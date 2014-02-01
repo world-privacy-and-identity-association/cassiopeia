@@ -1,4 +1,4 @@
-cacert-cassiopeia
+Cassiopeia
 =================
 
 Signing Module for CAcert
