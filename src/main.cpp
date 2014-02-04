@@ -17,6 +17,9 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-int main(int argc, const char* argv[]) {
-	return 0;
+int main( int argc, const char* argv[] ) {
+    ( void )argc;
+    ( void )argv;
+
+    return 0;
 }
