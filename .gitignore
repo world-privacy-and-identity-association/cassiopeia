@@ -1,3 +1,7 @@
+# Auto-Generated Dependenciy files
+*.d
+*.log
+
 # Compiled Object files
 *.slo
 *.lo
@@ -15,3 +19,8 @@
 # Ignore Eclipse stuff
 *.cproject
 *.project
+
+# Subdirectories filled with generated binary files
+bin
+dep
+obj
