@@ -36,7 +36,7 @@ LD=${LT_LD}
 
 CFLAGS=-O3 -g -flto -Wall -Werror -Wextra -pedantic -std=c++11
 CXXFLAGS=$(CFLAGS)
-LDFLAGS=-O3 -g -flto
+LDFLAGS=-O3 -g -flto -lmysqlclient
 
 SRC_DIR=src
 OBJ_DIR=obj
@@ -97,7 +97,7 @@ collissiondetect:
 cassiopeia: bin/cassiopeia
 
 bin/cassiopeia: libs ${FS_OBJ}
-	${MKDIR} $(shell dirname $@) && ${LT_LD} -o $@ ${FS_OBJ}
+	${MKDIR} $(shell dirname $@) && ${LT_LD} ${LDFLAGS} -o $@ ${FS_OBJ}
 
 ${DEP_DIR}/%.d: ${SRC_DIR}/%.cpp
 	${MKDIR} $(shell dirname $@) && $(CXX_DEP) $(CXXFLAGS) -M -MF $@ $<

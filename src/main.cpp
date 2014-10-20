@@ -16,10 +16,28 @@
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+#include <iostream>
+
+#include "database.h"
+#include "mysql.h"
 
 int main( int argc, const char* argv[] ) {
-    ( void )argc;
-    ( void )argv;
+    if( argc < 2 ) {
+        std::cout << argv[0] << " password" << std::endl;
+        return 1;
+    }
+
+    std::shared_ptr<JobProvider> jp( new MySQLJobProvider( "localhost", "cacert", argv[1], "cacert" ) );
+    std::shared_ptr<Job> job = jp->fetchJob();
+
+    if( !job ) {
+        std::cout << "Nothing to work on" << std::endl;
+        return 2;
+    }
+
+    if( !jp->finishJob( job ) ) {
+        return 1;
+    }
 
     return 0;
 }
