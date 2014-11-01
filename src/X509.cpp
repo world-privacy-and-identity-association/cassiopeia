@@ -103,6 +103,20 @@ X509Cert::X509Cert() {
     if( !X509_set_version( c, 2 ) ) {
         throw "Setting X509-version to 3 failed";
     }
+
+    X509_NAME* subjectP = X509_NAME_new();
+
+    if( !subjectP ) {
+        throw "malloc failure";
+    }
+
+    subject = std::shared_ptr<X509_NAME>( subjectP, X509_NAME_free );
+}
+
+void X509Cert::addRDN( int nid, std::string data ) {
+    if( ! X509_NAME_add_entry_by_NID( subject.get(), nid, MBSTRING_UTF8, ( unsigned char* )const_cast<char*>( data.data() ), data.size(), -1, 0 ) ) {
+        throw "malloc failure";
+    }
 }
 
 void X509Cert::setIssuerNameFrom( std::shared_ptr<X509> caCert ) {
@@ -204,6 +218,10 @@ void X509Cert::setExtensions( std::shared_ptr<X509> caCert, std::vector<std::sha
 }
 
 std::shared_ptr<SignedCertificate> X509Cert::sign( std::shared_ptr<EVP_PKEY> caKey ) {
+    if( !X509_set_subject_name( target.get(), subject.get() ) ) {
+        throw "error setting subject";
+    }
+
     if( !X509_sign( target.get(), caKey.get(), EVP_sha512() ) ) {
         throw "Signing failed.";
     }

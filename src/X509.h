@@ -24,8 +24,10 @@ public:
 class X509Cert {
 private:
     std::shared_ptr<X509> target;
+    std::shared_ptr<X509_NAME> subject;
 public:
     X509Cert();
+    void addRDN( int nid, std::string data );
     void setIssuerNameFrom( std::shared_ptr<X509> ca );
     void setPubkeyFrom( std::shared_ptr<X509Req> r );
     void setSerialNumber( BIGNUM* num );
