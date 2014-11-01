@@ -35,6 +35,15 @@ int main( int argc, const char* argv[] ) {
         return 2;
     }
 
+    if( job->task == "sign" ) {
+        std::cout << "signing" << std::endl;
+        std::shared_ptr<TBSCertificate> cert = jp->fetchTBSCert( job );
+        std::cout << cert->CN << std::endl;
+        std::cout << cert->md << std::endl;
+        std::cout << cert->csr << std::endl;
+        std::cout << cert->csr_type << std::endl;
+    }
+
     if( !jp->finishJob( job ) ) {
         return 1;
     }
