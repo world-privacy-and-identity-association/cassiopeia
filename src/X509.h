@@ -33,5 +33,5 @@ public:
     void setSerialNumber( BIGNUM* num );
     void setExtensions( std::shared_ptr<X509> caCert, std::vector<std::shared_ptr<SAN>>& sans );
     void setTimes( uint32_t before, uint32_t after );
-    std::shared_ptr<SignedCertificate> sign( std::shared_ptr<EVP_PKEY> caKey );
+    std::shared_ptr<SignedCertificate> sign( std::shared_ptr<EVP_PKEY> caKey, std::string signAlg );
 };

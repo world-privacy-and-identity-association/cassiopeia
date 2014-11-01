@@ -172,7 +172,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     c.setTimes( 0, 60 * 60 * 24 * 10 );
     c.setExtensions( caCert, cert->SANs );
 
-    std::shared_ptr<SignedCertificate> output = c.sign( caKey );
+    std::shared_ptr<SignedCertificate> output = c.sign( caKey, cert->md );
 
     return output;
 }

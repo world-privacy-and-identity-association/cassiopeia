@@ -221,12 +221,26 @@ void X509Cert::setExtensions( std::shared_ptr<X509> caCert, std::vector<std::sha
     X509_EXTENSION_free( ext );
 }
 
-std::shared_ptr<SignedCertificate> X509Cert::sign( std::shared_ptr<EVP_PKEY> caKey ) {
+std::shared_ptr<SignedCertificate> X509Cert::sign( std::shared_ptr<EVP_PKEY> caKey, std::string signAlg ) {
     if( !X509_set_subject_name( target.get(), subject.get() ) ) {
         throw "error setting subject";
     }
 
-    if( !X509_sign( target.get(), caKey.get(), EVP_sha512() ) ) {
+    const EVP_MD* md;
+
+    if( signAlg == "sha512" ) {
+        md = EVP_sha512();
+    } else if( signAlg == "sha384" ) {
+        md = EVP_sha384();
+    } else if( signAlg == "sha256" ) {
+        md = EVP_sha256();
+    } else if( signAlg == "sha1" ) {
+        md = EVP_sha1();
+    } else {
+        throw "Unknown md-type";
+    }
+
+    if( !X509_sign( target.get(), caKey.get(), md ) ) {
         throw "Signing failed.";
     }
 
