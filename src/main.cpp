@@ -17,6 +17,8 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 #include <iostream>
+#include <fstream>
+#include <streambuf>
 
 #include "database.h"
 #include "mysql.h"
@@ -42,6 +44,9 @@ int main( int argc, const char* argv[] ) {
         std::cout << cert->md << std::endl;
         std::cout << cert->csr << std::endl;
         std::cout << cert->csr_type << std::endl;
+        std::ifstream t( cert->csr );
+        std::string str( std::istreambuf_iterator<char>( t ), std::istreambuf_iterator<char>() );
+        std::cout << "CSR:  " << str << std::endl;
     }
 
     if( !jp->finishJob( job ) ) {
