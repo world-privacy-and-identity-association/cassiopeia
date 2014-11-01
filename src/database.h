@@ -17,6 +17,7 @@ struct TBSCertificate {
     std::string profile;
     std::string csr;
     std::string csr_type;
+    std::string csr_content;
 };
 
 class JobProvider {

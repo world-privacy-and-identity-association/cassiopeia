@@ -36,7 +36,7 @@ LD=${LT_LD}
 
 CFLAGS=-O3 -g -flto -Wall -Werror -Wextra -pedantic -std=c++11
 CXXFLAGS=$(CFLAGS)
-LDFLAGS=-O3 -g -flto -lmysqlclient
+LDFLAGS=-O3 -g -flto -lmysqlclient -lssl -lcrypto -ldl
 
 SRC_DIR=src
 OBJ_DIR=obj

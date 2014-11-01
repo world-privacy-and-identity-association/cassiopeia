@@ -22,6 +22,7 @@
 
 #include "database.h"
 #include "mysql.h"
+#include "simpleOpensslSigner.h"
 
 int main( int argc, const char* argv[] ) {
     if( argc < 2 ) {
@@ -30,6 +31,7 @@ int main( int argc, const char* argv[] ) {
     }
 
     std::shared_ptr<JobProvider> jp( new MySQLJobProvider( "localhost", "cacert", argv[1], "cacert" ) );
+    std::shared_ptr<Signer> sign( new SimpleOpensslSigner() );
     std::shared_ptr<Job> job = jp->fetchJob();
 
     if( !job ) {
@@ -43,10 +45,9 @@ int main( int argc, const char* argv[] ) {
         std::cout << cert->CN << std::endl;
         std::cout << cert->md << std::endl;
         std::cout << cert->csr << std::endl;
-        std::cout << cert->csr_type << std::endl;
         std::ifstream t( cert->csr );
-        std::string str( std::istreambuf_iterator<char>( t ), std::istreambuf_iterator<char>() );
-        std::cout << "CSR:  " << str << std::endl;
+        cert->csr_content = std::string( std::istreambuf_iterator<char>( t ), std::istreambuf_iterator<char>() );
+        sign->sign( cert );
     }
 
     if( !jp->finishJob( job ) ) {
