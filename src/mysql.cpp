@@ -95,7 +95,7 @@ std::pair< int, std::shared_ptr<MYSQL_RES> > MySQLJobProvider::query( const std:
     int err = mysql_real_query( this->conn.get(), query.c_str(), query.size() );
 
     if( err ) {
-        throw( std::string( "MySQL error: " ) + mysql_error( this->conn.get() ) ).c_str();
+        throw std::string( "MySQL error: " ) + mysql_error( this->conn.get() );
     }
 
     auto c = conn;
@@ -187,7 +187,7 @@ bool MySQLJobProvider::finishJob( std::shared_ptr<Job> job ) {
 
 std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<Job> job ) {
     std::shared_ptr<TBSCertificate> cert = std::shared_ptr<TBSCertificate>( new TBSCertificate() );
-    std::string q = "SELECT CN, subject, md, profile, csr_name, csr_type FROM certs WHERE id='" + this->escape_string( job->target ) + "'";
+    std::string q = "SELECT md, profile, csr_name, csr_type FROM certs WHERE id='" + this->escape_string( job->target ) + "'";
 
     int err = 0;
 
@@ -211,12 +211,10 @@ std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<
         return std::shared_ptr<TBSCertificate>();
     }
 
-    cert->CN = std::string( row[0], row[0] + l[0] );
-    cert->subj = std::string( row[1], row[1] + l[1] );
-    cert->md = std::string( row[2], row[2] + l[2] );
-    cert->profile = std::string( row[3], row[3] + l[3] );
-    cert->csr = std::string( row[4], row[4] + l[4] );
-    cert->csr_type = std::string( row[5], row[5] + l[5] );
+    cert->md = std::string( row[0], row[0] + l[0] );
+    cert->profile = std::string( row[1], row[1] + l[1] );
+    cert->csr = std::string( row[2], row[2] + l[2] );
+    cert->csr_type = std::string( row[3], row[3] + l[3] );
 
     cert->SANs = std::vector<std::shared_ptr<SAN>>();
 
@@ -227,6 +225,8 @@ std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<
         std::cout << mysql_error( this->conn.get() );
         return std::shared_ptr<TBSCertificate>();
     }
+
+    std::cout << "Fetching SANs" << std::endl;
 
     while( ( row = mysql_fetch_row( res.get() ) ) ) {
         unsigned long* l = mysql_fetch_lengths( res.get() );
@@ -239,6 +239,28 @@ std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<
         nSAN->content = std::string( row[0], row[0] + l[0] );
         nSAN->type = std::string( row[1], row[1] + l[1] );
         cert->SANs.push_back( nSAN );
+    }
+
+    q = "SELECT name, value FROM certAvas WHERE certid='" + this->escape_string( job->target ) + "'";
+    std::tie( err, res ) = query( q );
+
+    if( err ) {
+        std::cout << mysql_error( this->conn.get() );
+        return std::shared_ptr<TBSCertificate>();
+
+    }
+
+    while( ( row = mysql_fetch_row( res.get() ) ) ) {
+        unsigned long* l = mysql_fetch_lengths( res.get() );
+
+        if( !l ) {
+            return std::shared_ptr<TBSCertificate>();
+        }
+
+        std::shared_ptr<AVA> nAVA = std::shared_ptr<AVA>( new AVA() );
+        nAVA->name = std::string( row[0], row[0] + l[0] );
+        nAVA->value = std::string( row[1], row[1] + l[1] );
+        cert->AVAs.push_back( nAVA );
     }
 
     return cert;

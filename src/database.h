@@ -22,16 +22,21 @@ struct SAN {
     std::string type;
 };
 
+struct AVA {
+    std::string name;
+    std::string value;
+};
+
 struct TBSCertificate {
-    std::string CN;
-    std::string subj;
     std::string md;
     std::string profile;
     std::string csr;
     std::string csr_type;
     std::string csr_content;
     std::vector<std::shared_ptr<SAN>> SANs;
+    std::vector<std::shared_ptr<AVA>> AVAs;
 };
+
 
 struct SignedCertificate {
     std::string certificate;

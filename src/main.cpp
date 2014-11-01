@@ -56,6 +56,12 @@ std::string writeBackFile( uint32_t serial, std::string cert ) {
 int main( int argc, const char* argv[] ) {
     ( void ) argc;
     ( void ) argv;
+    bool once = false;
+
+    if( argc == 2 && std::string( "--once" ) == std::string( argv[1] ) ) {
+        once = true;
+    }
+
     std::ifstream config;
     config.open( "config.txt" );
 
@@ -159,7 +165,10 @@ int main( int argc, const char* argv[] ) {
                 res->crt_name = fn;
                 jp->writeBack( job, res );
             } catch( const char* c ) {
-                std::cerr << c << std::endl;
+                std::cerr << "ERROR: " << c << std::endl;
+                return 2;
+            } catch( std::string c ) {
+                std::cerr << "ERROR: " << c << std::endl;
                 return 2;
             }
         } else {
@@ -170,7 +179,7 @@ int main( int argc, const char* argv[] ) {
             return 1;
         }
 
-        if( !DAEMON ) {
+        if( !DAEMON || once ) {
             return 0;
         }
     }

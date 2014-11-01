@@ -155,10 +155,16 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
         throw "malloc failure";
     }
 
-    std::shared_ptr<X509_NAME> subject = std::shared_ptr<X509_NAME>( subjectP, X509_NAME_free );
-    const char* strdata = "commonName";
-    X509_NAME_add_entry_by_NID( subject.get(), NID_commonName, MBSTRING_UTF8, ( unsigned char* )const_cast<char*>( strdata ), 10, -1, 0 ); // guard
-    c.addRDN( NID_commonName, "common-Content" );
+    for( std::shared_ptr<AVA> a : cert->AVAs ) {
+        if( a->name == "CN" ) {
+            c.addRDN( NID_commonName, a->value );
+        } else if( a->name == "EMAIL" ) {
+            c.addRDN( NID_pkcs9_emailAddress, a->value );
+        } else {
+            throw "unknown AVA-type";
+        }
+    }
+
     c.setIssuerNameFrom( caCert );
     c.setPubkeyFrom( req );
     std::shared_ptr<BIGNUM> ser = nextSerial();
