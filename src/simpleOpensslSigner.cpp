@@ -160,6 +160,16 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
             c.addRDN( NID_commonName, a->value );
         } else if( a->name == "EMAIL" ) {
             c.addRDN( NID_pkcs9_emailAddress, a->value );
+        } else if( a->name == "C" ) {
+            c.addRDN( NID_countryName, a->value );
+        } else if( a->name == "L" ) {
+            c.addRDN( NID_localityName, a->value );
+        } else if( a->name == "ST" ) {
+            c.addRDN( NID_stateOrProvinceName, a->value );
+        } else if( a->name == "O" ) {
+            c.addRDN( NID_organizationName, a->value );
+        } else if( a->name == "OU" ) {
+            c.addRDN( NID_organizationalUnitName, a->value );
         } else {
             throw "unknown AVA-type";
         }
