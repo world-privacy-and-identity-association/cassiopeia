@@ -27,3 +27,11 @@ obj
 
 # Emacs
 *~
+\#*#
+
+# Devel key files
+*.crt
+*.key
+*.csr
+config.txt
+serial

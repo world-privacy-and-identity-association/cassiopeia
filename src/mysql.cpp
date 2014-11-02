@@ -249,7 +249,7 @@ void MySQLJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<Sign
         throw "Error while writing back";
     }
 
-    std::string q = "UPDATE certs SET crt_name='" + this->escape_string( res->crt_name ) + "', serial='" + this->escape_string( std::to_string( res->serial ) ) + "', created=NOW() WHERE id='" + this->escape_string( job->id ) + "' LIMIT 1";
+    std::string q = "UPDATE certs SET crt_name='" + this->escape_string( res->crt_name ) + "', serial='" + this->escape_string( res->serial ) + "', created=NOW() WHERE id='" + this->escape_string( job->target ) + "' LIMIT 1";
 
     // TODO write more thingies back
 

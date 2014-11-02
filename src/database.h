@@ -35,7 +35,7 @@ struct TBSCertificate {
 
 struct SignedCertificate {
     std::string certificate;
-    uint32_t serial;
+    std::string serial;
     uint32_t before;
     uint32_t after;
     std::string pkHash;

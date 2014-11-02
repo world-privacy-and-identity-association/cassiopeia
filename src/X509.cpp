@@ -119,8 +119,8 @@ void X509Cert::setPubkeyFrom( std::shared_ptr<X509Req> req ) {
     }
 }
 
-void X509Cert::setSerialNumber( int num ) {
-    ASN1_INTEGER_set( target.get()->cert_info->serialNumber, num );
+void X509Cert::setSerialNumber( BIGNUM* num ) {
+    BN_to_ASN1_INTEGER( num , target->cert_info->serialNumber );
 }
 
 void X509Cert::setTimes( uint32_t before, uint32_t after ) {
@@ -216,6 +216,10 @@ std::shared_ptr<SignedCertificate> X509Cert::sign( std::shared_ptr<EVP_PKEY> caK
     BIO_get_mem_ptr( mem.get(), &buf );
     std::shared_ptr<SignedCertificate> res = std::shared_ptr<SignedCertificate>( new SignedCertificate() );
     res->certificate = std::string( buf->data, buf->data + buf->length );
-    res->serial = ASN1_INTEGER_get( target.get()->cert_info->serialNumber );
+    BIGNUM* ser = ASN1_INTEGER_to_BN( target->cert_info->serialNumber, NULL );
+    char* serStr = BN_bn2hex( ser );
+    res->serial = std::string( serStr );
+    OPENSSL_free( serStr );
+    BN_free( ser );
     return res;
 }

@@ -49,6 +49,7 @@ std::string writeBackFile( uint32_t serial, std::string cert ) {
     file.open( filename.c_str() );
     file << cert.c_str();
     file.close();
+    std::cout << "wrote to " << filename << std::endl;
     return filename;
 }
 
