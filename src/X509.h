@@ -11,9 +11,12 @@ class X509Req {
 private:
     std::shared_ptr<EVP_PKEY> pk;
     std::shared_ptr<X509_REQ> req;
+    std::shared_ptr<NETSCAPE_SPKI> spki;
     X509Req( X509_REQ* csr );
+    X509Req( std::string spkac );
 public:
     static std::shared_ptr<X509Req> parse( std::string filename );
+    static std::shared_ptr<X509Req> parseSPKAC( std::string filename );
     int verify();
     std::shared_ptr<EVP_PKEY> getPkey();
 };

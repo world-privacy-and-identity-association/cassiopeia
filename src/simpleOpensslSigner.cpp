@@ -74,7 +74,15 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
         throw "CA-key not found";
     }
 
-    std::shared_ptr<X509Req> req = X509Req::parse( cert->csr_content );
+    std::shared_ptr<X509Req> req;
+
+    if( cert->csr_type == "SPKAC" ) {
+        req = X509Req::parseSPKAC( cert->csr_content );
+    } else if( cert->csr_type == "CSR" ) {
+        req = X509Req::parse( cert->csr_content );
+    } else {
+        throw "Error, unknown REQ rype " + ( cert->csr_type );
+    }
 
     int i = req->verify();
 

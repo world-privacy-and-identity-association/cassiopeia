@@ -1,5 +1,6 @@
 #include "X509.h"
 
+#include <fstream>
 #include <iostream>
 
 #include <openssl/ssl.h>
@@ -17,7 +18,33 @@ X509Req::X509Req( X509_REQ* csr ) {
     pk = std::shared_ptr<EVP_PKEY>( pkt, EVP_PKEY_free );
 }
 
+X509Req::X509Req( std::string spkac ) {
+    if( spkac.compare( 0, 6, "SPKAC=" ) != 0 ) {
+        throw "Error: not a SPKAC";
+    }
+
+    spkac = spkac.substr( 6 );
+    NETSCAPE_SPKI* spki_p = NETSCAPE_SPKI_b64_decode( spkac.c_str(), spkac.size() );
+
+    if( !spki_p ) {
+        throw "Error: decode failed";
+    }
+
+    spki = std::shared_ptr<NETSCAPE_SPKI>( spki_p, NETSCAPE_SPKI_free );
+    EVP_PKEY* pkt_p = NETSCAPE_SPKI_get_pubkey( spki.get() );
+
+    if( !pkt_p ) {
+        throw "Error: reading SPKAC Pubkey failed";
+    }
+
+    pk = std::shared_ptr<EVP_PKEY>( pkt_p, EVP_PKEY_free );
+}
+
 int X509Req::verify() {
+    if( !req ) {
+        return NETSCAPE_SPKI_verify( spki.get(), pk.get() );
+    }
+
     return X509_REQ_verify( req.get(), pk.get() );
 }
 
@@ -34,6 +61,10 @@ std::shared_ptr<X509Req> X509Req::parse( std::string filename ) {
     }
 
     return std::shared_ptr<X509Req>( new X509Req( req ) );
+}
+
+std::shared_ptr<X509Req> X509Req::parseSPKAC( std::string content ) {
+    return std::shared_ptr<X509Req>( new X509Req( content ) );
 }
 
 int add_ext( std::shared_ptr<X509> issuer, std::shared_ptr<X509> subj, int nid, const char* value ) {
