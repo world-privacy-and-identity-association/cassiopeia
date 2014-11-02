@@ -155,7 +155,7 @@ std::shared_ptr<Job> MySQLJobProvider::fetchJob() {
     return job;
 }
 
-std::string MySQLJobProvider::escape_string( const std::string & target ) {
+std::string MySQLJobProvider::escape_string( const std::string& target ) {
     if( !conn ) {
         throw "Not connected!";
     }
@@ -242,4 +242,18 @@ std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<
     }
 
     return cert;
+}
+
+void MySQLJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<SignedCertificate> res ) {
+    if( !conn ) {
+        throw "Error while writing back";
+    }
+
+    std::string q = "UPDATE certs SET crt_name='" + this->escape_string( res->crt_name ) + "', serial='" + this->escape_string( std::to_string( res->serial ) ) + "' WHERE id='" + this->escape_string( job->id ) + "' LIMIT 1";
+
+    // TODO write more thingies back
+
+    if( query( q ).first ) {
+        throw "Error while writing back";
+    }
 }

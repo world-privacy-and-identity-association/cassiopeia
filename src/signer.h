@@ -6,5 +6,5 @@
 
 class Signer {
 public:
-    virtual void sign( std::shared_ptr<TBSCertificate> cert ) = 0;
+    virtual std::shared_ptr<SignedCertificate> sign( std::shared_ptr<TBSCertificate> cert ) = 0;
 };

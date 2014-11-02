@@ -66,7 +66,7 @@ std::shared_ptr<X509> SimpleOpensslSigner::caCert = loadX509FromFile( "assured.c
 
 std::shared_ptr<EVP_PKEY> SimpleOpensslSigner::caKey = loadPkeyFromFile( "assured.key" );
 
-void SimpleOpensslSigner::sign( std::shared_ptr<TBSCertificate> cert ) {
+std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TBSCertificate> cert ) {
     if( !caKey ) {
         throw "CA-key not found";
     }
@@ -100,5 +100,7 @@ void SimpleOpensslSigner::sign( std::shared_ptr<TBSCertificate> cert ) {
 
     std::string output = c.sign( caKey );
 
-    std::cout << "Certificate:" << std::endl << output << std::endl;
+    std::shared_ptr<SignedCertificate> output = c.sign( caKey );
+
+    return output;
 }

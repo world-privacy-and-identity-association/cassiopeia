@@ -92,7 +92,7 @@ void X509Cert::setSerialNumber( int num ) {
     ASN1_INTEGER_set( target.get()->cert_info->serialNumber, num );
 }
 
-void X509Cert::setTimes( long before, long after ) {
+void X509Cert::setTimes( uint32_t before, uint32_t after ) {
     X509_gmtime_adj( X509_get_notBefore( target.get() ), before );
     X509_gmtime_adj( X509_get_notAfter( target.get() ), after );
 }
@@ -172,17 +172,19 @@ void X509Cert::setExtensions( std::shared_ptr<X509> caCert, std::vector<std::sha
     X509_EXTENSION_free( ext );
 }
 
-std::string X509Cert::sign( std::shared_ptr<EVP_PKEY> caKey ) {
+std::shared_ptr<SignedCertificate> X509Cert::sign( std::shared_ptr<EVP_PKEY> caKey ) {
     if( !X509_sign( target.get(), caKey.get(), EVP_sha512() ) ) {
         throw "Signing failed.";
     }
 
-    X509_print_fp( stdout, target.get() );
+    //X509_print_fp( stdout, target.get() );
 
     std::shared_ptr<BIO> mem = std::shared_ptr<BIO>( BIO_new( BIO_s_mem() ), BIO_free );
     PEM_write_bio_X509( mem.get(), target.get() );
     BUF_MEM* buf;
     BIO_get_mem_ptr( mem.get(), &buf );
-    std::string output( buf->data, buf->data + buf->length );
-    return output;
+    std::shared_ptr<SignedCertificate> res = std::shared_ptr<SignedCertificate>( new SignedCertificate() );
+    res->certificate = std::string( buf->data, buf->data + buf->length );
+    res->serial = ASN1_INTEGER_get( target.get()->cert_info->serialNumber );
+    return res;
 }

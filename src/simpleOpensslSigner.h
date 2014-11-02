@@ -10,5 +10,5 @@ private:
     static std::shared_ptr<EVP_PKEY> caKey;
     static std::shared_ptr<X509> caCert;
 public:
-    void sign( std::shared_ptr<TBSCertificate> cert );
+    std::shared_ptr<SignedCertificate> sign( std::shared_ptr<TBSCertificate> cert );
 };

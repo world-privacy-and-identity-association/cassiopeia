@@ -16,6 +16,8 @@
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+#include <sys/stat.h>
+
 #include <iostream>
 #include <fstream>
 #include <streambuf>
@@ -23,6 +25,21 @@
 #include "database.h"
 #include "mysql.h"
 #include "simpleOpensslSigner.h"
+
+std::string writeBackFile( uint32_t serial, std::string cert ) {
+    std::string filename = "keys";
+    mkdir( filename.c_str(), 0755 );
+    filename += "/crt";
+    mkdir( filename.c_str(), 0755 );
+    filename += "/" + std::to_string( serial / 1000 );
+    mkdir( filename.c_str(), 0755 );
+    filename += "/" + std::to_string( serial ) + ".crt";
+    std::ofstream file;
+    file.open( filename.c_str() );
+    file << cert.c_str();
+    file.close();
+    return filename;
+}
 
 int main( int argc, const char* argv[] ) {
     if( argc < 2 ) {
@@ -51,7 +68,11 @@ int main( int argc, const char* argv[] ) {
             std::cout << "Found a CSR at '" << cert->csr << "' signing" << std::endl;
             std::ifstream t( cert->csr );
             cert->csr_content = std::string( std::istreambuf_iterator<char>( t ), std::istreambuf_iterator<char>() );
-            sign->sign( cert );
+
+            std::shared_ptr<SignedCertificate> res = sign->sign( cert );
+            std::string fn = writeBackFile( res->serial, res->certificate );
+            res->crt_name = fn;
+            jp->writeBack( job, res );
         } catch( const char* c ) {
             std::cerr << c << std::endl;
             return 2;
