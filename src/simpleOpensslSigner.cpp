@@ -9,6 +9,8 @@
 #include <openssl/engine.h>
 #include <openssl/x509v3.h>
 
+#include "X509.h"
+
 extern std::vector<Profile> profiles;
 
 std::shared_ptr<int> SimpleOpensslSigner::lib_ref(

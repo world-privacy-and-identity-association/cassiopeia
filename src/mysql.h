@@ -1,10 +1,10 @@
 #pragma once
 
-#include <mysql/mysql.h>
-
 #include <string>
 #include <memory>
 #include <tuple>
+
+#include <mysql/mysql.h>
 
 #include "database.h"
 

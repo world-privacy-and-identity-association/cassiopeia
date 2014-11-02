@@ -1,8 +1,9 @@
 #pragma once
 
+#include <openssl/ssl.h>
+
 #include "database.h"
 #include "signer.h"
-#include <openssl/ssl.h>
 
 class SimpleOpensslSigner : public Signer {
 private:
