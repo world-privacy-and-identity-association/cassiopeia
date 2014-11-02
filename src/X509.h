@@ -1,6 +1,11 @@
 #pragma once
+
 #include <memory>
+#include <vector>
+
 #include <openssl/ssl.h>
+
+#include "database.h"
 
 class X509Req {
 private:
@@ -21,8 +26,7 @@ public:
     void setIssuerNameFrom( std::shared_ptr<X509> ca );
     void setPubkeyFrom( std::shared_ptr<X509Req> r );
     void setSerialNumber( int num );
-    void setExtensions( std::shared_ptr<X509> caCert );
+    void setExtensions( std::shared_ptr<X509> caCert, std::vector<std::shared_ptr<SAN>>& sans );
     void setTimes( long before, long after );
     std::string sign( std::shared_ptr<EVP_PKEY> caKey );
 };
-

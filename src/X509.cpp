@@ -1,5 +1,7 @@
 #include "X509.h"
 
+#include <iostream>
+
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include <openssl/x509v3.h>
@@ -95,7 +97,40 @@ void X509Cert::setTimes( long before, long after ) {
     X509_gmtime_adj( X509_get_notAfter( target.get() ), after );
 }
 
-void X509Cert::setExtensions( std::shared_ptr<X509> caCert ) {
+static X509_EXTENSION* do_ext_i2d( int ext_nid, int crit, ASN1_VALUE* ext_struc ) {
+    unsigned char* ext_der;
+    int ext_len;
+    ASN1_OCTET_STRING* ext_oct;
+    X509_EXTENSION* ext;
+    /* Convert internal representation to DER */
+    ext_der = NULL;
+    ext_len = ASN1_item_i2d( ext_struc, &ext_der, ASN1_ITEM_ptr( ASN1_ITEM_ref( GENERAL_NAMES ) ) );
+
+    if( ext_len < 0 ) {
+        goto merr;
+    }
+
+    if( !( ext_oct = M_ASN1_OCTET_STRING_new() ) ) {
+        goto merr;
+    }
+
+    ext_oct->data = ext_der;
+    ext_oct->length = ext_len;
+
+    ext = X509_EXTENSION_create_by_NID( NULL, ext_nid, crit, ext_oct );
+
+    if( !ext ) {
+        goto merr;
+    }
+
+    M_ASN1_OCTET_STRING_free( ext_oct );
+    return ext;
+
+merr:
+    throw "memerr";
+}
+
+void X509Cert::setExtensions( std::shared_ptr<X509> caCert, std::vector<std::shared_ptr<SAN>>& sans ) {
     add_ext( caCert, target, NID_basic_constraints, "critical,CA:FALSE" );
     add_ext( caCert, target, NID_subject_key_identifier, "hash" );
     add_ext( caCert, target, NID_authority_key_identifier, "keyid,issuer:always" );
@@ -103,6 +138,38 @@ void X509Cert::setExtensions( std::shared_ptr<X509> caCert ) {
     add_ext( caCert, target, NID_ext_key_usage, "clientAuth, serverAuth" );
     add_ext( caCert, target, NID_info_access, "OCSP;URI:http://ocsp.cacert.org" );
     add_ext( caCert, target, NID_crl_distribution_points, "URI:http://crl.cacert.org/class3-revoke.crl" );
+
+    std::shared_ptr<GENERAL_NAMES> gens = std::shared_ptr<GENERAL_NAMES>(
+        sk_GENERAL_NAME_new_null(),
+        []( GENERAL_NAMES * ref ) {
+            if( ref ) {
+                sk_GENERAL_NAME_pop_free( ref, GENERAL_NAME_free );
+            }
+        } );
+
+    for( auto& name : sans ) {
+        GENERAL_NAME* gen = GENERAL_NAME_new();
+
+        if( !gen ) {
+            throw "Malloc failure.";
+        }
+
+        gen->type = name->type == "DNS" ? GEN_DNS : name->type == "email" ? GEN_EMAIL : 0; // GEN_EMAIL;
+
+        if( !gen->type
+                || !( gen->d.ia5 = M_ASN1_IA5STRING_new() )
+                || !ASN1_STRING_set( gen->d.ia5, name->content.data(), name->content.size() ) ) {
+            GENERAL_NAME_free( gen );
+            throw "initing iasting5 failed";
+        }
+
+        sk_GENERAL_NAME_push( gens.get(), gen );
+    }
+
+    X509_EXTENSION* ext = do_ext_i2d( NID_subject_alt_name, 0/*critical*/, ( ASN1_VALUE* )gens.get() );
+
+    X509_add_ext( target.get(), ext, -1 );
+    X509_EXTENSION_free( ext );
 }
 
 std::string X509Cert::sign( std::shared_ptr<EVP_PKEY> caKey ) {
@@ -111,6 +178,7 @@ std::string X509Cert::sign( std::shared_ptr<EVP_PKEY> caKey ) {
     }
 
     X509_print_fp( stdout, target.get() );
+
     std::shared_ptr<BIO> mem = std::shared_ptr<BIO>( BIO_new( BIO_s_mem() ), BIO_free );
     PEM_write_bio_X509( mem.get(), target.get() );
     BUF_MEM* buf;

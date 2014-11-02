@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 struct Job {
     std::string id;
@@ -10,6 +11,12 @@ struct Job {
     std::string from;
     std::string to;
 };
+
+struct SAN {
+    std::string content;
+    std::string type;
+};
+
 struct TBSCertificate {
     std::string CN;
     std::string subj;
@@ -18,6 +25,7 @@ struct TBSCertificate {
     std::string csr;
     std::string csr_type;
     std::string csr_content;
+    std::vector<std::shared_ptr<SAN>> SANs;
 };
 
 class JobProvider {

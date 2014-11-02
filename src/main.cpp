@@ -42,12 +42,19 @@ int main( int argc, const char* argv[] ) {
     if( job->task == "sign" ) {
         try {
             std::shared_ptr<TBSCertificate> cert = jp->fetchTBSCert( job );
+
+            if( !cert ) {
+                std::cout << "wasn't able to load CSR" << std::endl;
+                return 2;
+            }
+
             std::cout << "Found a CSR at '" << cert->csr << "' signing" << std::endl;
             std::ifstream t( cert->csr );
             cert->csr_content = std::string( std::istreambuf_iterator<char>( t ), std::istreambuf_iterator<char>() );
             sign->sign( cert );
         } catch( const char* c ) {
             std::cerr << c << std::endl;
+            return 2;
         }
     }
 

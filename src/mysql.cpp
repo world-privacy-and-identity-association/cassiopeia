@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 
+#include <iostream>
+
 #include <mysql/errmsg.h>
 
 //This static variable exists to handle initializing and finalizing the MySQL driver library
@@ -93,7 +95,7 @@ std::pair< int, std::shared_ptr<MYSQL_RES> > MySQLJobProvider::query( const std:
     int err = mysql_real_query( this->conn.get(), query.c_str(), query.size() );
 
     if( err ) {
-        return std::make_pair( err, std::shared_ptr<MYSQL_RES>() );
+        throw( std::string( "MySQL error: " ) + mysql_error( this->conn.get() ) ).c_str();
     }
 
     auto c = conn;
@@ -153,7 +155,7 @@ std::shared_ptr<Job> MySQLJobProvider::fetchJob() {
     return job;
 }
 
-std::string MySQLJobProvider::escape_string( const std::string& target ) {
+std::string MySQLJobProvider::escape_string( const std::string & target ) {
     if( !conn ) {
         throw "Not connected!";
     }
@@ -185,9 +187,10 @@ bool MySQLJobProvider::finishJob( std::shared_ptr<Job> job ) {
 
 std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<Job> job ) {
     std::shared_ptr<TBSCertificate> cert = std::shared_ptr<TBSCertificate>( new TBSCertificate() );
-    std::string q = "SELECT CN, subject, md, profile, csr_name, csr_type FROM certs WHERE id='" + this->escape_string( job->id ) + "'";
+    std::string q = "SELECT CN, subject, md, profile, csr_name, csr_type FROM certs WHERE id='" + this->escape_string( job->target ) + "'";
 
     int err = 0;
+
     std::shared_ptr<MYSQL_RES> res;
 
     std::tie( err, res ) = query( q );
@@ -214,6 +217,29 @@ std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<
     cert->profile = std::string( row[3], row[3] + l[3] );
     cert->csr = std::string( row[4], row[4] + l[4] );
     cert->csr_type = std::string( row[5], row[5] + l[5] );
+
+    cert->SANs = std::vector<std::shared_ptr<SAN>>();
+
+    q = "SELECT contents, type FROM subjectAlternativeNames WHERE certId='" + this->escape_string( job->target ) + "'";
+    std::tie( err, res ) = query( q );
+
+    if( err ) {
+        std::cout << mysql_error( this->conn.get() );
+        return std::shared_ptr<TBSCertificate>();
+    }
+
+    while( ( row = mysql_fetch_row( res.get() ) ) ) {
+        unsigned long* l = mysql_fetch_lengths( res.get() );
+
+        if( !l ) {
+            return std::shared_ptr<TBSCertificate>();
+        }
+
+        std::shared_ptr<SAN> nSAN = std::shared_ptr<SAN>( new SAN() );
+        nSAN->content = std::string( row[0], row[0] + l[0] );
+        nSAN->type = std::string( row[1], row[1] + l[1] );
+        cert->SANs.push_back( nSAN );
+    }
 
     return cert;
 }

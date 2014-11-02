@@ -14,7 +14,10 @@
 std::shared_ptr<int> SimpleOpensslSigner::lib_ref(
     new int( SSL_library_init() ),
     []( int* ref ) {
-        ( void ) ref;
+        delete ref;
+
+        EVP_cleanup();
+        CRYPTO_cleanup_all_ex_data();
     } );
 
 std::shared_ptr<X509> loadX509FromFile( std::string filename ) {
@@ -92,8 +95,8 @@ void SimpleOpensslSigner::sign( std::shared_ptr<TBSCertificate> cert ) {
     c.setIssuerNameFrom( caCert );
     c.setPubkeyFrom( req );
     c.setSerialNumber( 4711 );
-    c.setTimes( 0, 1000 * 60 * 60 * 24 * 10 );
-    c.setExtensions( caCert );
+    c.setTimes( 0, 60 * 60 * 24 * 10 );
+    c.setExtensions( caCert, cert->SANs );
 
     std::string output = c.sign( caKey );
 
