@@ -34,7 +34,11 @@ CXX=${LT_CXX}
 CXX_DEP=${LT_CXX_DEP}
 LD=${LT_LD}
 
-CFLAGS=-O3 -g -flto -Wall -Werror -Wextra -pedantic -std=c++11
+ifneq (,$(filter debug,$(DEB_BUILD_OPTIONS)))
+ADDFLAGS=-DNO_DAEMON
+endif
+
+CFLAGS=-O3 -g -flto -Wall -Werror -Wextra -pedantic -std=c++11 ${ADDFLAGS}
 CXXFLAGS=$(CFLAGS)
 LDFLAGS=-O3 -g -flto -lmysqlclient -lssl -lcrypto -ldl
 

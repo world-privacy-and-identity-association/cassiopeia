@@ -4,6 +4,11 @@
 #include <memory>
 #include <vector>
 
+struct Profile {
+    std::string cert;
+    std::string key;
+};
+
 struct Job {
     std::string id;
     std::string target;
