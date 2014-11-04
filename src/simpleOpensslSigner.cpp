@@ -73,7 +73,7 @@ SimpleOpensslSigner::SimpleOpensslSigner() {
 SimpleOpensslSigner::~SimpleOpensslSigner() {
 }
 
-std::shared_ptr<BIGNUM> SimpleOpensslSigner::nextSerial() {
+std::shared_ptr<BIGNUM> SimpleOpensslSigner::nextSerial( uint16_t profile ) {
     std::ifstream serialif( "serial" );
     std::string res;
     serialif >> res;
@@ -97,8 +97,8 @@ std::shared_ptr<BIGNUM> SimpleOpensslSigner::nextSerial() {
 
     std::shared_ptr<unsigned char> data = std::shared_ptr<unsigned char>( ( unsigned char* ) malloc( BN_num_bytes( serial.get() ) + 20 ), free );
     int len = BN_bn2bin( serial.get(), data.get() );
-    data.get()[len] = 0x0;
-    data.get()[len + 1] = 0x0; // profile id
+    data.get()[len] = profile >> 8;
+    data.get()[len + 1] = profile & 0xFF; // profile id
     data.get()[len + 2] = 0x0;
     data.get()[len + 3] = 0x0; // signer id
 
@@ -177,7 +177,13 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
 
     c.setIssuerNameFrom( caCert );
     c.setPubkeyFrom( req );
-    std::shared_ptr<BIGNUM> ser = nextSerial();
+    long int profile = strtol( cert->profile.c_str(), 0, 10 );
+
+    if( profile > 0xFFFF || profile < 0 || ( profile == 0 && cert->profile != "0" ) ) {
+        throw "invalid profile id";
+    }
+
+    std::shared_ptr<BIGNUM> ser = nextSerial( profile );
     c.setSerialNumber( ser.get() );
     c.setTimes( 0, 60 * 60 * 24 * 10 );
     c.setExtensions( caCert, cert->SANs );
