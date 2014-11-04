@@ -11,7 +11,7 @@
 #                    <...>
 ### END INIT INFO
 
-# Author: unknown <software@cacert.org>
+# Author: CAcert Software Team <cacert-devel@cacert.org>
 
 # Do NOT "set -e"
 
@@ -54,7 +54,7 @@ do_start()
 	#   2 if daemon could not be started
         start-stop-daemon -b --start --quiet --pidfile $PIDFILE -d $DIR --exec $DAEMON --test > /dev/null \
 		|| return 1
-	start-stop-daemon -b --start --quiet --pidfile $PIDFILE --make-pidfile -d $DIR --exec $DAEMON --no-close -- \
+	start-stop-daemon -b --start --quiet --pidfile $PIDFILE --make-pidfile -d $DIR -c nobody --exec $DAEMON --no-close -- \
 		>> /var/log/cassiopeia.log 2>&1 \
 		|| return 2
 	# The above code will not work for interpreted scripts, use the next
