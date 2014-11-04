@@ -1,4 +1,4 @@
-Source: cassiopeia
+Source: cacert-cassiopeia
 Section: utils
 Priority: extra
 Maintainer: CAcert Software Team <cacert-devel@cacert.org>
@@ -8,14 +8,14 @@ Homepage: https://cacert.org/
 #Vcs-Git: git://git.debian.org/collab-maint/cassiopeia.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/cassiopeia.git;a=summary
 
-Package: cassiopeia
+Package: cacert-cassiopeia
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: CAcert Certificate Signing Software
  This package provides the necessary tools to run a
  certificate signing instance on https://cacert.org
 
-Package: cassiopeia-doc
+Package: cacert-cassiopeia-doc
 Architecture: all
 Description: Documentation for the CAcert Certificate Signing Software
  This package provides the necessary tools to run a
