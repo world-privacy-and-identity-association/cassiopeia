@@ -97,10 +97,12 @@ std::shared_ptr<BIGNUM> SimpleOpensslSigner::nextSerial( uint16_t profile ) {
 
     std::shared_ptr<unsigned char> data = std::shared_ptr<unsigned char>( ( unsigned char* ) malloc( BN_num_bytes( serial.get() ) + 20 ), free );
     int len = BN_bn2bin( serial.get(), data.get() );
-    data.get()[len] = profile >> 8;
-    data.get()[len + 1] = profile & 0xFF; // profile id
-    data.get()[len + 2] = 0x0;
-    data.get()[len + 3] = 0x0; // signer id
+
+    data.get()[len] = 0x0;
+    data.get()[len + 1] = 0x0; // signer id
+
+    data.get()[len + 2] = profile >> 8;
+    data.get()[len + 3] = profile & 0xFF; // profile id
 
     if( !RAND_bytes( data.get() + len + 4, 16 ) || !BN_add_word( serial.get(), 1 ) ) {
         throw "Big number math failed while calcing serials.";
