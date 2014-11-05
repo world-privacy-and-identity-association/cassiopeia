@@ -55,7 +55,7 @@ do_start()
         start-stop-daemon -b --start --quiet --pidfile $PIDFILE -d $DIR --exec $DAEMON --test > /dev/null \
 		|| return 1
 	start-stop-daemon -b --start --quiet --pidfile $PIDFILE --make-pidfile -d $DIR -c nobody --exec $DAEMON --no-close -- \
-		>> /var/log/cassiopeia.log 2>&1 \
+		>> /var/log/cacert-cassiopeia.log 2>&1 \
 		|| return 2
 	# The above code will not work for interpreted scripts, use the next
 	# six lines below instead (Ref: #643337, start-stop-daemon(8) )
