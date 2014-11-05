@@ -46,7 +46,7 @@ do_start()
 {
 	if [ ! -f /var/lib/cacert-gigi/config.txt ]; then
 		echo Missing cassiopeia-configfile
-                exit 2
+                exit 0
         fi
 	# Return
 	#   0 if daemon has been started
