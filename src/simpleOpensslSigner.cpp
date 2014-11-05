@@ -9,7 +9,7 @@
 #include <openssl/engine.h>
 #include <openssl/x509v3.h>
 
-#include "X509.h"
+extern std::vector<Profile> profiles;
 
 std::shared_ptr<int> SimpleOpensslSigner::lib_ref(
     new int( SSL_library_init() ),
@@ -62,9 +62,12 @@ std::shared_ptr<EVP_PKEY> loadPkeyFromFile( std::string filename ) {
         } );
 }
 
-std::shared_ptr<X509> SimpleOpensslSigner::caCert = loadX509FromFile( "assured.crt" );
+SimpleOpensslSigner::SimpleOpensslSigner() {
+    caCert = loadX509FromFile( profiles[0].cert );
+    caKey = loadPkeyFromFile( profiles[0].key );
+}
 
-std::shared_ptr<EVP_PKEY> SimpleOpensslSigner::caKey = loadPkeyFromFile( "assured.key" );
+int serial = 10;
 
 std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TBSCertificate> cert ) {
     if( !caKey ) {
@@ -94,11 +97,9 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
 
     c.setIssuerNameFrom( caCert );
     c.setPubkeyFrom( req );
-    c.setSerialNumber( 4711 );
+    c.setSerialNumber( serial++ );
     c.setTimes( 0, 60 * 60 * 24 * 10 );
     c.setExtensions( caCert, cert->SANs );
-
-    std::string output = c.sign( caKey );
 
     std::shared_ptr<SignedCertificate> output = c.sign( caKey );
 

@@ -35,6 +35,7 @@
 
 std::string keyDir;
 std::vector<Profile> profiles;
+std::string sqlHost, sqlUser, sqlPass, sqlDB;
 
 std::string writeBackFile( uint32_t serial, std::string cert ) {
     std::string filename = "keys";
@@ -52,11 +53,8 @@ std::string writeBackFile( uint32_t serial, std::string cert ) {
 }
 
 int main( int argc, const char* argv[] ) {
-    if( argc < 2 ) {
-        std::cout << argv[0] << " password" << std::endl;
-        return 1;
-    }
-
+    ( void ) argc;
+    ( void ) argv;
     std::ifstream config;
     config.open( "config.txt" );
 
@@ -85,6 +83,14 @@ int main( int argc, const char* argv[] ) {
         if( key == "key.directory" ) {
             keyDir = value;
             continue;
+        } else if( key == "sql.host" ) {
+            sqlHost = value;
+        } else if( key == "sql.user" ) {
+            sqlUser = value;
+        } else if( key == "sql.password" ) {
+            sqlPass = value;
+        } else if( key == "sql.database" ) {
+            sqlDB = value;
         }
 
         if( key.compare( 0, 8, "profile." ) == 0 ) {
@@ -103,9 +109,9 @@ int main( int argc, const char* argv[] ) {
             }
 
             if( rest == "key" ) {
-                profiles[i].cert = value;
-            } else if( rest == "cert" ) {
                 profiles[i].key = value;
+            } else if( rest == "cert" ) {
+                profiles[i].cert = value;
             } else {
                 std::cout << "invalid line: " << line1 << std::endl;
                 continue;
@@ -122,7 +128,7 @@ int main( int argc, const char* argv[] ) {
 
     config.close();
 
-    std::shared_ptr<JobProvider> jp( new MySQLJobProvider( "localhost", "cacert", argv[1], "cacert" ) );
+    std::shared_ptr<JobProvider> jp( new MySQLJobProvider( sqlHost, sqlUser, sqlPass, sqlDB ) );
     std::shared_ptr<Signer> sign( new SimpleOpensslSigner() );
 
     while( true ) {
@@ -148,7 +154,7 @@ int main( int argc, const char* argv[] ) {
                 cert->csr_content = std::string( std::istreambuf_iterator<char>( t ), std::istreambuf_iterator<char>() );
 
                 std::shared_ptr<SignedCertificate> res = sign->sign( cert );
-                std::string fn = writeBackFile( res->serial, res->certificate );
+                std::string fn = writeBackFile( atoi( job->target.c_str() ), res->certificate );
                 res->crt_name = fn;
                 jp->writeBack( job, res );
             } catch( const char* c ) {
