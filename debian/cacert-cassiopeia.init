@@ -18,7 +18,7 @@
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="cacert's signer software"
-NAME=cassiopeia
+NAME=cacert-cassiopeia
 DAEMON=/usr/bin/cassiopeia
 DAEMON_ARGS=
 PIDFILE=/var/run/$NAME.pid
@@ -30,6 +30,10 @@ DIR=/var/lib/cacert-gigi
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
+if [ "$START_DAEMON" = "0" ]; then
+    echo "Not starting $NAME (as configured in /etc/default/$NAME)";
+    exit 0;
+fi
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh
@@ -44,9 +48,9 @@ DIR=/var/lib/cacert-gigi
 #
 do_start()
 {
-	if [ ! -f /var/lib/cacert-gigi/config.txt ]; then
+	if [ ! -f /etc/cacert/cassiopeia/cassiopeia.conf ]; then
 		echo Missing cassiopeia-configfile
-                exit 0
+                exit 2
         fi
 	# Return
 	#   0 if daemon has been started

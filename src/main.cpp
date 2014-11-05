@@ -45,7 +45,11 @@ int main( int argc, const char* argv[] ) {
     }
 
     std::ifstream config;
-    config.open( "config.txt" );
+    if(DAEMON){
+      config.open( "/etc/cacert/cassiopeia/cassiopeia.conf" );
+    }else{
+      config.open( "config.txt" );
+    }
 
     if( !config.is_open() ) {
         std::cerr << "config missing" << std::endl;
