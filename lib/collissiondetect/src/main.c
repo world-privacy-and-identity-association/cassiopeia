@@ -35,6 +35,8 @@
 
 #include "libdetectcoll.h"
 
+void gen_sha1_dv_xm_tables();
+
 int main(int argc, char** argv) {
 	FILE* fd;
 	unsigned char hash[16];
