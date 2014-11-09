@@ -1,0 +1,56 @@
+Copyright (C) 2012 CWI
+
+ Contact:
+ Marc Stevens
+ Cryptology Group
+ Centrum Wiskunde & Informatica
+ P.O. Box 94079, 1090 GB Amsterdam, Netherlands
+ marc@marc-stevens.nl
+
+License: see LICENSE file
+
+Library:
+
+Compile libdetectcoll.c  libdetectcoll.h into your project
+
+Use library interface:
+	void MD5Init(MD5_CTX*); 
+	void MD5Init_unsafe(MD5_CTX*); 
+	void MD5Update(MD5_CTX*, const char* buf, unsigned len);
+	int  MD5Final(unsigned char hash[16], MD5_CTX*); 
+
+	void SHA1Init(SHA1_CTX*);
+	void SHA1Init_unsafe(SHA1_CTX*);
+	void SHA1Update(SHA1_CTX*, const char* buf, unsigned len);
+	int  SHA1Final(unsigned char hash[20], SHA1_CTX*);
+
+	Allocate a context and call MD5Init/SHA1Init.
+	Process your message (in chunks) with MD5Update/SHA1Update.
+	Obtain digest with MD5Final/SHA1Final and auxilary input indicating whether a collision attack was detected.
+
+Notes:
+MD5Final and SHA1Final store the computed digest in hash and return 0 if no collision attack was detected.
+Non-zero return value indicates a detected collision attack and the application should act accordingly.
+
+MD5Init_unsafe and SHA1Init_unsafe will result in the correct and possibly unsafe MD5 and SHA-1 hash.
+
+MD5Init and SHA1Init will result in the correct MD5 and SHA-1 hash *if no collision attack was detected*,
+otherwise they will return a different but safe to use hash (how this is generated may change in future revisions).
+In this manner they can protect an application against collision attacks without further action in the application.
+
+
+Command line tool:
+
+Build: make all test
+
+Run: detectcoll  <files>
+Run: detectcollv <files>    (verbose version)
+
+(Run: detectcoll_reducedsha <files>       (also reports detected collision attacks on *reduced-round* SHA-1, only for testing))
+
+
+Notes:
+Feedback requested!
+Please let us know if and where you're using it.
+We'd be happy to know where it is being used 
+and if desired can keep you updated on new improved versions.
