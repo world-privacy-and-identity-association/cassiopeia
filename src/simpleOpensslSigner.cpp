@@ -1,7 +1,6 @@
 #include "simpleOpensslSigner.h"
 
 #include <iostream>
-#include <fstream>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -11,6 +10,7 @@
 #include <openssl/x509v3.h>
 
 #include "X509.h"
+#include "util.h"
 
 extern std::vector<Profile> profiles;
 
@@ -74,10 +74,7 @@ SimpleOpensslSigner::~SimpleOpensslSigner() {
 }
 
 std::shared_ptr<BIGNUM> SimpleOpensslSigner::nextSerial( uint16_t profile ) {
-    std::ifstream serialif( "serial" );
-    std::string res;
-    serialif >> res;
-    serialif.close();
+    std::string res = readFile( "serial" );
 
     BIGNUM* bn = 0;
 
@@ -109,9 +106,7 @@ std::shared_ptr<BIGNUM> SimpleOpensslSigner::nextSerial( uint16_t profile ) {
     }
 
     char* serStr = BN_bn2hex( serial.get() );
-    std::ofstream serialf( "serial" );
-    serialf << serStr;
-    serialf.close();
+    writeFile( serStr, "serial" );
     OPENSSL_free( serStr );
 
     return std::shared_ptr<BIGNUM>( BN_bin2bn( data.get(), len + 4 + 16 , 0 ), BN_free );

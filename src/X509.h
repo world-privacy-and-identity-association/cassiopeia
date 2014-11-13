@@ -15,8 +15,8 @@ private:
     X509Req( X509_REQ* csr );
     X509Req( std::string spkac );
 public:
-    static std::shared_ptr<X509Req> parse( std::string filename );
-    static std::shared_ptr<X509Req> parseSPKAC( std::string filename );
+    static std::shared_ptr<X509Req> parse( std::string content );
+    static std::shared_ptr<X509Req> parseSPKAC( std::string content );
     int verify();
     std::shared_ptr<EVP_PKEY> getPkey();
 };

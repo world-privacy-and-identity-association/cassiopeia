@@ -8,6 +8,7 @@
 #include "database.h"
 #include "mysql.h"
 #include "simpleOpensslSigner.h"
+#include "util.h"
 
 #ifdef NO_DAEMON
 #define DAEMON false
@@ -27,10 +28,7 @@ std::string writeBackFile( uint32_t serial, std::string cert ) {
     filename += "/" + std::to_string( serial / 1000 );
     mkdir( filename.c_str(), 0755 );
     filename += "/" + std::to_string( serial ) + ".crt";
-    std::ofstream file;
-    file.open( filename.c_str() );
-    file << cert.c_str();
-    file.close();
+    writeFile( filename, cert );
     std::cout << "wrote to " << filename << std::endl;
     return filename;
 }
@@ -45,10 +43,11 @@ int main( int argc, const char* argv[] ) {
     }
 
     std::ifstream config;
-    if(DAEMON){
-      config.open( "/etc/cacert/cassiopeia/cassiopeia.conf" );
-    }else{
-      config.open( "config.txt" );
+
+    if( DAEMON ) {
+        config.open( "/etc/cacert/cassiopeia/cassiopeia.conf" );
+    } else {
+        config.open( "config.txt" );
     }
 
     if( !config.is_open() ) {
@@ -143,8 +142,7 @@ int main( int argc, const char* argv[] ) {
                 }
 
                 std::cout << "Found a CSR at '" << cert->csr << "' signing" << std::endl;
-                std::ifstream t( cert->csr );
-                cert->csr_content = std::string( std::istreambuf_iterator<char>( t ), std::istreambuf_iterator<char>() );
+                cert->csr_content = readFile( cert->csr );
 
                 std::shared_ptr<SignedCertificate> res = sign->sign( cert );
                 std::string fn = writeBackFile( atoi( job->target.c_str() ), res->certificate );
