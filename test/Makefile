@@ -25,13 +25,14 @@ ifneq (,$(filter debug,$(DEB_BUILD_OPTIONS)))
 ADDFLAGS=-DNO_DAEMON
 endif
 
-CFLAGS=-O3 -g -flto -Wall -Werror -Wextra -pedantic -std=c++11 ${ADDFLAGS}
+CFLAGS=-O3 -g -flto -Wall -Werror -Wextra -pedantic -std=c++11 -I../src ${ADDFLAGS}
 CXXFLAGS=$(CFLAGS)
 LDFLAGS=-O3 -g -flto -lmysqlclient -lssl -lcrypto -ldl -lboost_unit_test_framework
 
 SRC_DIR=src
 OBJ_DIR=obj
 DEP_DIR=dep
+TESTDATA_DIR=testdata
 
 FS_SRC=$(wildcard ${SRC_DIR}/*.cpp)
 FS_BIN=$(wildcard ${SRC_DIR}/app/*.cpp)
@@ -55,8 +56,13 @@ clean::
 	-rm -rf *.so
 	-rm -rf ${OBJ_DIR}
 	-rm -rf ${DEP_DIR}
+	-rm -rf ${TESTDATA_DIR}
 
-build: cassiopeia-test
+.PHONY: testdata
+testdata:
+	./genTestData.sh
+
+build: cassiopeia-test testdata
 	${BIN}
 
 .PHONY: install
@@ -78,7 +84,7 @@ collissiondetect:
 cassiopeia-test: bin/cassiopeia-test
 
 bin/cassiopeia-test: libs ${FS_OBJ}
-	${MKDIR} $(shell dirname $@) && ${LT_LD} ${LDFLAGS} -o $@ ${FS_OBJ}
+	${MKDIR} $(shell dirname $@) && ${LT_LD} ${LDFLAGS} -o $@ ${FS_OBJ} $(filter-out %/main.o,$(wildcard ../obj/*.o))
 
 ${DEP_DIR}/%.d: ${SRC_DIR}/%.cpp
 	${MKDIR} $(shell dirname $@) && $(CXX_DEP) $(CXXFLAGS) -M -MF $@ $<
