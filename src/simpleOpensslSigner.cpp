@@ -105,9 +105,12 @@ std::shared_ptr<BIGNUM> SimpleOpensslSigner::nextSerial( uint16_t profile ) {
         throw "Big number math failed while calcing serials.";
     }
 
-    char* serStr = BN_bn2hex( serial.get() );
-    writeFile( serStr, "serial" );
-    OPENSSL_free( serStr );
+    std::shared_ptr<char> serStr = std::shared_ptr<char>(
+        BN_bn2hex( serial.get() ),
+        []( char* ref ) {
+            OPENSSL_free( ref );
+        } );
+    writeFile( "serial", serStr.get() );
 
     return std::shared_ptr<BIGNUM>( BN_bin2bn( data.get(), len + 4 + 16 , 0 ), BN_free );
 }
@@ -122,7 +125,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     if( cert->csr_type == "SPKAC" ) {
         req = X509Req::parseSPKAC( cert->csr_content );
     } else if( cert->csr_type == "CSR" ) {
-        req = X509Req::parse( cert->csr_content );
+        req = X509Req::parseCSR( cert->csr_content );
     } else {
         throw "Error, unknown REQ rype " + ( cert->csr_type );
     }

@@ -52,7 +52,7 @@ std::shared_ptr<EVP_PKEY> X509Req::getPkey() {
     return pk;
 }
 
-std::shared_ptr<X509Req> X509Req::parse( std::string content ) {
+std::shared_ptr<X509Req> X509Req::parseCSR( std::string content ) {
     std::shared_ptr<BIO> in = std::shared_ptr<BIO>( BIO_new_mem_buf( const_cast<char*>( content.c_str() ), -1 ), BIO_free );
     X509_REQ* req = PEM_read_bio_X509_REQ( in.get(), NULL, NULL, NULL );
 

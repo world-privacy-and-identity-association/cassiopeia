@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-void writeFile( const std::string& content, const std::string& name ) {
+void writeFile( const std::string& name, const std::string& content ) {
     std::ofstream file;
 
     file.open( name );
