@@ -9,3 +9,4 @@ lib
 /rehash.time
 /crypto/opensslconf.h
 /Makefile
+*.save
