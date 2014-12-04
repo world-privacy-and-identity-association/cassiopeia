@@ -16,3 +16,6 @@ for alg in csr spkac; do
     fake_sigalg testdata/test.$alg testdata/test_invalid_sig.$alg
     fake_sig testdata/test.$alg testdata/test_false_sig.$alg
 done
+
+openssl req -new -newkey rsa:2048 -nodes -subj "/CN=cn" -keyout testdata/server.key -out testdata/server.csr 2> /dev/null
+openssl x509 -in testdata/server.csr -signkey testdata/server.key -req -out testdata/server.crt 2> /dev/null

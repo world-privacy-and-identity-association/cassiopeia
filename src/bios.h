@@ -19,9 +19,13 @@ public:
 namespace BIOWrapper {
 
     int write( BIO* b, const char* buf, int num );
+
     int read( BIO* b, char* buf, int size );
+
     int puts( BIO* b, const char* str );
+
     int gets( BIO* b, char* str, int size );
+
     long ctrl( BIO* b, int cmod, long arg1, void* arg2 );
 
     template <typename T>
@@ -38,6 +42,11 @@ namespace BIOWrapper {
 
 template <typename T>
 BIO_METHOD* toBio() {
+    return toBio<T>( BIOWrapper::bio_new<T> );
+}
+
+template <typename T>
+BIO_METHOD* toBio( int ( *newfunc )( BIO* ) ) {
     static BIO_METHOD new_method = {
         T::typeID,
         T::getName(),
@@ -46,7 +55,7 @@ BIO_METHOD* toBio() {
         BIOWrapper::puts,
         BIOWrapper::gets,
         BIOWrapper::ctrl,
-        BIOWrapper::bio_new<T>,
+        newfunc,
         BIOWrapper::free,
         NULL,
     };

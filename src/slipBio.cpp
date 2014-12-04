@@ -35,9 +35,19 @@ std::string toHex( const char* buf, int len ) {
     return std::string( mem.get(), len * 2 );
 }
 
+SlipBIO::SlipBIO() {
+    this->buffer = std::vector<char>( 4096 );
+    this->decodeTarget = 0;
+    this->decodePos = 0;
+    this->rawPos = 0;
+}
+
+void SlipBIO::setTarget( std::shared_ptr<OpensslBIO> target ) {
+    this->target = target;
+}
+
 SlipBIO::SlipBIO( std::shared_ptr<OpensslBIO> target ) {
     this->target = target;
-
     this->buffer = std::vector<char>( 4096 );
     this->decodeTarget = 0;
     this->decodePos = 0;
@@ -57,7 +67,7 @@ int SlipBIO::write( const char* buf, int num ) {
         }
     }
 
-    int totalLen = num + badOnes + 2;
+    int totalLen = num + badOnes + 1; // 2
     char* targetPtr = ( char* ) malloc( totalLen );
 
     if( !targetPtr ) {
@@ -66,7 +76,8 @@ int SlipBIO::write( const char* buf, int num ) {
 
     std::shared_ptr<char> t = std::shared_ptr<char>( targetPtr, free );
     int j = 0;
-    targetPtr[j++] = ( char )0xC0;
+
+    //targetPtr[j++] = (char)0xC0;
 
     for( int i = 0; i < num; i++ ) {
         if( buf[i] == ( char )0xc0 ) {
@@ -83,20 +94,16 @@ int SlipBIO::write( const char* buf, int num ) {
     targetPtr[j++] = ( char )0xC0;
 
     if( target->write( targetPtr, j ) != j ) {
+        std::cout << "sent " << j << std::endl;
         throw "Error, target write failed";
     }
 
-    std::cout << toHex( targetPtr, j ) << std::endl;
     return num;
 }
 
 int SlipBIO::read( char* buf, int size ) {
-    if( ( unsigned int ) size < buffer.capacity() ) {
-        // fail...
-    }
-
     // while we have no data to decode or unmasking does not yield a full package
-    while( decodePos >= rawPos || !unmask() ) {
+    while( !packageLeft && ( decodePos >= rawPos || !unmask() ) ) {
 
         // we have no data, read more
         if( buffer.size() - rawPos < 64 ) {
@@ -110,18 +117,24 @@ int SlipBIO::read( char* buf, int size ) {
         if( len > 0 ) {
             rawPos += len;
         } else {
-            decodeTarget = 0;
-            failed = true;
+            return -1;
+            //decodeTarget = 0;
+            //failed = true;
         }
 
     }
 
+    packageLeft = true;
+    int len = std::min( decodeTarget, ( unsigned int ) size );
     // a package finished, return it
-    std::copy( buffer.data(), buffer.data() + decodeTarget, buf );
+    std::copy( buffer.data(), buffer.data() + len, buf );
     // move the buffer contents back
+    std::copy( buffer.data() + len, buffer.data() + decodeTarget, buffer.data() );
+    decodeTarget -= len;
 
-    int len = decodeTarget;
-    decodeTarget = 0;
+    if( decodeTarget == 0 ) {
+        packageLeft = false;
+    }
 
     return len;
 }
@@ -130,8 +143,7 @@ long SlipBIO::ctrl( int cmod, long arg1, void* arg2 ) {
     ( void ) cmod;
     ( void ) arg1;
     ( void ) arg2;
-
-    return 0;
+    return target->ctrl( cmod, arg1, arg2 );
 }
 
 const char* SlipBIO::getName() {

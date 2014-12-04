@@ -16,13 +16,17 @@ private:
     unsigned int rawPos;
 
     bool failed;
+    bool packageLeft = false;
 
 private:
     bool unmask();
 
 public:
     SlipBIO( std::shared_ptr<OpensslBIO> target );
+    SlipBIO();
     ~SlipBIO();
+
+    void setTarget( std::shared_ptr<OpensslBIO> target );
 
     virtual int write( const char* buf, int num );
     virtual int read( char* buf, int size );

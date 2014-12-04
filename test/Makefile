@@ -73,7 +73,7 @@ libs: ${LIBS}
 
 .PHONY: openssl
 openssl:
-	${MAKE} -C ../lib/openssl
+	${MAKE} -C ../lib openssl
 
 .PHONY: collissiondetect
 collissiondetect:
