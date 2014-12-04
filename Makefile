@@ -68,12 +68,15 @@ clean::
 	-rm -rf *.so
 	-rm -rf ${OBJ_DIR}
 	-rm -rf ${DEP_DIR}
-	${MAKE} -C lib/openssl clean
-	${MAKE} -C lib/collissiondetect clean
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 	# Code to run the package test suite.
 	${MAKE} -C test clean
 endif
+
+.PHONY: dist-clean
+dist-clean: clean
+	${MAKE} -C lib/openssl clean
+	${MAKE} -C lib/collissiondetect clean
 
 
 build: cassiopeia
