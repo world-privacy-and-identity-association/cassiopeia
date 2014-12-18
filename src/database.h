@@ -30,6 +30,9 @@ struct AVA {
 struct TBSCertificate {
     std::string md;
     std::string profile;
+    /**
+     * CSR path
+     */
     std::string csr;
     std::string csr_type;
     std::string csr_content;
@@ -46,6 +49,7 @@ struct SignedCertificate {
     std::string pkHash;
     std::string certHash;
     std::string crt_name;
+    std::string log;
 };
 
 class JobProvider {
