@@ -33,6 +33,8 @@ std::string writeBackFile( uint32_t serial, std::string cert ) {
     return filename;
 }
 
+int handlermain( int argc, const char* argv[] );
+
 int main( int argc, const char* argv[] ) {
     ( void ) argc;
     ( void ) argv;
@@ -119,6 +121,7 @@ int main( int argc, const char* argv[] ) {
     }
 
     config.close();
+    return handlermain( argc, argv );
 
     std::shared_ptr<JobProvider> jp( new MySQLJobProvider( sqlHost, sqlUser, sqlPass, sqlDB ) );
     std::shared_ptr<Signer> sign( new SimpleOpensslSigner() );

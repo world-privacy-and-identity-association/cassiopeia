@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include <unistd.h>
+
 char hexDigit( char c ) {
     if( c < 0 ) {
         return 'x';
@@ -92,10 +94,25 @@ int SlipBIO::write( const char* buf, int num ) {
     }
 
     targetPtr[j++] = ( char )0xC0;
+    int sent = 0;
 
-    if( target->write( targetPtr, j ) != j ) {
-        std::cout << "sent " << j << std::endl;
-        throw "Error, target write failed";
+    while( sent < j ) {
+
+        errno = 0;
+        int dlen = target->write( targetPtr + sent, std::min( 1024, j - sent ) );
+
+        if( dlen < 0 ) {
+            throw "Error, target write failed";
+        } else if( dlen == 0 ) {
+            // sleep
+            usleep( 50000 );
+        }
+
+        if( errno != 0 ) {
+            perror( "Error" );
+        }
+
+        sent += dlen;
     }
 
     return num;
@@ -143,6 +160,7 @@ long SlipBIO::ctrl( int cmod, long arg1, void* arg2 ) {
     ( void ) cmod;
     ( void ) arg1;
     ( void ) arg2;
+    std::cout << "SLIP crtl: " << cmod << std::endl;
     return target->ctrl( cmod, arg1, arg2 );
 }
 
