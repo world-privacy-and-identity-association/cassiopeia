@@ -52,7 +52,7 @@ public:
     void read( std::string::iterator& it, T& val ) {
         char* data = ( char* ) &val;
 
-        for( int i = 0; i < sizeof( T ); i++ ) {
+        for( size_t i = 0; i < sizeof( T ); i++ ) {
             data[i] = *it;
             it++;
         }

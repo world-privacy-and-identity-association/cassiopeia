@@ -1,11 +1,11 @@
 #include "recordHandler.h"
 
-#include <termios.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <termios.h>
+#include <unistd.h>
 
 #include <iostream>
 
@@ -16,6 +16,62 @@
 #include "opensslBIO.h"
 #include "simpleOpensslSigner.h"
 #include "slipBio.h"
+
+int gencb( int a, int b, BN_GENCB* g ) {
+    ( void ) a;
+    ( void ) b;
+    ( void ) g;
+
+    std::cout << ( a == 0 ? "." : "+" ) << std::flush;
+
+    return 1;
+}
+
+static std::shared_ptr<DH> dh_param;
+
+std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
+    std::shared_ptr<SSL_CTX> ctx = std::shared_ptr<SSL_CTX>( SSL_CTX_new( TLSv1_2_method() ), SSL_CTX_free );
+
+    if( !SSL_CTX_set_cipher_list( ctx.get(), "HIGH:+CAMELLIA256:!eNull:!aNULL:!ADH:!MD5:-RSA+AES+SHA1:!RC4:!DES:!3DES:!SEED:!EXP:!AES128:!CAMELLIA128" ) ) {
+        throw "Cannot set cipher list. Your source is broken.";
+    }
+
+    if( server ) {
+        if( !dh_param ) {
+            FILE* paramfile = fopen( "dh_param.pem", "r" );
+
+            if( paramfile ) {
+                dh_param = std::shared_ptr<DH>( PEM_read_DHparams( paramfile, NULL, NULL, NULL ), DH_free );
+                fclose( paramfile );
+            } else {
+                dh_param = std::shared_ptr<DH>( DH_new(), DH_free );
+                std::cout << "Generating DH params" << std::endl;
+                BN_GENCB cb;
+                cb.ver = 2;
+                cb.arg = 0;
+                cb.cb.cb_2 = gencb;
+
+                if( !DH_generate_parameters_ex( dh_param.get(), 2048, 5, &cb ) ) {
+                    throw "DH generation failed";
+                }
+
+                std::cout << std::endl;
+                paramfile = fopen( "dh_param.pem", "w" );
+
+                if( paramfile ) {
+                    PEM_write_DHparams( paramfile, dh_param.get() );
+                    fclose( paramfile );
+                }
+            }
+        }
+
+        if( !SSL_CTX_set_tmp_dh( ctx.get(), dh_param.get() ) ) {
+            throw "Cannot set tmp dh.";
+        }
+    }
+
+    return ctx;
+}
 
 class RecordHandlerSession {
 public:
@@ -37,10 +93,10 @@ public:
         this->signer = signer;
 
         ssl = SSL_new( ctx.get() );
-        BIO* bio = output;//BIO_new( BIO_f_ssl() );
-        //SSL_set_accept_state( ssl );
-        //SSL_set_bio( ssl, output, output );
-        //BIO_set_ssl( bio, ssl, BIO_NOCLOSE );
+        BIO* bio = BIO_new( BIO_f_ssl() );
+        SSL_set_accept_state( ssl );
+        SSL_set_bio( ssl, output, output );
+        BIO_set_ssl( bio, ssl, BIO_NOCLOSE );
         io = std::shared_ptr<OpensslBIOWrapper>( new OpensslBIOWrapper( bio ) );
     }
 
@@ -151,7 +207,8 @@ DefaultRecordHandler::DefaultRecordHandler( std::shared_ptr<Signer> signer, BIO*
 
     this->signer = signer;
 
-    ctx = std::shared_ptr<SSL_CTX>( SSL_CTX_new( TLSv1_method() ), SSL_CTX_free );
+    ctx = generateSSLContext( true );
+
     SSL_CTX_use_certificate_file( ctx.get(), "testdata/server.crt", SSL_FILETYPE_PEM );
     SSL_CTX_use_PrivateKey_file( ctx.get(), "testdata/server.key", SSL_FILETYPE_PEM );
 
@@ -172,6 +229,7 @@ void DefaultRecordHandler::handle() {
 }
 
 int count = 0;
+
 void send( std::shared_ptr<OpensslBIOWrapper> bio, RecordHeader& head, RecordHeader::SignerCommand cmd, std::string data ) {
     head.command = ( uint16_t ) cmd;
     head.command_count++;
@@ -232,7 +290,14 @@ int handlermain( int argc, const char* argv[] ) {
         BIO* b = BIO_new_fd( fileno( f ), 0 );
         BIO* slip1 = BIO_new( toBio<SlipBIO>() );
         ( ( SlipBIO* )slip1->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( b ) ) );
-        std::shared_ptr<OpensslBIOWrapper> conn( new OpensslBIOWrapper( slip1 ) );
+        std::cout << "Initing tlsv1_2" << std::endl;
+        std::shared_ptr<SSL_CTX> ctx = generateSSLContext( false );
+        SSL* ssl = SSL_new( ctx.get() );
+        BIO* bio = BIO_new( BIO_f_ssl() );
+        SSL_set_connect_state( ssl );
+        SSL_set_bio( ssl, slip1, slip1 );
+        BIO_set_ssl( bio, ssl, BIO_NOCLOSE );
+        std::shared_ptr<OpensslBIOWrapper> conn( new OpensslBIOWrapper( bio ) );
         send( conn, head, RecordHeader::SignerCommand::SET_CSR, data );
         send( conn, head, RecordHeader::SignerCommand::SET_SIGNATURE_TYPE, "sha256" );
         send( conn, head, RecordHeader::SignerCommand::SET_PROFILE, "1" );
@@ -244,7 +309,7 @@ int handlermain( int argc, const char* argv[] ) {
 
         for( int i = 0; i < 2; i++ ) {
             try {
-                int length = BIO_read( slip1, buffer.data(), buffer.size() );
+                int length = conn->read( buffer.data(), buffer.size() );
                 RecordHeader head;
                 std::string payload = parseCommand( head, std::string( buffer.data(), length ) );
                 std::cout << "Data: " << std::endl << payload << std::endl;
@@ -271,9 +336,10 @@ int handlermain( int argc, const char* argv[] ) {
     BIO* conn =  BIO_new_fd( fileno( f ), 0 );
     BIO* slip1 = BIO_new( toBio<SlipBIO>() );
     ( ( SlipBIO* )slip1->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( conn ) ) );
-    DefaultRecordHandler* dh = new DefaultRecordHandler( std::shared_ptr<Signer>( new SimpleOpensslSigner() ), slip1 );
 
     try {
+        DefaultRecordHandler* dh = new DefaultRecordHandler( std::shared_ptr<Signer>( new SimpleOpensslSigner() ), slip1 );
+
         while( true ) {
             dh->handle();
         }

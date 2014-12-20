@@ -21,20 +21,15 @@ char hexDigit( char c ) {
 }
 
 std::string toHex( const char* buf, int len ) {
-    char* c = ( char* ) malloc( len * 2 );
-
-    if( !c ) {
-        return "<malloc fail>";
-    }
-
-    std::shared_ptr<char> mem = std::shared_ptr<char>( c, free );
+    std::string data = "000000";
 
     for( int i = 0; i < len; i++ ) {
-        c[i * 2] = hexDigit( ( buf[i] >> 4 ) & 0xF );
-        c[i * 2 + 1] = hexDigit( buf[i] & 0xF );
+        data.append( 1, ' ' );
+        data.append( 1, hexDigit( ( buf[i] >> 4 ) & 0xF ) );
+        data.append( 1, hexDigit( buf[i] & 0xF ) );
     }
 
-    return std::string( mem.get(), len * 2 );
+    return data;
 }
 
 SlipBIO::SlipBIO() {
