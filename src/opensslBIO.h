@@ -1,12 +1,13 @@
 #pragma once
 
+#include <memory>
 #include "bios.h"
 
 class OpensslBIOWrapper : public OpensslBIO {
 private:
-    BIO* b;
+    std::shared_ptr<BIO> b;
 public:
-    OpensslBIOWrapper( BIO* b );
+    OpensslBIOWrapper( std::shared_ptr<BIO> b );
     virtual ~OpensslBIOWrapper();
 
     int write( const char* buf, int num );

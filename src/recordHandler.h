@@ -19,12 +19,12 @@ class RecordHandlerSession;
 
 class DefaultRecordHandler {
 private:
-    BIO* bio;
+    std::shared_ptr<BIO> bio;
     std::shared_ptr<SSL_CTX> ctx;
     std::shared_ptr<Signer> signer;
     std::shared_ptr<RecordHandlerSession> currentSession;
 public:
-    DefaultRecordHandler( std::shared_ptr<Signer> signer, BIO* bio );
+    DefaultRecordHandler( std::shared_ptr<Signer> signer, std::shared_ptr<BIO> bio );
     void handle();
     void reset();
 };

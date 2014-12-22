@@ -113,9 +113,9 @@ BOOST_AUTO_TEST_CASE( TestSSLThroughSLIP ) {
     BIO* bio1, *bio2;
     BOOST_REQUIRE_EQUAL( BIO_new_bio_pair( &bio1, 8096, &bio2, 8096 ), 1 );
     BIO* slip1 = BIO_new( toBio<SlipBIO>() );
-    ( ( SlipBIO* )slip1->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( bio1 ) ) );
+    ( ( SlipBIO* )slip1->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( std::shared_ptr<BIO>( bio1, BIO_free ) ) ) );
     BIO* slip2 = BIO_new( toBio<SlipBIO>() );
-    ( ( SlipBIO* )slip2->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( bio2 ) ) );
+    ( ( SlipBIO* )slip2->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( std::shared_ptr<BIO>( bio2, BIO_free ) ) ) );
 
     auto meth = TLSv1_method();
     auto c_ctx = SSL_CTX_new( meth );

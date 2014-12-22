@@ -27,6 +27,11 @@ int gencb( int a, int b, BN_GENCB* g ) {
     return 1;
 }
 
+int vfy( int prevfy, X509_STORE_CTX* ct ) {
+    ( void ) ct;
+    return prevfy;
+}
+
 static std::shared_ptr<DH> dh_param;
 
 std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
@@ -34,6 +39,20 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
 
     if( !SSL_CTX_set_cipher_list( ctx.get(), "HIGH:+CAMELLIA256:!eNull:!aNULL:!ADH:!MD5:-RSA+AES+SHA1:!RC4:!DES:!3DES:!SEED:!EXP:!AES128:!CAMELLIA128" ) ) {
         throw "Cannot set cipher list. Your source is broken.";
+    }
+
+    SSL_CTX_set_verify( ctx.get(), SSL_VERIFY_NONE, vfy );
+    SSL_CTX_use_certificate_file( ctx.get(), "testdata/server.crt", SSL_FILETYPE_PEM );
+    SSL_CTX_use_PrivateKey_file( ctx.get(), "testdata/server.key", SSL_FILETYPE_PEM );
+    std::shared_ptr<STACK_OF( X509_NAME )> cert_names(
+        SSL_load_client_CA_file( "testdata/server.crt" ),
+        []( STACK_OF( X509_NAME ) *st ) {
+            std::cout << "freeing" << std::endl;
+            sk_X509_NAME_free( st );
+        } );
+
+    if( cert_names ) {
+        SSL_CTX_set_client_CA_list( ctx.get(), cert_names.get() );
     }
 
     if( server ) {
@@ -87,16 +106,18 @@ public:
     DefaultRecordHandler* parent;
     std::shared_ptr<Signer> signer;
 
-    RecordHandlerSession( DefaultRecordHandler* parent, std::shared_ptr<Signer> signer, std::shared_ptr<SSL_CTX> ctx, BIO* output ) :
+    RecordHandlerSession( DefaultRecordHandler* parent, std::shared_ptr<Signer> signer, std::shared_ptr<SSL_CTX> ctx, std::shared_ptr<BIO> output ) :
         tbs( new TBSCertificate() ) {
         this->parent = parent;
         this->signer = signer;
 
         ssl = SSL_new( ctx.get() );
-        BIO* bio = BIO_new( BIO_f_ssl() );
+        std::shared_ptr<BIO> bio( BIO_new( BIO_f_ssl() ), [output]( BIO * p ) {
+            BIO_free( p );
+        } );
         SSL_set_accept_state( ssl );
-        SSL_set_bio( ssl, output, output );
-        BIO_set_ssl( bio, ssl, BIO_NOCLOSE );
+        SSL_set_bio( ssl, output.get(), output.get() );
+        BIO_set_ssl( bio.get(), ssl, BIO_NOCLOSE );
         io = std::shared_ptr<OpensslBIOWrapper>( new OpensslBIOWrapper( bio ) );
     }
 
@@ -110,8 +131,11 @@ public:
     }
 
     void work() {
+        std::cout << "done" << std::endl;
         std::vector<char> buffer( 2048, 0 );
+        std::cout << "reading" << std::endl;
         int res = io->read( buffer.data(), buffer.capacity() );
+        std::cout << "read" << std::endl;
 
         if( res <= 0 ) {
             parent->reset();
@@ -144,7 +168,7 @@ public:
             break;
 
         case RecordHeader::SignerCommand::SET_SIGNATURE_TYPE:
-            tbs->md = "sha256"; // TODO use content ;-)
+            tbs->md = data;
             break;
 
         case RecordHeader::SignerCommand::SET_PROFILE:
@@ -202,7 +226,7 @@ public:
     }
 };
 
-DefaultRecordHandler::DefaultRecordHandler( std::shared_ptr<Signer> signer, BIO* bio ) :
+DefaultRecordHandler::DefaultRecordHandler( std::shared_ptr<Signer> signer, std::shared_ptr<BIO> bio ) :
     currentSession() {
 
     this->signer = signer;
@@ -225,16 +249,8 @@ void DefaultRecordHandler::handle() {
         currentSession = std::shared_ptr<RecordHandlerSession>( new RecordHandlerSession( this, signer, ctx, bio ) );
     }
 
+    std::cout << "really allocated: " << currentSession << ";" << std::endl;
     currentSession->work();
-}
-
-int count = 0;
-
-void send( std::shared_ptr<OpensslBIOWrapper> bio, RecordHeader& head, RecordHeader::SignerCommand cmd, std::string data ) {
-    head.command = ( uint16_t ) cmd;
-    head.command_count++;
-    head.totalLength = data.size();
-    sendCommand( head, data, bio );
 }
 
 void setupSerial( FILE* f ) {
@@ -258,7 +274,8 @@ void setupSerial( FILE* f ) {
 int handlermain( int argc, const char* argv[] ) {
     ( void ) argc;
     ( void ) argv;
-    std::shared_ptr<OpensslBIOWrapper> bio( new OpensslBIOWrapper( BIO_new_fd( 0, 0 ) ) );
+
+    std::shared_ptr<OpensslBIOWrapper> bio( new OpensslBIOWrapper( std::shared_ptr<BIO>( BIO_new_fd( 0, 0 ), BIO_free ) ) );
     std::string data =
         "-----BEGIN CERTIFICATE REQUEST-----\n"
         "MIIBSzCBtQIBADAMMQowCAYDVQQDDAFhMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCB\n"
@@ -269,6 +286,7 @@ int handlermain( int argc, const char* argv[] ) {
         "/f49zIcVtUJuZuEwY6uDZQqfAm+8CLNpOCICH/Qw7YOe+s/Yw7a8rk5VqLtgxR4M\n"
         "z6DUeVL0zYFoLUxIje9yDU3pWmPvyVaBPdo0DguZwFMfiWwzhkUDeQgyeaiMvQA=\n"
         "-----END CERTIFICATE REQUEST-----";
+
     RecordHeader head;
     head.flags = 0;
     head.sessid = 13;
@@ -287,38 +305,19 @@ int handlermain( int argc, const char* argv[] ) {
 
         setupSerial( f );
 
-        BIO* b = BIO_new_fd( fileno( f ), 0 );
-        BIO* slip1 = BIO_new( toBio<SlipBIO>() );
+        std::shared_ptr<BIO> b( BIO_new_fd( fileno( f ), 0 ), BIO_free );
+        std::shared_ptr<BIO> slip1( BIO_new( toBio<SlipBIO>() ), BIO_free );
         ( ( SlipBIO* )slip1->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( b ) ) );
         std::cout << "Initing tlsv1_2" << std::endl;
         std::shared_ptr<SSL_CTX> ctx = generateSSLContext( false );
-        SSL* ssl = SSL_new( ctx.get() );
-        BIO* bio = BIO_new( BIO_f_ssl() );
-        SSL_set_connect_state( ssl );
-        SSL_set_bio( ssl, slip1, slip1 );
-        BIO_set_ssl( bio, ssl, BIO_NOCLOSE );
-        std::shared_ptr<OpensslBIOWrapper> conn( new OpensslBIOWrapper( bio ) );
-        send( conn, head, RecordHeader::SignerCommand::SET_CSR, data );
-        send( conn, head, RecordHeader::SignerCommand::SET_SIGNATURE_TYPE, "sha256" );
-        send( conn, head, RecordHeader::SignerCommand::SET_PROFILE, "1" );
-        send( conn, head, RecordHeader::SignerCommand::ADD_AVA, "CN,commonName" );
-        send( conn, head, RecordHeader::SignerCommand::ADD_SAN, "DNS,*.example.com" );
-        send( conn, head, RecordHeader::SignerCommand::SIGN, "" );
-        send( conn, head, RecordHeader::SignerCommand::LOG_SAVED, "" );
-        std::vector<char> buffer( 2048 * 4 );
+        std::shared_ptr<RemoteSigner> sign( new RemoteSigner( slip1, ctx ) );
+        std::shared_ptr<TBSCertificate> cert( new TBSCertificate() );
+        cert->csr_type = "csr";
+        cert->csr_content = data;
+        cert->md = "sha256";
+        cert->profile = "1";
 
-        for( int i = 0; i < 2; i++ ) {
-            try {
-                int length = conn->read( buffer.data(), buffer.size() );
-                RecordHeader head;
-                std::string payload = parseCommand( head, std::string( buffer.data(), length ) );
-                std::cout << "Data: " << std::endl << payload << std::endl;
-            } catch( const char* msg ) {
-                std::cout << msg << std::endl;
-                return -1;
-            }
-        }
-
+        auto res = sign->sign( cert );
         std::cout << "sent things" << std::endl;
 
         return 0;
@@ -333,8 +332,9 @@ int handlermain( int argc, const char* argv[] ) {
 
     setupSerial( f );
 
-    BIO* conn =  BIO_new_fd( fileno( f ), 0 );
-    BIO* slip1 = BIO_new( toBio<SlipBIO>() );
+    std::shared_ptr<BIO> conn( BIO_new_fd( fileno( f ), 0 ), BIO_free );
+    std::shared_ptr<BIO> slip1( BIO_new( toBio<SlipBIO>() ), BIO_free );
+
     ( ( SlipBIO* )slip1->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( conn ) ) );
 
     try {

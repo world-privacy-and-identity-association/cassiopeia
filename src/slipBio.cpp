@@ -37,6 +37,7 @@ SlipBIO::SlipBIO() {
     this->decodeTarget = 0;
     this->decodePos = 0;
     this->rawPos = 0;
+    this->failed = false;
 }
 
 void SlipBIO::setTarget( std::shared_ptr<OpensslBIO> target ) {
@@ -45,6 +46,7 @@ void SlipBIO::setTarget( std::shared_ptr<OpensslBIO> target ) {
 
 SlipBIO::SlipBIO( std::shared_ptr<OpensslBIO> target ) {
     this->target = target;
+
     this->buffer = std::vector<char>( 4096 );
     this->decodeTarget = 0;
     this->decodePos = 0;
