@@ -107,6 +107,7 @@ BOOST_AUTO_TEST_CASE( TestSLIP ) {
     BOOST_CHECK_EQUAL( res, 2 );
     char res3[] = {( char ) 0xdb, 2};
     BOOST_CHECK_EQUAL_COLLECTIONS( buf, buf + 2, res3, res3 + 2 );
+    delete slip;
 }
 
 BOOST_AUTO_TEST_CASE( TestSSLThroughSLIP ) {
@@ -138,8 +139,8 @@ BOOST_AUTO_TEST_CASE( TestSSLThroughSLIP ) {
 
     char data[] = {1, 2, 3, 4, 5};
     char data2[5];
-    ERR_load_SSL_strings();
-    ERR_load_crypto_strings();
+    //ERR_load_SSL_strings();
+    //ERR_load_crypto_strings();
 
     int res = BIO_write( c_bio, data, 5 );
     BOOST_CHECK_EQUAL( res, -1 );
@@ -149,7 +150,6 @@ BOOST_AUTO_TEST_CASE( TestSSLThroughSLIP ) {
     res = BIO_write( c_bio, data, 5 );
     BOOST_CHECK_EQUAL( res, -1 );
 
-
     res = BIO_read( s_bio, data2, sizeof( data2 ) );
     BOOST_CHECK_EQUAL( res, -1 );
     res = BIO_write( c_bio, data, 5 );
@@ -157,6 +157,17 @@ BOOST_AUTO_TEST_CASE( TestSSLThroughSLIP ) {
     res = BIO_read( s_bio, data2, sizeof( data2 ) );
     BOOST_CHECK_EQUAL( res, 5 );
     BOOST_CHECK_EQUAL_COLLECTIONS( data, data + 5, data2, data2 + 5 );
+
+    BIO_free(c_bio);
+    BIO_free(s_bio);
+
+    BIO_free(slip1);
+    BIO_free(slip2);
+    SSL_free(c_ssl);
+    SSL_free(s_ssl);
+
+    SSL_CTX_free(c_ctx);
+    SSL_CTX_free(s_ctx);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
