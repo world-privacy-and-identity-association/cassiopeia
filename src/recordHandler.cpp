@@ -28,34 +28,41 @@ int gencb( int a, int b, BN_GENCB* g ) {
     return 1;
 }
 
-int vfy( int prevfy, X509_STORE_CTX* ct ) {
-    ( void ) ct;
-    return prevfy;
+static int verify_callback( int preverify_ok, X509_STORE_CTX* ctx ) {
+    if( !preverify_ok ) {
+        std::cout << "Verification failed: " << preverify_ok << " because " << X509_STORE_CTX_get_error( ctx ) << std::endl;
+    }
+
+    return preverify_ok;
 }
 
 static std::shared_ptr<DH> dh_param;
 
 std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
-    std::shared_ptr<SSL_CTX> ctx = std::shared_ptr<SSL_CTX>( SSL_CTX_new( TLSv1_2_method() ), SSL_CTX_free );
+    std::shared_ptr<SSL_CTX> ctx = std::shared_ptr<SSL_CTX>(
+        SSL_CTX_new( TLSv1_2_method() ),
+        []( SSL_CTX * p ) {
+            SSL_CTX_free( p );
+        } );
 
     if( !SSL_CTX_set_cipher_list( ctx.get(), "HIGH:+CAMELLIA256:!eNull:!aNULL:!ADH:!MD5:-RSA+AES+SHA1:!RC4:!DES:!3DES:!SEED:!EXP:!AES128:!CAMELLIA128" ) ) {
         throw "Cannot set cipher list. Your source is broken.";
     }
 
-    SSL_CTX_set_verify( ctx.get(), SSL_VERIFY_NONE, vfy );
-    SSL_CTX_use_certificate_file( ctx.get(), "testdata/server.crt", SSL_FILETYPE_PEM );
-    SSL_CTX_use_PrivateKey_file( ctx.get(), "testdata/server.key", SSL_FILETYPE_PEM );
-    std::shared_ptr<STACK_OF( X509_NAME )> cert_names(
-        SSL_load_client_CA_file( "testdata/server.crt" ),
-        []( STACK_OF( X509_NAME ) *st ) {
-            sk_X509_NAME_free( st );
-        } );
-
-    if( cert_names ) {
-        SSL_CTX_set_client_CA_list( ctx.get(), cert_names.get() );
-    }
+    SSL_CTX_set_verify( ctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, verify_callback );
+    SSL_CTX_use_certificate_file( ctx.get(), server ? "keys/signer_server.crt" : "keys/signer_client.crt", SSL_FILETYPE_PEM );
+    SSL_CTX_use_PrivateKey_file( ctx.get(), server ? "keys/signer_server.key" : "keys/signer_client.key", SSL_FILETYPE_PEM );
+    SSL_CTX_load_verify_locations( ctx.get(), "keys/env.crt", 0 );
 
     if( server ) {
+        STACK_OF( X509_NAME ) *names = SSL_load_client_CA_file( "keys/env.crt" );
+
+        if( names ) {
+            SSL_CTX_set_client_CA_list( ctx.get(), names );
+        } else {
+            // error
+        }
+
         if( !dh_param ) {
             FILE* paramfile = fopen( "dh_param.pem", "r" );
 
@@ -233,9 +240,6 @@ DefaultRecordHandler::DefaultRecordHandler( std::shared_ptr<Signer> signer, std:
 
     ctx = generateSSLContext( true );
 
-    SSL_CTX_use_certificate_file( ctx.get(), "testdata/server.crt", SSL_FILETYPE_PEM );
-    SSL_CTX_use_PrivateKey_file( ctx.get(), "testdata/server.key", SSL_FILETYPE_PEM );
-
     this->bio = bio;
 }
 
@@ -331,7 +335,6 @@ int handlermain( int argc, const char* argv[] ) {
         auto res = sign->sign( cert );
         std::cout << "log: " << res->log << std::endl;
         std::cout << "cert things: " << res->certificate << std::endl;
-
         return 0;
     }
 
