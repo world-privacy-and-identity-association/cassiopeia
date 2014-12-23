@@ -158,16 +158,16 @@ BOOST_AUTO_TEST_CASE( TestSSLThroughSLIP ) {
     BOOST_CHECK_EQUAL( res, 5 );
     BOOST_CHECK_EQUAL_COLLECTIONS( data, data + 5, data2, data2 + 5 );
 
-    BIO_free(c_bio);
-    BIO_free(s_bio);
+    BIO_free( c_bio );
+    BIO_free( s_bio );
 
-    BIO_free(slip1);
-    BIO_free(slip2);
-    SSL_free(c_ssl);
-    SSL_free(s_ssl);
+    BIO_free( slip1 );
+    BIO_free( slip2 );
+    SSL_free( c_ssl );
+    SSL_free( s_ssl );
 
-    SSL_CTX_free(c_ctx);
-    SSL_CTX_free(s_ctx);
+    SSL_CTX_free( c_ctx );
+    SSL_CTX_free( s_ctx );
 }
 
 BOOST_AUTO_TEST_SUITE_END()

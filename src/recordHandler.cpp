@@ -14,6 +14,7 @@
 #include "database.h"
 #include "record.h"
 #include "opensslBIO.h"
+#include "remoteSigner.h"
 #include "simpleOpensslSigner.h"
 #include "slipBio.h"
 
@@ -47,7 +48,6 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
     std::shared_ptr<STACK_OF( X509_NAME )> cert_names(
         SSL_load_client_CA_file( "testdata/server.crt" ),
         []( STACK_OF( X509_NAME ) *st ) {
-            std::cout << "freeing" << std::endl;
             sk_X509_NAME_free( st );
         } );
 
@@ -266,6 +266,9 @@ void setupSerial( FILE* f ) {
     attr.c_cflag &= ~( CSIZE | PARENB );
     attr.c_cflag |= CS8;
 
+    cfsetispeed( &attr, B115200 );
+    cfsetospeed( &attr, B115200 );
+
     if( tcsetattr( fileno( f ), TCSANOW, &attr ) ) {
         throw "failed to get attrs";
     }
@@ -316,9 +319,18 @@ int handlermain( int argc, const char* argv[] ) {
         cert->csr_content = data;
         cert->md = "sha256";
         cert->profile = "1";
+        std::shared_ptr<AVA> ava( new AVA() );
+        ava->name = "CN";
+        ava->value = "Dummy user certificates";
+        cert->AVAs.push_back( ava );
+        std::shared_ptr<SAN> san( new SAN() );
+        san->type = "DNS";
+        san->content = "n42.example.com";
+        cert->SANs.push_back( san );
 
         auto res = sign->sign( cert );
-        std::cout << "sent things" << std::endl;
+        std::cout << "log: " << res->log << std::endl;
+        std::cout << "cert things: " << res->certificate << std::endl;
 
         return 0;
     }

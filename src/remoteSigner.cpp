@@ -37,8 +37,25 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
 
     send( conn, head, RecordHeader::SignerCommand::SET_SIGNATURE_TYPE, cert->md );
     send( conn, head, RecordHeader::SignerCommand::SET_PROFILE, cert->profile );
-    send( conn, head, RecordHeader::SignerCommand::ADD_AVA, "CN,commonName" );
-    send( conn, head, RecordHeader::SignerCommand::ADD_SAN, "DNS,*.example.com" );
+
+    for( auto ava : cert->AVAs ) {
+        if( ava->name.find( "," ) != std::string::npos ) {
+            // invalid ava
+            return std::shared_ptr<SignedCertificate>();
+        }
+
+        send( conn, head, RecordHeader::SignerCommand::ADD_AVA, ava->name + "," + ava->value );
+    }
+
+    for( auto san : cert->SANs ) {
+        if( san->type.find( "," ) != std::string::npos ) {
+            // invalid ava
+            return std::shared_ptr<SignedCertificate>();
+        }
+
+        send( conn, head, RecordHeader::SignerCommand::ADD_SAN, san->type + "," + san->content );
+    }
+
     send( conn, head, RecordHeader::SignerCommand::SIGN, "" );
     send( conn, head, RecordHeader::SignerCommand::LOG_SAVED, "" );
     std::shared_ptr<SignedCertificate> result = std::shared_ptr<SignedCertificate>( new SignedCertificate() );
@@ -49,7 +66,16 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
             int length = conn->read( buffer.data(), buffer.size() );
             RecordHeader head;
             std::string payload = parseCommand( head, std::string( buffer.data(), length ) );
-            std::cout << "Data: " << std::endl << payload << std::endl;
+
+            switch( ( RecordHeader::SignerResult ) head.command ) {
+            case RecordHeader::SignerResult::CERTIFICATE:
+                result->certificate = payload;
+                break;
+
+            case RecordHeader::SignerResult::SAVE_LOG:
+                result->log = payload;
+                break;
+            }
         } catch( const char* msg ) {
             std::cout << msg << std::endl;
             return std::shared_ptr<SignedCertificate>();
