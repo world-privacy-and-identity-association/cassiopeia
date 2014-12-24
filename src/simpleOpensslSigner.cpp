@@ -11,17 +11,11 @@
 
 #include "X509.h"
 #include "util.h"
+#include "sslUtil.h"
 
 extern std::vector<Profile> profiles;
 
-std::shared_ptr<int> SimpleOpensslSigner::lib_ref(
-    new int( SSL_library_init() ),
-    []( int* ref ) {
-        delete ref;
-
-        EVP_cleanup();
-        CRYPTO_cleanup_all_ex_data();
-    } );
+std::shared_ptr<int> SimpleOpensslSigner::lib_ref = ssl_lib_ref;
 
 std::shared_ptr<X509> loadX509FromFile( std::string filename ) {
     FILE* f = fopen( filename.c_str(), "r" );

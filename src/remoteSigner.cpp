@@ -28,7 +28,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     head.flags = 0;
     head.sessid = 13;
 
-    if( cert->csr_type == "csr" ) {
+    if( cert->csr_type == "CSR" ) {
         send( conn, head, RecordHeader::SignerCommand::SET_CSR, cert->csr_content );
     } else {
         std::cout << "Unknown csr_type: " << cert->csr_type;

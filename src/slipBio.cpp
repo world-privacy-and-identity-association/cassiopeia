@@ -4,6 +4,8 @@
 
 #include <unistd.h>
 
+#define BUFFER_SIZE 8192
+
 char hexDigit( char c ) {
     if( c < 0 ) {
         return 'x';
@@ -33,7 +35,7 @@ std::string toHex( const char* buf, int len ) {
 }
 
 SlipBIO::SlipBIO() {
-    this->buffer = std::vector<char>( 4096 );
+    this->buffer = std::vector<char>( BUFFER_SIZE );
     this->decodeTarget = 0;
     this->decodePos = 0;
     this->rawPos = 0;
@@ -47,7 +49,7 @@ void SlipBIO::setTarget( std::shared_ptr<OpensslBIO> target ) {
 SlipBIO::SlipBIO( std::shared_ptr<OpensslBIO> target ) {
     this->target = target;
 
-    this->buffer = std::vector<char>( 4096 );
+    this->buffer = std::vector<char>( BUFFER_SIZE );
     this->decodeTarget = 0;
     this->decodePos = 0;
     this->rawPos = 0;
@@ -58,6 +60,7 @@ SlipBIO::SlipBIO( std::shared_ptr<OpensslBIO> target ) {
 SlipBIO::~SlipBIO() {}
 
 int SlipBIO::write( const char* buf, int num ) {
+    std::cout << "Out: " << toHex( buf, num ) << std::endl;
     int badOnes = 0;
 
     for( int i = 0; i < num; i++ ) {
