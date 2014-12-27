@@ -5,7 +5,7 @@ fake_sigalg (){
 }
 
 fake_sig (){
-    cat $1 | sed "s/[^a]=\$/c=/" | sed "s/a=/b=/" |sed "s/c=/a=/" > $2
+    cat $1 | sed "s/[^a]...=\$/caaa=/" | sed "s/a...=/baaa=/" |sed "s/caaa=/aaaa=/" > $2
 }
 
 mkdir -p testdata

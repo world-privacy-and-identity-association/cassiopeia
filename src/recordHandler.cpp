@@ -62,11 +62,8 @@ public:
     }
 
     void work() {
-        std::cout << "done" << std::endl;
         std::vector<char> buffer( 2048, 0 );
-        std::cout << "reading" << std::endl;
         int res = io->read( buffer.data(), buffer.capacity() );
-        std::cout << "read" << std::endl;
 
         if( res <= 0 ) {
             parent->reset();
@@ -177,7 +174,6 @@ void DefaultRecordHandler::handle() {
         currentSession = std::shared_ptr<RecordHandlerSession>( new RecordHandlerSession( this, signer, ctx, bio ) );
     }
 
-    std::cout << "really allocated: " << currentSession << ";" << std::endl;
     currentSession->work();
 }
 
