@@ -14,6 +14,48 @@ std::shared_ptr<int> ssl_lib_ref(
         CRYPTO_cleanup_all_ex_data();
     } );
 
+std::shared_ptr<X509> loadX509FromFile( std::string filename ) {
+    FILE* f = fopen( filename.c_str(), "r" );
+
+    if( !f ) {
+        return std::shared_ptr<X509>();
+    }
+
+    X509* key = PEM_read_X509( f, NULL, NULL, 0 );
+    fclose( f );
+
+    if( !key ) {
+        return std::shared_ptr<X509>();
+    }
+
+    return std::shared_ptr<X509>(
+        key,
+        []( X509 * ref ) {
+            X509_free( ref );
+        } );
+}
+
+std::shared_ptr<EVP_PKEY> loadPkeyFromFile( std::string filename ) {
+    FILE* f = fopen( filename.c_str(), "r" );
+
+    if( !f ) {
+        return std::shared_ptr<EVP_PKEY>();
+    }
+
+    EVP_PKEY* key = PEM_read_PrivateKey( f, NULL, NULL, 0 );
+    fclose( f );
+
+    if( !key ) {
+        return std::shared_ptr<EVP_PKEY>();
+    }
+
+    return std::shared_ptr<EVP_PKEY>(
+        key,
+        []( EVP_PKEY * ref ) {
+            EVP_PKEY_free( ref );
+        } );
+}
+
 int gencb( int a, int b, BN_GENCB* g ) {
     ( void ) a;
     ( void ) b;
@@ -103,8 +145,7 @@ void setupSerial( FILE* f ) {
         throw "failed to get attrs";
     }
 
-    attr.c_iflag &= ~( IGNBRK | BRKINT | PARMRK | ISTRIP
-                       | INLCR | IGNCR | ICRNL | IXON );
+    attr.c_iflag &= ~( IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON );
     attr.c_oflag &= ~OPOST;
     attr.c_lflag &= ~( ECHO | ECHONL | ICANON | ISIG | IEXTEN );
     attr.c_cflag &= ~( CSIZE | PARENB );

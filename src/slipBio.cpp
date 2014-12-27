@@ -1,8 +1,8 @@
 #include "slipBio.h"
 
-#include <iostream>
-
 #include <unistd.h>
+
+#include <iostream>
 
 #define BUFFER_SIZE 8192
 

@@ -19,6 +19,8 @@
 #include "sslUtil.h"
 #include "slipBio.h"
 
+extern std::vector<Profile> profiles;
+
 class RecordHandlerSession {
 public:
     uint32_t sessid;
@@ -235,7 +237,7 @@ int handlermain( int argc, const char* argv[] ) {
     ( ( SlipBIO* )slip1->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( conn ) ) );
 
     try {
-        DefaultRecordHandler* dh = new DefaultRecordHandler( std::shared_ptr<Signer>( new SimpleOpensslSigner() ), slip1 );
+        DefaultRecordHandler* dh = new DefaultRecordHandler( std::shared_ptr<Signer>( new SimpleOpensslSigner( profiles[0] ) ), slip1 );
 
         while( true ) {
             dh->handle();

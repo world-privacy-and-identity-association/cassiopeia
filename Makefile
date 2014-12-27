@@ -6,11 +6,6 @@ INSTALL_DIR     = $(INSTALL) -p -d -o root -g root  -m  755
 
 MKDIR = mkdir -p
 
-ifneq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
-    CFLAGS += -O0
-else
-    CFLAGS += -O2
-endif
 ifeq (,$(filter nostrip,$(DEB_BUILD_OPTIONS)))
     INSTALL_PROGRAM += -s
 endif
@@ -22,31 +17,30 @@ endif
 BIN="bin/cassiopeia"
 LIBS=openssl collissiondetect
 
-LT_CC=libtool --mode=compile gcc
-LT_CC_DEP=g++
-LT_CXX=libtool --mode=compile g++
-LT_CXX_DEP=g++
-LT_LD=libtool --mode=link g++
-
-CC=${LT_CC}
-CC_DEP=${LT_CC_DEP}
-CXX=${LT_CXX}
-CXX_DEP=${LT_CXX_DEP}
-LD=${LT_LD}
+CC=libtool --mode=compile gcc
+CC_DEP=g++
+CXX=libtool --mode=compile g++
+CXX_DEP=g++
+LD=libtool --mode=link g++
 
 ifneq (,$(filter debug,$(DEB_BUILD_OPTIONS)))
-ADDFLAGS=-DNO_DAEMON
+CFLAGS+=-DNO_DAEMON -g
+endif
+ifneq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
+    CFLAGS += -O0
+else
+    CFLAGS += -O2
 endif
 
-CFLAGS=-O3 -g -flto -Wall -Werror -Wextra -pedantic -std=c++11 ${ADDFLAGS}
+CFLAGS+=${ADDFLAGS} -Wall -Werror -Wextra -pedantic -std=c++11 -Ilib/openssl/include -Isrc
 CXXFLAGS=$(CFLAGS)
-LDFLAGS=-O3 -g -flto -lmysqlclient -lssl -lcrypto -ldl
+LDFLAGS+=${ADDFLAGS} -L/usr/lib/i386-linux-gnu/ -lssl -lcrypto -ldl -Llib/openssl
 
 SRC_DIR=src
 OBJ_DIR=obj
 DEP_DIR=dep
 
-FS_SRC=$(wildcard ${SRC_DIR}/*.cpp)
+FS_SRC=$(filter-out ${SRC_DIR}/mysql--disabled.cpp,$(wildcard ${SRC_DIR}/*.cpp))
 FS_BIN=$(wildcard ${SRC_DIR}/app/*.cpp)
 FS_LIBS=$(wildcard lib/*/)
 FS_OBJ=$(FS_SRC:${SRC_DIR}/%.cpp=${OBJ_DIR}/%.lo)
@@ -70,7 +64,7 @@ clean::
 	-rm -rf ${DEP_DIR}
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 	# Code to run the package test suite.
-	${MAKE} -C test clean
+	ADDFLAGS="$(ADDFLAGS)" DEB_BUILD_OPTIONS="$(DEB_BUILD_OPTIONS)" ${MAKE} -C test clean
 endif
 
 .PHONY: dist-clean
@@ -81,7 +75,7 @@ dist-clean: clean
 
 build: cassiopeia
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
-	${MAKE} -C test
+	ADDFLAGS="$(ADDFLAGS)" DEB_BUILD_OPTIONS="$(DEB_BUILD_OPTIONS)" ${MAKE} -C test
 endif
 
 .PHONY: install
@@ -102,10 +96,13 @@ collissiondetect:
 
 # --------
 
-cassiopeia: bin/cassiopeia
+cassiopeia: bin/cassiopeia bin/cassiopeia-signer
 
-bin/cassiopeia: libs ${FS_OBJ}
-	${MKDIR} $(shell dirname $@) && ${LT_LD} ${LDFLAGS} -o $@ ${FS_OBJ}
+bin/cassiopeia: libs ${FS_OBJ} ${OBJ_DIR}/apps/client.lo
+	${MKDIR} $(shell dirname $@) &&  ${LD} ${LDFLAGS} -lmysqlclient -o $@ ${FS_OBJ} ${OBJ_DIR}/apps/client.lo
+
+bin/cassiopeia-signer: libs ${FS_OBJ} ${OBJ_DIR}/apps/signer.lo
+	${MKDIR} $(shell dirname $@) &&  ${LD} ${LDFLAGS} -o $@ $(filter-out ${OBJ_DIR}/mysql.lo,${FS_OBJ}) ${OBJ_DIR}/apps/signer.lo
 
 ${DEP_DIR}/%.d: ${SRC_DIR}/%.cpp
 	${MKDIR} $(shell dirname $@) && $(CXX_DEP) $(CXXFLAGS) -M -MF $@ $<

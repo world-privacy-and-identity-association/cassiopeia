@@ -9,25 +9,19 @@ endif
 BIN="bin/cassiopeia-test"
 LIBS=openssl collissiondetect
 
-LT_CC=libtool --mode=compile gcc
-LT_CC_DEP=g++
-LT_CXX=libtool --mode=compile g++
-LT_CXX_DEP=g++
-LT_LD=libtool --mode=link g++
-
-CC=${LT_CC}
-CC_DEP=${LT_CC_DEP}
-CXX=${LT_CXX}
-CXX_DEP=${LT_CXX_DEP}
-LD=${LT_LD}
+CC=libtool --mode=compile gcc
+CC_DEP=g++
+CXX=libtool --mode=compile g++
+CXX_DEP=g++
+LD=libtool --mode=link g++
 
 ifneq (,$(filter debug,$(DEB_BUILD_OPTIONS)))
-ADDFLAGS=-DNO_DAEMON
+CFLAGS+=-DNO_DAEMON -g
 endif
 
-CFLAGS=-O3 -g -flto -Wall -Werror -Wextra -pedantic -std=c++11 -I../src ${ADDFLAGS}
+CFLAGS+=${ADDFLAGS} -Wall -Werror -Wextra -pedantic -std=c++11 -I../src -I../lib/openssl/include
 CXXFLAGS=$(CFLAGS)
-LDFLAGS=-O3 -g -flto -lmysqlclient -lssl -lcrypto -ldl -lboost_unit_test_framework
+LDFLAGS+=${ADDFLAGS} -lmysqlclient -lssl -lcrypto -ldl -lboost_unit_test_framework -L../lib/openssl -L/usr/lib/i386-linux-gnu
 
 SRC_DIR=src
 OBJ_DIR=obj
@@ -84,7 +78,7 @@ collissiondetect:
 cassiopeia-test: bin/cassiopeia-test
 
 bin/cassiopeia-test: libs ${FS_OBJ}
-	${MKDIR} $(shell dirname $@) && ${LT_LD} ${LDFLAGS} -o $@ ${FS_OBJ} $(filter-out %/main.o,$(wildcard ../obj/*.o))
+	${MKDIR} $(shell dirname $@) && ${LD} ${LDFLAGS} -o $@ ${FS_OBJ} $(filter-out %/main.o,$(wildcard ../obj/*.o))
 
 ${DEP_DIR}/%.d: ${SRC_DIR}/%.cpp
 	${MKDIR} $(shell dirname $@) && $(CXX_DEP) $(CXXFLAGS) -M -MF $@ $<
