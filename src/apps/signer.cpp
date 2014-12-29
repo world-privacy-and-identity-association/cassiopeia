@@ -21,6 +21,9 @@
 
 int handlermain( int argc, const char* argv[] );
 
+extern std::string serialPath;
+extern std::vector<Profile> profiles;
+
 int main( int argc, const char* argv[] ) {
     ( void ) argc;
     ( void ) argv;
@@ -38,5 +41,26 @@ int main( int argc, const char* argv[] ) {
         return -1;
     }
 
-    return handlermain( argc, argv );
+    std::shared_ptr<int> ssl_lib = ssl_lib_ref;
+
+    if( serialPath == "" ) {
+        std::cout << "Error: no serial device is given" << std::endl;
+        return -1;
+    }
+
+    std::shared_ptr<BIO> conn = openSerial( serialPath );
+    std::shared_ptr<BIO> slip1( BIO_new( toBio<SlipBIO>() ), BIO_free );
+    ( ( SlipBIO* )slip1->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( conn ) ) );
+
+    try {
+        DefaultRecordHandler* dh = new DefaultRecordHandler( std::shared_ptr<Signer>( new SimpleOpensslSigner( profiles[5] ) ), slip1 );
+
+        while( true ) {
+            dh->handle();
+        }
+    } catch( char const* ch ) {
+        std::cout << "Exception: " << ch << std::endl;
+    }
+
+    return -1;
 }

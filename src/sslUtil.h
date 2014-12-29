@@ -1,6 +1,7 @@
 #pragma once
 #include <openssl/ssl.h>
 #include <memory>
+#include <string>
 
 struct Profile {
     std::string cert;
@@ -18,4 +19,4 @@ std::shared_ptr<X509> loadX509FromFile( std::string filename );
 std::shared_ptr<EVP_PKEY> loadPkeyFromFile( std::string filename );
 
 std::shared_ptr<SSL_CTX> generateSSLContext( bool server );
-std::shared_ptr<BIO> openSerial( const char* name );
+std::shared_ptr<BIO> openSerial( const std::string name );

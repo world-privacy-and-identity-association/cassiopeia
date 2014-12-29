@@ -7,6 +7,7 @@
 std::string keyDir;
 std::vector<Profile> profiles;
 std::string sqlHost, sqlUser, sqlPass, sqlDB;
+std::string serialPath;
 
 int parseConfig( std::string path ) {
     std::ifstream config;
@@ -45,9 +46,9 @@ int parseConfig( std::string path ) {
             sqlPass = value;
         } else if( key == "sql.database" ) {
             sqlDB = value;
-        }
-
-        if( key.compare( 0, 8, "profile." ) == 0 ) {
+        } else if( key == "serialPath" ) {
+            serialPath = value;
+        } else  if( key.compare( 0, 8, "profile." ) == 0 ) {
             int numE = key.find( ".", 9 );
 
             if( numE == 0 ) {

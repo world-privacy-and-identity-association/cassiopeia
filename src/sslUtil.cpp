@@ -159,8 +159,8 @@ void setupSerial( FILE* f ) {
     }
 }
 
-std::shared_ptr<BIO> openSerial( const char* name ) {
-    FILE* f = fopen( name, "r+" );
+std::shared_ptr<BIO> openSerial( const std::string name ) {
+    FILE* f = fopen( name.c_str(), "r+" );
 
     if( !f ) {
         std::cout << "Opening serial device failed" << std::endl;

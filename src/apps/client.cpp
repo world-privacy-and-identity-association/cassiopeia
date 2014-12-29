@@ -24,6 +24,7 @@
 extern std::string keyDir;
 extern std::vector<Profile> profiles;
 extern std::string sqlHost, sqlUser, sqlPass, sqlDB;
+extern std::string serialPath;
 
 std::string writeBackFile( uint32_t serial, std::string cert ) {
     std::string filename = "keys";
@@ -37,8 +38,6 @@ std::string writeBackFile( uint32_t serial, std::string cert ) {
     std::cout << "wrote to " << filename << std::endl;
     return filename;
 }
-
-int handlermain( int argc, const char* argv[] );
 
 int main( int argc, const char* argv[] ) {
     ( void ) argc;
@@ -61,12 +60,13 @@ int main( int argc, const char* argv[] ) {
         return -1;
     }
 
-    if( argc == 0 ) {
-        return handlermain( argc, argv );
+    if( serialPath == "" ) {
+        std::cout << "Error: no serial device is given" << std::endl;
+        return -1;
     }
 
     std::shared_ptr<JobProvider> jp( new MySQLJobProvider( sqlHost, sqlUser, sqlPass, sqlDB ) );
-    std::shared_ptr<BIO> b = openSerial( "/dev/ttyUSB0" );
+    std::shared_ptr<BIO> b = openSerial( serialPath );
     std::shared_ptr<BIO> slip1( BIO_new( toBio<SlipBIO>() ), BIO_free );
     ( ( SlipBIO* )slip1->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( b ) ) );
     std::shared_ptr<RemoteSigner> sign( new RemoteSigner( slip1, generateSSLContext( false ) ) );
