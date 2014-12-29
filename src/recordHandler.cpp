@@ -29,7 +29,7 @@ public:
     std::shared_ptr<TBSCertificate> tbs;
     std::shared_ptr<SignedCertificate> result;
 
-    SSL* ssl;
+    std::shared_ptr<SSL> ssl;
 
     std::shared_ptr<OpensslBIOWrapper> io;
     DefaultRecordHandler* parent;
@@ -40,15 +40,15 @@ public:
         this->parent = parent;
         this->signer = signer;
 
-        ssl = SSL_new( ctx.get() );
+        ssl = std::shared_ptr<SSL>( SSL_new( ctx.get() ), SSL_free );
         std::shared_ptr<BIO> bio(
             BIO_new( BIO_f_ssl() ),
             [output]( BIO * p ) {
                 BIO_free( p );
             } );
-        SSL_set_accept_state( ssl );
-        SSL_set_bio( ssl, output.get(), output.get() );
-        BIO_set_ssl( bio.get(), ssl, BIO_NOCLOSE );
+        SSL_set_accept_state( ssl.get() );
+        SSL_set_bio( ssl.get(), output.get(), output.get() );
+        BIO_set_ssl( bio.get(), ssl.get(), BIO_NOCLOSE );
         io = std::shared_ptr<OpensslBIOWrapper>( new OpensslBIOWrapper( bio ) );
     }
 
@@ -144,6 +144,10 @@ public:
         case RecordHeader::SignerCommand::LOG_SAVED:
             if( result ) {
                 respondCommand( RecordHeader::SignerResult::CERTIFICATE, result->certificate );
+            }
+
+            if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
+                std::cout << "SSL close failed" << std::endl;
             }
 
             break;

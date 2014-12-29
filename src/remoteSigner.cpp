@@ -18,6 +18,8 @@ void RemoteSigner::send( std::shared_ptr<OpensslBIOWrapper> bio, RecordHeader& h
 }
 
 std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertificate> cert ) {
+    ( void )BIO_reset( target.get() );
+
     std::shared_ptr<SSL> ssl( SSL_new( ctx.get() ), SSL_free );
     std::shared_ptr<BIO> bio( BIO_new( BIO_f_ssl() ), BIO_free );
     SSL_set_connect_state( ssl.get() );
@@ -64,6 +66,11 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     for( int i = 0; i < 2; i++ ) {
         try {
             int length = conn->read( buffer.data(), buffer.size() );
+
+            if( length == -1 ) {
+                return std::shared_ptr<SignedCertificate>();
+            }
+
             RecordHeader head;
             std::string payload = parseCommand( head, std::string( buffer.data(), length ) );
 
@@ -80,6 +87,10 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
             std::cout << msg << std::endl;
             return std::shared_ptr<SignedCertificate>();
         }
+    }
+
+    if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) { // need to close the connection twice
+        std::cout << "SSL shutdown failed" << std::endl;
     }
 
     return result;

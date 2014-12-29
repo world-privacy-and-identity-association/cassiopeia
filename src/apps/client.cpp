@@ -50,11 +50,11 @@ int main( int argc, const char* argv[] ) {
 
     std::string path;
 
-    if( DAEMON ) {
-        path = "/etc/cacert/cassiopeia/cassiopeia.conf";
-    } else {
-        path = "config.txt";
-    }
+#ifdef NDEBUG
+    path = "/etc/cacert/cassiopeia/cassiopeia.conf";
+#else
+    path = "config.txt";
+#endif
 
     if( parseConfig( path ) != 0 ) {
         return -1;
@@ -95,6 +95,12 @@ int main( int argc, const char* argv[] ) {
                 std::cout << cert->csr_content << " content " << std::endl;
 
                 std::shared_ptr<SignedCertificate> res = sign->sign( cert );
+
+                if( !res ) {
+                    std::cout << "Error no cert came back." << std::endl;
+                    continue;
+                }
+
                 std::cout << "did it!" << res->certificate << std::endl;
                 std::string fn = writeBackFile( atoi( job->target.c_str() ), res->certificate );
                 res->crt_name = fn;

@@ -6,6 +6,9 @@
 
 #define BUFFER_SIZE 8192
 
+#define SLIP_ESCAPE_CHAR ( (char) 0xDB)
+#define SLIP_PACKET ( (char) 0xC0)
+
 char hexDigit( char c ) {
     if( c < 0 ) {
         return 'x';
@@ -60,11 +63,14 @@ SlipBIO::SlipBIO( std::shared_ptr<OpensslBIO> target ) {
 SlipBIO::~SlipBIO() {}
 
 int SlipBIO::write( const char* buf, int num ) {
+#ifdef SLIP_IO_DEBUG
     std::cout << "Out: " << toHex( buf, num ) << std::endl;
+#endif
+
     int badOnes = 0;
 
     for( int i = 0; i < num; i++ ) {
-        if( ( buf[i] == ( char )0xc0 ) || ( buf[i] == ( char )0xDB ) ) {
+        if( ( buf[i] == SLIP_PACKET ) || ( buf[i] == SLIP_ESCAPE_CHAR ) ) {
             badOnes++;
         }
     }
@@ -79,21 +85,19 @@ int SlipBIO::write( const char* buf, int num ) {
     std::shared_ptr<char> t = std::shared_ptr<char>( targetPtr, free );
     int j = 0;
 
-    //targetPtr[j++] = (char)0xC0;
-
     for( int i = 0; i < num; i++ ) {
-        if( buf[i] == ( char )0xc0 ) {
-            targetPtr[j++] = ( char )0xDB;
+        if( buf[i] == SLIP_PACKET ) {
+            targetPtr[j++] = SLIP_ESCAPE_CHAR;
             targetPtr[j++] = ( char )0xDC;
-        } else if( buf[i] == ( char )0xDB ) {
-            targetPtr[j++] = ( char )0xDB;
+        } else if( buf[i] == SLIP_ESCAPE_CHAR ) {
+            targetPtr[j++] = SLIP_ESCAPE_CHAR;
             targetPtr[j++] = ( char )0xDD;
         } else {
             targetPtr[j++] = buf[i];
         }
     }
 
-    targetPtr[j++] = ( char )0xC0;
+    targetPtr[j++] = SLIP_PACKET;
     int sent = 0;
 
     while( sent < j ) {
@@ -153,6 +157,10 @@ int SlipBIO::read( char* buf, int size ) {
         packageLeft = false;
     }
 
+#ifdef SLIP_IO_DEBUG
+    std::cout << "in: " << toHex( buf, len ) << std::endl;
+#endif
+
     return len;
 }
 
@@ -160,7 +168,17 @@ long SlipBIO::ctrl( int cmod, long arg1, void* arg2 ) {
     ( void ) cmod;
     ( void ) arg1;
     ( void ) arg2;
-    std::cout << "SLIP crtl: " << cmod << std::endl;
+
+    if( cmod == BIO_CTRL_RESET ) {
+        char resetSequence[] = {SLIP_ESCAPE_CHAR, 0, SLIP_PACKET};
+        target->write( resetSequence, 3 );
+        decodePos = 0;
+        decodeTarget = 0;
+        rawPos = 0;
+        std::cout << "resetting SLIP" << std::endl;
+        return 0;
+    }
+
     return target->ctrl( cmod, arg1, arg2 );
 }
 
@@ -172,7 +190,7 @@ bool SlipBIO::unmask() {
     unsigned int j = decodeTarget;
 
     for( unsigned int i = decodePos; i < rawPos; i++ ) {
-        if( buffer[i] == ( char ) 0xDB ) {
+        if( buffer[i] == SLIP_ESCAPE_CHAR ) {
             i++;
 
             if( i >= rawPos ) {
@@ -182,16 +200,20 @@ bool SlipBIO::unmask() {
                 rawPos = decodePos + 1;
                 return 0;// no packet
             } else if( buffer[i] == ( char )0xdc ) {
-                buffer[j++] = ( char ) 0xc0;
+                buffer[j++] = SLIP_PACKET;
             } else if( buffer[i] == ( char )0xdd ) {
-                buffer[j++] = ( char ) 0xdb;
+                buffer[j++] = SLIP_ESCAPE_CHAR;
+            } else if( buffer[i] == SLIP_PACKET ) {
+                failed = true;
+                i--;
+                continue;
             } else {
                 decodeTarget = 0;
                 failed = true;
                 // failed package
                 // error
             }
-        } else if( buffer[i] == ( char ) 0xc0 ) {
+        } else if( buffer[i] == SLIP_PACKET ) {
             decodePos = i + 1;
             decodeTarget = j;
 

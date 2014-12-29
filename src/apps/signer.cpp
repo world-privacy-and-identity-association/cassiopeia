@@ -30,12 +30,11 @@ int main( int argc, const char* argv[] ) {
 
     std::string path;
 
-    if( DAEMON ) {
-        path = "/etc/cacert/cassiopeia/cassiopeia.conf";
-    } else {
-        path = "config.txt";
-    }
-
+#ifdef NDEBUG
+    path = "/etc/cacert/cassiopeia/cassiopeia.conf";
+#else
+    path = "config.txt";
+#endif
 
     if( parseConfig( path ) != 0 ) {
         return -1;
