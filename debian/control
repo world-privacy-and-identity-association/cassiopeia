@@ -15,6 +15,13 @@ Description: CAcert Certificate Signing Software
  This package provides the necessary tools to run a
  certificate signing instance on https://cacert.org
 
+Package: cacert-cassiopeia-signer
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: CAcert Certificate Signing Software
+ This package provides the signer-side part of the
+ CAcert signing software.
+
 Package: cacert-cassiopeia-doc
 Architecture: all
 Description: Documentation for the CAcert Certificate Signing Software

@@ -81,6 +81,7 @@ endif
 .PHONY: install
 install: build
 	${INSTALL_PROGRAM} bin/cassiopeia ${DESTDIR}/usr/bin/cassiopeia
+	${INSTALL_PROGRAM} bin/cassiopeia-signer ${DESTDIR}/usr/bin/cassiopeia-signer
 	${INSTALL_DIR} ${DESTDIR}/etc/cacert/cassiopeia
 
 .PHONY: libs
