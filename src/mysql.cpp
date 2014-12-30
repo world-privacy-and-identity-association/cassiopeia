@@ -113,7 +113,7 @@ std::pair< int, std::shared_ptr<MYSQL_RES> > MySQLJobProvider::query( const std:
 }
 
 std::shared_ptr<Job> MySQLJobProvider::fetchJob() {
-    std::string q = "SELECT id, targetId, task, executeFrom, executeTo FROM jobs WHERE state='open'";
+    std::string q = "SELECT id, targetId, task, executeFrom, executeTo, warning FROM jobs WHERE state='open' AND warning < 3";
 
     int err = 0;
     std::shared_ptr<MYSQL_RES> res;
@@ -145,6 +145,7 @@ std::shared_ptr<Job> MySQLJobProvider::fetchJob() {
     job->task = std::string( row[2], row[2] + l[2] );
     job->from = std::string( row[3], row[3] + l[3] );
     job->to = std::string( row[4], row[4] + l[4] );
+    job->warning = std::string( row[5], row[5] + l[5] );
 
     for( unsigned int i = 0; i < num; i++ ) {
         printf( "[%.*s] ", ( int ) l[i], row[i] ? row[i] : "NULL" );
@@ -171,18 +172,29 @@ std::string MySQLJobProvider::escape_string( const std::string& target ) {
     return result;
 }
 
-bool MySQLJobProvider::finishJob( std::shared_ptr<Job> job ) {
+void MySQLJobProvider::finishJob( std::shared_ptr<Job> job ) {
     if( !conn ) {
-        return false;
+        throw "Not connected!";
     }
 
     std::string q = "UPDATE jobs SET state='done' WHERE id='" + this->escape_string( job->id ) + "' LIMIT 1";
 
     if( query( q ).first ) {
-        return false;
+        throw "No database entry found.";
     }
 
-    return true;
+}
+
+void MySQLJobProvider::failJob( std::shared_ptr<Job> job ) {
+    if( !conn ) {
+        throw "Not connected!";
+    }
+
+    std::string q = "UPDATE jobs SET warning = warning + 1 WHERE id='" + this->escape_string( job->id ) + "' LIMIT 1";
+
+    if( query( q ).first ) {
+        throw "No database entry found.";
+    }
 }
 
 std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<Job> job ) {

@@ -31,7 +31,8 @@ public:
 
 public:
     std::shared_ptr<Job> fetchJob();
-    bool finishJob( std::shared_ptr<Job> job );
+    void finishJob( std::shared_ptr<Job> job );
+    void failJob( std::shared_ptr<Job> job );
     std::shared_ptr<TBSCertificate> fetchTBSCert( std::shared_ptr<Job> job );
     void writeBack( std::shared_ptr<Job> job, std::shared_ptr<SignedCertificate> res );
 };

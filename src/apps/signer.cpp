@@ -19,8 +19,6 @@
 #define DAEMON true
 #endif
 
-int handlermain( int argc, const char* argv[] );
-
 extern std::string serialPath;
 extern std::vector<Profile> profiles;
 

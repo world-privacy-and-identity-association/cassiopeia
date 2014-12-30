@@ -8,6 +8,8 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <fstream>
+#include <ctime>
 
 #include <openssl/ssl.h>
 
@@ -35,10 +37,24 @@ public:
     DefaultRecordHandler* parent;
     std::shared_ptr<Signer> signer;
 
+    std::shared_ptr<std::ofstream> log;
+
     RecordHandlerSession( DefaultRecordHandler* parent, std::shared_ptr<Signer> signer, std::shared_ptr<SSL_CTX> ctx, std::shared_ptr<BIO> output ) :
         tbs( new TBSCertificate() ) {
         this->parent = parent;
         this->signer = signer;
+        time_t c_time;
+
+        if( time( &c_time ) == -1 ) {
+            throw "Error while fetching time?";
+        }
+
+        log = std::shared_ptr<std::ofstream>(
+            new std::ofstream( std::string( "logs/log_" ) + std::to_string( c_time ) ),
+            []( std::ofstream * ptr ) {
+                ptr->close();
+                delete ptr;
+            } );
 
         ssl = std::shared_ptr<SSL>( SSL_new( ctx.get() ), SSL_free );
         std::shared_ptr<BIO> bio(
@@ -58,7 +74,7 @@ public:
         rh.flags = 0;
         rh.command_count = 0; // TODO i++
         rh.totalLength = payload.size();
-        sendCommand( rh, payload, io );
+        sendCommand( rh, payload, io, log );
     }
 
     void work() {
@@ -74,10 +90,13 @@ public:
 
         try {
             RecordHeader head;
-            std::string payload = parseCommand( head, content );
+            std::string payload = parseCommand( head, content, log );
             execute( head, payload );
         } catch( const char* msg ) {
-            std::cout << msg << std::endl;
+            if( log ) {
+                ( *log ) << "ERROR: " << msg << std::endl;
+            }
+
             parent->reset();
             return;
         }
@@ -92,7 +111,7 @@ public:
         case RecordHeader::SignerCommand::SET_CSR: // setCSR
             tbs->csr_content = data;
             tbs->csr_type = "CSR";
-            std::cout << "CSR read" << std::endl;
+            ( *log ) << "INFO: CSR read:" << std::endl << tbs->csr_content;
             break;
 
         case RecordHeader::SignerCommand::SET_SIGNATURE_TYPE:
@@ -136,8 +155,8 @@ public:
 
         case RecordHeader::SignerCommand::SIGN:
             result = signer->sign( tbs );
-            std::cout << "res: " << result->certificate << std::endl;
-            result->log = "I am a dummy log.\nI signed that thing ;-) \n";
+            ( *log ) << "INFO: signlog: " << result->log << std::endl;
+            ( *log ) << "INFO: res: " << result->certificate << std::endl;
             respondCommand( RecordHeader::SignerResult::SAVE_LOG, result->log );
             break;
 
@@ -147,7 +166,7 @@ public:
             }
 
             if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
-                std::cout << "SSL close failed" << std::endl;
+                ( *log ) << "ERROR: SSL close failed" << std::endl;
             }
 
             break;

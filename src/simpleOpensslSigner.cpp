@@ -1,6 +1,7 @@
 #include "simpleOpensslSigner.h"
 
 #include <iostream>
+#include <sstream>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -66,9 +67,13 @@ std::shared_ptr<BIGNUM> SimpleOpensslSigner::nextSerial( uint16_t profile ) {
 }
 
 std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TBSCertificate> cert ) {
+    std::stringstream signlog;
+
     if( !prof.ca ) {
         throw "CA-key not found";
     }
+
+    signlog << "FINE: CA-key is correctly loaded." << std::endl;
 
     std::shared_ptr<X509Req> req;
 
@@ -87,7 +92,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     } else if( i == 0 ) {
         throw "Signature did not match";
     } else {
-        std::cerr << "Signature ok" << std::endl;
+        signlog << "FINE: Signature ok" << std::endl;
     }
 
     // Construct the Certificate
@@ -106,6 +111,8 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     }
 
     for( std::shared_ptr<AVA> a : cert->AVAs ) {
+        signlog << "Addings RDN: " << a->name << ": " << a->value << std::endl;
+
         if( a->name == "CN" ) {
             c.addRDN( NID_commonName, a->value );
         } else if( a->name == "EMAIL" ) {
@@ -136,9 +143,11 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     std::shared_ptr<BIGNUM> ser = nextSerial( profile );
     c.setSerialNumber( ser.get() );
     c.setTimes( 0, 60 * 60 * 24 * 10 );
+    signlog << "FINE: Setting extensions." << std::endl;
     c.setExtensions( prof.ca, cert->SANs );
-
+    signlog << "FINE: Signed" << std::endl;
     std::shared_ptr<SignedCertificate> output = c.sign( prof.caKey, cert->md );
-
+    signlog << "FINE: all went well" << std::endl;
+    output->log = signlog.str();
     return output;
 }

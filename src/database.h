@@ -6,6 +6,7 @@
 
 struct Job {
     std::string id;
+    std::string warning;
     std::string target;
     std::string task;
     std::string from;
@@ -50,7 +51,8 @@ struct SignedCertificate {
 class JobProvider {
 public:
     virtual std::shared_ptr<Job> fetchJob() = 0;
-    virtual bool finishJob( std::shared_ptr<Job> job ) = 0;
+    virtual void finishJob( std::shared_ptr<Job> job ) = 0;
+    virtual void failJob( std::shared_ptr<Job> job ) = 0;
     virtual std::shared_ptr<TBSCertificate> fetchTBSCert( std::shared_ptr<Job> job ) = 0;
     virtual void writeBack( std::shared_ptr<Job> job, std::shared_ptr<SignedCertificate> res ) = 0;
 };

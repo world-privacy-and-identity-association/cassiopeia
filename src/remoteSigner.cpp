@@ -13,7 +13,7 @@ void RemoteSigner::send( std::shared_ptr<OpensslBIOWrapper> bio, RecordHeader& h
     head.command = ( uint16_t ) cmd;
     head.command_count++;
     head.totalLength = data.size();
-    sendCommand( head, data, bio );
+    sendCommand( head, data, bio, log );
 
 }
 
@@ -72,7 +72,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
             }
 
             RecordHeader head;
-            std::string payload = parseCommand( head, std::string( buffer.data(), length ) );
+            std::string payload = parseCommand( head, std::string( buffer.data(), length ), log );
 
             switch( ( RecordHeader::SignerResult ) head.command ) {
             case RecordHeader::SignerResult::CERTIFICATE:
@@ -96,3 +96,6 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     return result;
 }
 
+void RemoteSigner::setLog( std::shared_ptr<std::ostream> target ) {
+    this->log = target;
+}

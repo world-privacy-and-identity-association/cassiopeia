@@ -81,44 +81,80 @@ int main( int argc, const char* argv[] ) {
             continue;
         }
 
+        std::ofstream* logP = new std::ofstream( std::string( "logs/" ) + job->id + std::string( "_" ) + job->warning + std::string( ".log" ) );
+        std::shared_ptr<std::ofstream> logPtr(
+            logP,
+            []( std::ofstream * ptr ) {
+                ( *ptr ).close();
+                delete ptr;
+            } );
+        std::ofstream& log = *logP;
+
+        sign->setLog( logPtr );
+        log << "TASK ID: " << job->id << std::endl;
+        log << "TRY: " << job->warning << std::endl;
+        log << "TARGET: " << job->target << std::endl;
+        log << "TASK: " << job->task << std::endl << std::endl;
+
         if( job->task == "sign" ) {
             try {
                 std::shared_ptr<TBSCertificate> cert = jp->fetchTBSCert( job );
+                log << "INFO: message digest: " << cert->md << std::endl;
+                log << "INFO: profile id: " << cert->profile << std::endl;
+
+                for( auto& SAN : cert->SANs ) {
+                    log << "INFO: SAN " << SAN->type << ": " << SAN->content;
+                }
+
+                for( auto& AVA : cert->AVAs ) {
+                    log << "INFO: AVA " << AVA->name << ": " << AVA->value;
+                }
 
                 if( !cert ) {
                     std::cout << "wasn't able to load CSR" << std::endl;
-                    return 2;
+                    jp->failJob( job );
+                    continue;
                 }
 
-                std::cout << "Found a CSR at '" << cert->csr << "' signing" << std::endl;
+                log << "FINE: Found the CSR at '" << cert->csr << "'" << std::endl;
                 cert->csr_content = readFile( cert->csr );
-                std::cout << cert->csr_content << " content " << std::endl;
+                log << "FINE: CSR is " << std::endl << cert->csr_content << std::endl;
 
                 std::shared_ptr<SignedCertificate> res = sign->sign( cert );
 
                 if( !res ) {
-                    std::cout << "Error no cert came back." << std::endl;
+                    log << "ERROR: The signer failed. There was no certificate." << std::endl;
+                    jp->failJob( job );
                     continue;
                 }
 
-                std::cout << "did it!" << res->certificate << std::endl;
+                log << "FINE: CERTIFICATE LOG: " << res->log << std::endl;
+                log << "FINE: CERTIFICATE:" << std::endl << res->certificate << std::endl;
                 std::string fn = writeBackFile( atoi( job->target.c_str() ), res->certificate );
                 res->crt_name = fn;
                 jp->writeBack( job, res );
-                std::cout << "wrote back" << std::endl;
+                log << "FINE: signing done." << std::endl;
+
+                if( DAEMON ) {
+                    jp->finishJob( job );
+                }
+
+                continue;
             } catch( const char* c ) {
-                std::cerr << "ERROR: " << c << std::endl;
-                return 2;
+                log << "ERROR: " << c << std::endl;
             } catch( std::string c ) {
-                std::cerr << "ERROR: " << c << std::endl;
-                return 2;
+                log << "ERROR: " << c << std::endl;
+            }
+
+            try {
+                jp->failJob( job );
+            } catch( const char* c ) {
+                log << "ERROR: " << c << std::endl;
+            } catch( std::string c ) {
+                log << "ERROR: " << c << std::endl;
             }
         } else {
-            std::cout << "Unknown job type" << job->task << std::endl;
-        }
-
-        if( DAEMON && !jp->finishJob( job ) ) {
-            return 1;
+            log << "Unknown job type" << job->task << std::endl;
         }
 
         if( !DAEMON || once ) {
