@@ -109,10 +109,16 @@ public:
         }
 
         switch( ( RecordHeader::SignerCommand ) head.command ) {
-        case RecordHeader::SignerCommand::SET_CSR: // setCSR
+        case RecordHeader::SignerCommand::SET_CSR:
             tbs->csr_content = data;
             tbs->csr_type = "CSR";
             ( *log ) << "INFO: CSR read:" << std::endl << tbs->csr_content;
+            break;
+
+        case RecordHeader::SignerCommand::SET_SPKAC:
+            tbs->csr_content = data;
+            tbs->csr_type = "SPKAC";
+            ( *log ) << "INFO: SPKAC read:" << std::endl << tbs->csr_content;
             break;
 
         case RecordHeader::SignerCommand::SET_SIGNATURE_TYPE:
