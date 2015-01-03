@@ -82,6 +82,7 @@ public:
         int res = io->read( buffer.data(), buffer.capacity() );
 
         if( res <= 0 ) {
+            ( *log ) << "Stream error, resetting SSL" << std::endl;
             parent->reset();
             return;
         }

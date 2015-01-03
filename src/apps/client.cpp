@@ -27,7 +27,7 @@ extern std::string sqlHost, sqlUser, sqlPass, sqlDB;
 extern std::string serialPath;
 
 std::string writeBackFile( uint32_t serial, std::string cert ) {
-    std::string filename = "keys";
+    std::string filename = keyDir;
     mkdir( filename.c_str(), 0755 );
     filename += "/crt";
     mkdir( filename.c_str(), 0755 );
@@ -117,7 +117,7 @@ int main( int argc, const char* argv[] ) {
                 }
 
                 log << "FINE: Found the CSR at '" << cert->csr << "'" << std::endl;
-                cert->csr_content = readFile( cert->csr );
+                cert->csr_content = readFile( keyDir + "/../" + cert->csr );
                 log << "FINE: CSR is " << std::endl << cert->csr_content << std::endl;
 
                 std::shared_ptr<SignedCertificate> res = sign->sign( cert );

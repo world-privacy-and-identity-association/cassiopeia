@@ -2,10 +2,14 @@
 
 #include <iostream>
 
+#include <openssl/ssl.h>
+#include <openssl/bn.h>
+
 RemoteSigner::RemoteSigner( std::shared_ptr<BIO> target, std::shared_ptr<SSL_CTX> ctx ) {
     this->target = target;
     this->ctx = ctx;
 }
+
 RemoteSigner::~RemoteSigner() {
 }
 
@@ -67,8 +71,10 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
         try {
             int length = conn->read( buffer.data(), buffer.size() );
 
-            if( length == -1 ) {
-                return std::shared_ptr<SignedCertificate>();
+            if( length <= 0 ) {
+                std::cout << "Error, no response data" << std::endl;
+                result = std::shared_ptr<SignedCertificate>();
+                break;
             }
 
             RecordHeader head;
@@ -87,6 +93,37 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
             std::cout << msg << std::endl;
             return std::shared_ptr<SignedCertificate>();
         }
+    }
+
+    if( result ) {
+        std::shared_ptr<BIO> bios( BIO_new( BIO_s_mem() ), BIO_free );
+        const char* buf = result->certificate.data();
+        unsigned int len = result->certificate.size();
+
+        while( len > 0 ) {
+            int dlen = BIO_write( bios.get(), buf, len );
+
+            if( dlen <= 0 ) {
+                throw "Memory error.";
+            }
+
+            len -= dlen;
+            buf += dlen;
+        }
+
+        std::shared_ptr<X509> pem( PEM_read_bio_X509( bios.get(), NULL, 0, NULL ) );
+
+        if( !pem ) {
+            throw "Pem was not readable";
+        }
+
+        std::shared_ptr<BIGNUM> ser( ASN1_INTEGER_to_BN( pem->cert_info->serialNumber, NULL ), BN_free );
+        std::shared_ptr<char> serStr(
+            BN_bn2hex( ser.get() ),
+            []( char* p ) {
+                OPENSSL_free( p );
+            } ); // OPENSSL_free is a macro...
+        result->serial = std::string( serStr.get() );
     }
 
     if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) { // need to close the connection twice
