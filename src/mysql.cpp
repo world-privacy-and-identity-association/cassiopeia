@@ -199,7 +199,7 @@ void MySQLJobProvider::failJob( std::shared_ptr<Job> job ) {
 
 std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<Job> job ) {
     std::shared_ptr<TBSCertificate> cert = std::shared_ptr<TBSCertificate>( new TBSCertificate() );
-    std::string q = "SELECT md, profile, csr_name, csr_type FROM certs WHERE id='" + this->escape_string( job->target ) + "'";
+    std::string q = "SELECT md, profile, csr_name, csr_type, keyname FROM certs INNER JOIN profiles ON profiles.id = certs.profile WHERE certs.id='" + this->escape_string( job->target ) + "'";
 
     int err = 0;
 
@@ -223,8 +223,17 @@ std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<
         return std::shared_ptr<TBSCertificate>();
     }
 
+    std::string profileName = std::string( row[4], row[4] + l[4] );
+
     cert->md = std::string( row[0], row[0] + l[0] );
-    cert->profile = std::string( row[1], row[1] + l[1] );
+    std::string profileId = std::string( row[1], row[1] + l[1] );
+
+    while( profileId.size() < 4 ) {
+        profileId = "0" + profileId;
+    }
+
+    cert->profile = profileId + "-" + profileName;
+
     cert->csr = std::string( row[2], row[2] + l[2] );
     cert->csr_type = std::string( row[3], row[3] + l[3] );
 

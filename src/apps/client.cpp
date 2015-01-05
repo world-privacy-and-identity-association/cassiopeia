@@ -26,19 +26,6 @@ extern std::vector<Profile> profiles;
 extern std::string sqlHost, sqlUser, sqlPass, sqlDB;
 extern std::string serialPath;
 
-std::string writeBackFile( uint32_t serial, std::string cert ) {
-    std::string filename = keyDir;
-    mkdir( filename.c_str(), 0755 );
-    filename += "/crt";
-    mkdir( filename.c_str(), 0755 );
-    filename += "/" + std::to_string( serial / 1000 );
-    mkdir( filename.c_str(), 0755 );
-    filename += "/" + std::to_string( serial ) + ".crt";
-    writeFile( filename, cert );
-    std::cout << "wrote to " << filename << std::endl;
-    return filename;
-}
-
 int main( int argc, const char* argv[] ) {
     ( void ) argc;
     ( void ) argv;
@@ -130,7 +117,7 @@ int main( int argc, const char* argv[] ) {
 
                 log << "FINE: CERTIFICATE LOG: " << res->log << std::endl;
                 log << "FINE: CERTIFICATE:" << std::endl << res->certificate << std::endl;
-                std::string fn = writeBackFile( atoi( job->target.c_str() ), res->certificate );
+                std::string fn = writeBackFile( job->target.c_str(), res->certificate, keyDir );
                 res->crt_name = fn;
                 jp->writeBack( job, res );
                 log << "FINE: signing done." << std::endl;

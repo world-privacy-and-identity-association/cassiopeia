@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <unordered_map>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -14,18 +15,19 @@
 #include "util.h"
 #include "sslUtil.h"
 
-extern std::vector<Profile> profiles;
+extern std::unordered_map<std::string, Profile> profiles;
 
 std::shared_ptr<int> SimpleOpensslSigner::lib_ref = ssl_lib_ref;
 
-SimpleOpensslSigner::SimpleOpensslSigner( Profile& prof ) : prof( prof ) {
+SimpleOpensslSigner::SimpleOpensslSigner() {
 }
 
 SimpleOpensslSigner::~SimpleOpensslSigner() {
 }
 
-std::shared_ptr<BIGNUM> SimpleOpensslSigner::nextSerial( uint16_t profile ) {
-    std::string res = readFile( "serial" );
+std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial( Profile& prof ) {
+    uint16_t profile = prof.id;
+    std::string res = readFile( prof.ca->path + "/serial" );
 
     BIGNUM* bn = 0;
 
@@ -61,19 +63,26 @@ std::shared_ptr<BIGNUM> SimpleOpensslSigner::nextSerial( uint16_t profile ) {
         []( char* ref ) {
             OPENSSL_free( ref );
         } );
-    writeFile( "serial", serStr.get() );
+    writeFile( prof.ca->path + "/serial", serStr.get() );
 
-    return std::shared_ptr<BIGNUM>( BN_bin2bn( data.get(), len + 4 + 16 , 0 ), BN_free );
+    return std::pair<std::shared_ptr<BIGNUM>, std::string>( std::shared_ptr<BIGNUM>( BN_bin2bn( data.get(), len + 4 + 16 , 0 ), BN_free ), std::string( serStr.get() ) );
 }
 
 std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TBSCertificate> cert ) {
     std::stringstream signlog;
+
+    signlog << "FINE: profile is " << cert->profile << std::endl;
+
+    Profile& prof = profiles.at( cert->profile );
 
     if( !prof.ca ) {
         throw "CA-key not found";
     }
 
     signlog << "FINE: CA-key is correctly loaded." << std::endl;
+    signlog << "FINE: Profile id is: " << prof.id << std::endl;
+    signlog << "FINE: ku is: " << prof.ku << std::endl;
+    signlog << "FINE: eku is: " << prof.eku << std::endl;
 
     std::shared_ptr<X509Req> req;
 
@@ -132,22 +141,20 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
         }
     }
 
-    c.setIssuerNameFrom( prof.ca );
+    c.setIssuerNameFrom( prof.ca->ca );
     c.setPubkeyFrom( req );
-    long int profile = strtol( cert->profile.c_str(), 0, 10 );
 
-    if( profile > 0xFFFF || profile < 0 || ( profile == 0 && cert->profile != "0" ) ) {
-        throw "invalid profile id";
-    }
-
-    std::shared_ptr<BIGNUM> ser = nextSerial( profile );
+    std::shared_ptr<BIGNUM> ser;
+    std::string num;
+    std::tie( ser, num ) = nextSerial( prof );
     c.setSerialNumber( ser.get() );
     c.setTimes( 0, 60 * 60 * 24 * 10 );
     signlog << "FINE: Setting extensions." << std::endl;
-    c.setExtensions( prof.ca, cert->SANs );
+    c.setExtensions( prof.ca->ca, cert->SANs, prof );
     signlog << "FINE: Signed" << std::endl;
-    std::shared_ptr<SignedCertificate> output = c.sign( prof.caKey, cert->md );
+    std::shared_ptr<SignedCertificate> output = c.sign( prof.ca->caKey, cert->md );
     signlog << "FINE: all went well" << std::endl;
+    signlog << "FINE: crt went to: " << writeBackFile( num, output->certificate, prof.ca->path ) << std::endl;
     output->log = signlog.str();
     return output;
 }

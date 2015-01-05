@@ -9,10 +9,9 @@
 class SimpleOpensslSigner : public Signer {
 private:
     static std::shared_ptr<int> lib_ref;
-    Profile& prof;
-    std::shared_ptr<BIGNUM> nextSerial( uint16_t profile );
+    std::pair<std::shared_ptr<BIGNUM>, std::string> nextSerial( Profile& prof );
 public:
-    SimpleOpensslSigner( Profile& prof );
+    SimpleOpensslSigner();
     ~SimpleOpensslSigner();
     std::shared_ptr<SignedCertificate> sign( std::shared_ptr<TBSCertificate> cert );
 };

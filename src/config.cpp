@@ -1,21 +1,24 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <dirent.h>
+#include <unordered_map>
 
 #include "sslUtil.h"
 
 std::string keyDir;
-std::vector<Profile> profiles;
+std::unordered_map<std::string, Profile> profiles;
 std::string sqlHost, sqlUser, sqlPass, sqlDB;
 std::string serialPath;
 
-int parseConfig( std::string path ) {
+std::shared_ptr<std::unordered_map<std::string, std::string>> parseConf( std::string path ) {
+    std::shared_ptr<std::unordered_map<std::string, std::string>> map( new std::unordered_map<std::string, std::string>() );
     std::ifstream config;
     config.open( path );
 
     if( !config.is_open() ) {
-        std::cerr << "config missing" << std::endl;
-        return 1;
+        std::cout << "Where is " << path << "?" << std::endl;
+        throw "Config missing";
     }
 
     std::string line1;
@@ -34,57 +37,79 @@ int parseConfig( std::string path ) {
 
         std::string key = line1.substr( 0, splitter );
         std::string value = line1.substr( splitter + 1 );
+        map->emplace( key, value );
+    }
 
-        if( key == "key.directory" ) {
-            keyDir = value;
+    config.close();
+
+    return map;
+}
+
+int parseConfig( std::string path ) {
+
+    auto masterConf = parseConf( path );
+
+    keyDir = masterConf->at( "key.directory" );
+    sqlHost = masterConf->at( "sql.host" );
+    sqlUser = masterConf->at( "sql.user" );
+    sqlPass = masterConf->at( "sql.password" );
+    sqlDB = masterConf->at( "sql.database" );
+    serialPath = masterConf->at( "serialPath" );
+
+    std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<CAConfig>>> CAs( new std::unordered_map<std::string, std::shared_ptr<CAConfig>>() );
+
+    DIR* dp;
+    struct dirent* ep;
+    dp = opendir( "profiles" );
+
+    if( dp == NULL ) {
+        std::cerr << "Profiles not found " << std::endl;
+        return -1;
+    }
+
+    while( ( ep = readdir( dp ) ) ) {
+        if( ep->d_name[0] == '.' ) {
             continue;
-        } else if( key == "sql.host" ) {
-            sqlHost = value;
-        } else if( key == "sql.user" ) {
-            sqlUser = value;
-        } else if( key == "sql.password" ) {
-            sqlPass = value;
-        } else if( key == "sql.database" ) {
-            sqlDB = value;
-        } else if( key == "serialPath" ) {
-            serialPath = value;
-        } else  if( key.compare( 0, 8, "profile." ) == 0 ) {
-            int numE = key.find( ".", 9 );
-
-            if( numE == 0 ) {
-                std::cout << "invalid line: " << line1 << std::endl;
-                continue;
-            }
-
-            unsigned int i = atoi( key.substr( 8, numE - 8 ).c_str() );
-            std::string rest = key.substr( numE + 1 );
-
-            if( i + 1 > profiles.size() ) {
-                profiles.resize( i + 1 );
-            }
-
-            if( rest == "key" ) {
-                profiles[i].key = value;
-            } else if( rest == "cert" ) {
-                profiles[i].cert = value;
-            } else if( rest == "ku" ) {
-                profiles[i].ku = value;
-            } else if( rest == "eku" ) {
-                profiles[i].eku = value;
-            } else {
-                std::cout << "invalid line: " << line1 << std::endl;
-                continue;
-            }
         }
+
+        std::string profileName( ep->d_name );
+
+        int splitter = profileName.find( "-" );
+
+        if( splitter == -1 ) {
+            std::cerr << "Ignoring malformed profile: " << profileName << std::endl;
+            continue;
+        }
+
+        std::string id = profileName.substr( 0, splitter );
+
+        if( profileName.substr( profileName.size() - 4 ) != ".cfg" ) {
+            std::cerr << "Ignoring malformed profile: " << profileName << std::endl;
+            continue;
+        }
+
+        auto map = parseConf( std::string( "profiles/" ) + profileName );
+
+        profileName = profileName.substr( 0, profileName.size() - 4 );
+
+        Profile prof;
+        prof.id = std::stoi( id );
+        prof.eku = map->at( "eku" );
+        prof.ku = map->at( "ku" );
+
+        if( CAs->find( map->at( "ca" ) ) == CAs->end() ) {
+            std::shared_ptr<CAConfig> ca( new CAConfig( "ca/" + map->at( "ca" ) ) );
+            CAs->emplace( map->at( "ca" ), ca );
+        }
+
+        prof.ca = CAs->at( map->at( "ca" ) );
+
+        profiles.emplace( profileName, prof );
+        std::cout << "Profile: " << profileName << " up and running." << std::endl;
     }
 
-    for( auto& prof : profiles ) {
-        if( prof.cert != "" && prof.key != "" ) {
-            std::cout << "Loading profile... " << std::endl;
-            prof.ca = loadX509FromFile( prof.cert );
-            prof.caKey = loadPkeyFromFile( prof.key );
-        }
-    }
+    ( void ) closedir( dp );
+
 
     std::cout << profiles.size() << " profiles loaded." << std::endl;
 
@@ -93,6 +118,5 @@ int parseConfig( std::string path ) {
         return -1;
     }
 
-    config.close();
     return 0;
 }

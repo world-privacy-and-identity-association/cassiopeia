@@ -2,15 +2,26 @@
 #include <openssl/ssl.h>
 #include <memory>
 #include <string>
+#include <cinttypes>
 
-struct Profile {
-    std::string cert;
-    std::string key;
-    std::string eku;
-    std::string ku;
+class CAConfig {
+public:
+    std::string path;
 
     std::shared_ptr<X509> ca;
     std::shared_ptr<EVP_PKEY> caKey;
+    CAConfig( std::string path );
+
+};
+
+
+struct Profile {
+    uint16_t id;
+
+    std::string eku;
+    std::string ku;
+
+    std::shared_ptr<CAConfig> ca;
 };
 
 extern std::shared_ptr<int> ssl_lib_ref;

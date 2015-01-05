@@ -6,6 +6,7 @@
 #include <openssl/ssl.h>
 
 #include "database.h"
+#include "sslUtil.h"
 
 class X509Req {
 private:
@@ -31,7 +32,7 @@ public:
     void setIssuerNameFrom( std::shared_ptr<X509> ca );
     void setPubkeyFrom( std::shared_ptr<X509Req> r );
     void setSerialNumber( BIGNUM* num );
-    void setExtensions( std::shared_ptr<X509> caCert, std::vector<std::shared_ptr<SAN>>& sans );
+    void setExtensions( std::shared_ptr<X509> caCert, std::vector<std::shared_ptr<SAN>>& sans, Profile& prof );
     void setTimes( uint32_t before, uint32_t after );
     std::shared_ptr<SignedCertificate> sign( std::shared_ptr<EVP_PKEY> caKey, std::string signAlg );
 };

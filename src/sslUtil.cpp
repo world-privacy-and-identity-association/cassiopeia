@@ -172,3 +172,9 @@ std::shared_ptr<BIO> openSerial( const std::string name ) {
     std::shared_ptr<BIO> b( BIO_new_fd( fileno( f ), 0 ), BIO_free );
     return b;
 }
+
+CAConfig::CAConfig( std::string path ) {
+    this->path = path;
+    ca = loadX509FromFile( path + "/ca.crt" );
+    caKey = loadPkeyFromFile( path + "/ca.key" );
+}

@@ -2,5 +2,7 @@
 
 #include <string>
 
-void writeFile( const std::string& name, const std::string& content );
-std::string readFile( const std::string& name );
+void writeFile( std::string name, std::string content );
+std::string readFile( std::string name );
+
+std::string writeBackFile( std::string serial, std::string cert, std::string keydir );

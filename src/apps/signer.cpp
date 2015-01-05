@@ -20,7 +20,6 @@
 #endif
 
 extern std::string serialPath;
-extern std::vector<Profile> profiles;
 
 int main( int argc, const char* argv[] ) {
     ( void ) argc;
@@ -49,14 +48,16 @@ int main( int argc, const char* argv[] ) {
     std::shared_ptr<BIO> slip1( BIO_new( toBio<SlipBIO>() ), BIO_free );
     ( ( SlipBIO* )slip1->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( conn ) ) );
 
-    try {
-        DefaultRecordHandler* dh = new DefaultRecordHandler( std::shared_ptr<Signer>( new SimpleOpensslSigner( profiles[5] ) ), slip1 );
+    DefaultRecordHandler* dh = new DefaultRecordHandler( std::shared_ptr<Signer>( new SimpleOpensslSigner( ) ), slip1 );
 
-        while( true ) {
+    while( true ) {
+        try {
             dh->handle();
+            //} catch( const std::exception &ch ) {
+            //std::cout << "Real exception: " << typeid(ch).name() << ", " << ch.what() << std::endl;
+        } catch( char const* ch ) {
+            std::cout << "Exception: " << ch << std::endl;
         }
-    } catch( char const* ch ) {
-        std::cout << "Exception: " << ch << std::endl;
     }
 
     return -1;
