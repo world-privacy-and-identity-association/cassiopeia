@@ -21,11 +21,13 @@ public:
         ADD_PROOF_LINE = 0x40,
         SIGN = 0x80,
         LOG_SAVED = 0x81,
+        REVOKE = 0x100,
         GET_TIMESTAMP = 0xC0,
         GET_STATUS_REPORT = 0xD0
     };
 
     enum class SignerResult : uint16_t {
+        REVOKED = 0x100,
         SAVE_LOG = 0x80,
         CERTIFICATE = 0x81
     };

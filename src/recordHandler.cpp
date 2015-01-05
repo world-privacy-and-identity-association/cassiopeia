@@ -10,6 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include <ctime>
+#include <unordered_map>
 
 #include <openssl/ssl.h>
 
@@ -22,6 +23,7 @@
 #include "slipBio.h"
 
 extern std::vector<Profile> profiles;
+extern std::unordered_map<std::string, std::shared_ptr<CAConfig>> CAs;
 
 class RecordHandlerSession {
 public:
@@ -134,6 +136,7 @@ public:
             size_t pos = data.find( "," );
 
             if( pos == std::string::npos ) {
+                // error
             } else {
                 std::shared_ptr<SAN> san( new SAN() );
                 san->type = data.substr( 0, pos );
@@ -177,6 +180,49 @@ public:
             }
 
             break;
+
+        case RecordHeader::SignerCommand::REVOKE: {
+            ( *log ) << "got revoking command: " << data.size() << std::endl;
+            std::string nullstr( "\0", 1 );
+            size_t t = data.find( nullstr );
+
+            if( t == std::string::npos ) {
+                // error
+                ( *log ) << "error while parsing revoking command." << data << std::endl;
+                break;
+            }
+
+            std::string ca = data.substr( 0, t );
+            std::string serial = data.substr( t + 1 );
+            ( *log ) << "revoking " << ca << "<->" << serial << std::endl;
+
+            ( *log ) << "[";
+
+            for( auto x : CAs ) {
+                ( *log ) << x.first << ", ";
+            }
+
+            ( *log ) << "]" << std::endl;
+
+            auto reqCA = CAs.at( ca );
+            ( *log ) << "CA found" << std::endl;
+            std::shared_ptr<X509_CRL> crl = signer->revoke( reqCA, serial );
+
+            std::shared_ptr<BIO> mem( BIO_new( BIO_s_mem() ), BIO_free );
+
+            PEM_write_bio_X509_CRL( mem.get(), crl.get() );
+            BUF_MEM* bptr;
+            BIO_get_mem_ptr( mem.get(), &bptr );
+
+            std::string newCRL( bptr->data, bptr->length );
+            respondCommand( RecordHeader::SignerResult::REVOKED, newCRL );
+
+            if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
+                ( *log ) << "ERROR: SSL close failed" << std::endl;
+            }
+
+            break;
+        }
 
         default:
             throw "Unimplemented";

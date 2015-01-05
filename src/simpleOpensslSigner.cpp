@@ -158,3 +158,68 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     output->log = signlog.str();
     return output;
 }
+
+
+std::shared_ptr<X509_CRL> SimpleOpensslSigner::revoke( std::shared_ptr<CAConfig> ca, std::string serial ) {
+    std::string crlpath = ca->path + "/ca.crl";
+
+    std::shared_ptr<BIO> bio( BIO_new_file( crlpath.c_str(), "r" ), free );
+    std::shared_ptr<X509_CRL> crl( PEM_read_bio_X509_CRL( bio.get(), 0, NULL, 0 ), X509_CRL_free );
+    std::cout << "Starting revocation" << std::endl;
+
+    if( !crl ) {
+        std::cout << "CRL was not loaded" << std::endl;
+        crl = std::shared_ptr<X509_CRL>( X509_CRL_new(), X509_CRL_free );
+    }
+
+    BIGNUM* serBN = 0;
+
+    if( ! BN_hex2bn( &serBN, serial.c_str() ) ) {
+        //error
+    }
+
+    std::shared_ptr<BIGNUM> serBNP( serBN, BN_free );
+    std::shared_ptr<ASN1_INTEGER> ser( BN_to_ASN1_INTEGER( serBN, NULL ), ASN1_INTEGER_free );
+
+    if( !ser ) {
+        // error
+    }
+
+    std::shared_ptr<ASN1_TIME> tmptm( ASN1_TIME_new(), ASN1_TIME_free );
+
+    if( !tmptm ) {
+        // error
+    }
+
+    X509_gmtime_adj( tmptm.get(), 0 );
+
+    X509_REVOKED* rev = X509_REVOKED_new();
+    X509_REVOKED_set_serialNumber( rev, ser.get() );
+    X509_REVOKED_set_revocationDate( rev, tmptm.get() );
+
+    X509_CRL_add0_revoked( crl.get(), rev );
+
+    if( !X509_CRL_set_issuer_name( crl.get(), X509_get_subject_name( ca->ca.get() ) ) ) {
+        // error
+    }
+
+    X509_CRL_set_lastUpdate( crl.get(), tmptm.get() );
+
+    if( !X509_time_adj_ex( tmptm.get(), 1, 10, NULL ) ) {
+        // error
+    }
+
+    X509_CRL_set_nextUpdate( crl.get(), tmptm.get() );
+
+
+    std::cout << "Signing" << std::endl;
+    X509_CRL_sort( crl.get() );
+    X509_CRL_sign( crl.get(), ca->caKey.get(), EVP_sha256() );
+
+    std::cout << "writing bio" << std::endl;
+    std::shared_ptr<BIO> bioOut( BIO_new_file( crlpath.c_str(), "w" ), BIO_free );
+    PEM_write_bio_X509_CRL( bioOut.get(), crl.get() );
+    std::cout << "finished crl" << std::endl;
+
+    return crl;
+}

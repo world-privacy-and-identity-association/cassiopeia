@@ -8,6 +8,7 @@
 
 std::string keyDir;
 std::unordered_map<std::string, Profile> profiles;
+std::unordered_map<std::string, std::shared_ptr<CAConfig>> CAs;
 std::string sqlHost, sqlUser, sqlPass, sqlDB;
 std::string serialPath;
 
@@ -56,7 +57,7 @@ int parseConfig( std::string path ) {
     sqlDB = masterConf->at( "sql.database" );
     serialPath = masterConf->at( "serialPath" );
 
-    std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<CAConfig>>> CAs( new std::unordered_map<std::string, std::shared_ptr<CAConfig>>() );
+    CAs = std::unordered_map<std::string, std::shared_ptr<CAConfig>>();
 
     DIR* dp;
     struct dirent* ep;
@@ -97,12 +98,12 @@ int parseConfig( std::string path ) {
         prof.eku = map->at( "eku" );
         prof.ku = map->at( "ku" );
 
-        if( CAs->find( map->at( "ca" ) ) == CAs->end() ) {
-            std::shared_ptr<CAConfig> ca( new CAConfig( "ca/" + map->at( "ca" ) ) );
-            CAs->emplace( map->at( "ca" ), ca );
+        if( CAs.find( map->at( "ca" ) ) == CAs.end() ) {
+            std::shared_ptr<CAConfig> ca( new CAConfig( map->at( "ca" ) ) );
+            CAs.emplace( map->at( "ca" ), ca );
         }
 
-        prof.ca = CAs->at( map->at( "ca" ) );
+        prof.ca = CAs.at( map->at( "ca" ) );
 
         profiles.emplace( profileName, prof );
         std::cout << "Profile: " << profileName << " up and running." << std::endl;

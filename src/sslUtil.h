@@ -7,10 +7,11 @@
 class CAConfig {
 public:
     std::string path;
+    std::string name;
 
     std::shared_ptr<X509> ca;
     std::shared_ptr<EVP_PKEY> caKey;
-    CAConfig( std::string path );
+    CAConfig( std::string name );
 
 };
 

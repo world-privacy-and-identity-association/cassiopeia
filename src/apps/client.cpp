@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <streambuf>
+#include <unordered_map>
 
 #include "database.h"
 #include "mysql.h"
@@ -22,9 +23,9 @@
 #endif
 
 extern std::string keyDir;
-extern std::vector<Profile> profiles;
 extern std::string sqlHost, sqlUser, sqlPass, sqlDB;
 extern std::string serialPath;
+extern std::unordered_map<std::string, std::shared_ptr<CAConfig>> CAs;
 
 int main( int argc, const char* argv[] ) {
     ( void ) argc;
@@ -140,8 +141,18 @@ int main( int argc, const char* argv[] ) {
             } catch( std::string c ) {
                 log << "ERROR: " << c << std::endl;
             }
+        } else if( job->task == "revoke" ) {
+            std::cout << "Revoking!" << std::endl;
+
+            for( auto& x : CAs ) {
+                std::cout << " [" << x.first << ']' << std::endl;
+            }
+
+            sign->revoke( CAs.at( "unassured" ), "12345" );
+            jp->finishJob( job );
         } else {
             log << "Unknown job type" << job->task << std::endl;
+            jp->failJob( job );
         }
 
         if( !DAEMON || once ) {

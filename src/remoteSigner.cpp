@@ -90,6 +90,10 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
             case RecordHeader::SignerResult::SAVE_LOG:
                 result->log = payload;
                 break;
+
+            default:
+                std::cout << "Invalid Message" << std::endl;
+                break;
             }
         } catch( const char* msg ) {
             std::cout << msg << std::endl;
@@ -133,6 +137,49 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     }
 
     return result;
+}
+
+std::shared_ptr<X509_CRL> RemoteSigner::revoke( std::shared_ptr<CAConfig> ca, std::string serial ) {
+    ( void )BIO_reset( target.get() );
+
+    std::shared_ptr<SSL> ssl( SSL_new( ctx.get() ), SSL_free );
+    std::shared_ptr<BIO> bio( BIO_new( BIO_f_ssl() ), BIO_free );
+    SSL_set_connect_state( ssl.get() );
+    SSL_set_bio( ssl.get(), target.get(), target.get() );
+    BIO_set_ssl( bio.get(), ssl.get(), BIO_NOCLOSE );
+    std::shared_ptr<OpensslBIOWrapper> conn( new OpensslBIOWrapper( bio ) );
+
+    RecordHeader head;
+    head.flags = 0;
+    head.sessid = 13;
+
+    std::string payload = ca->name + std::string( "\0", 1 ) + serial;
+    send( conn, head, RecordHeader::SignerCommand::REVOKE, payload );
+
+    std::vector<char> buffer( 2048 * 4 );
+    int length = conn->read( buffer.data(), buffer.size() );
+
+    if( length <= 0 ) {
+        std::cout << "Error, no response data" << std::endl;
+        return std::shared_ptr<X509_CRL>();
+    }
+
+    payload = parseCommand( head, std::string( buffer.data(), length ), log );
+
+    switch( ( RecordHeader::SignerResult ) head.command ) {
+    case RecordHeader::SignerResult::REVOKED:
+        std::cout << "CRL: " << std::endl << payload << std::endl;
+        break;
+
+    default:
+        throw "Invalid response command.";
+    }
+
+    if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) { // need to close the connection twice
+        std::cout << "SSL shutdown failed" << std::endl;
+    }
+
+    return std::shared_ptr<X509_CRL>();
 }
 
 void RemoteSigner::setLog( std::shared_ptr<std::ostream> target ) {
