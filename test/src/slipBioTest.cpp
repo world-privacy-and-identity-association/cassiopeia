@@ -6,9 +6,9 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-#include "bios.h"
-#include "opensslBIO.h"
-#include "slipBio.h"
+#include "io/bios.h"
+#include "io/opensslBIO.h"
+#include "io/slipBio.h"
 
 class OpensslBIOVector : public OpensslBIO {
 private:

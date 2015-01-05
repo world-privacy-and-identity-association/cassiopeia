@@ -78,7 +78,7 @@ collissiondetect:
 cassiopeia-test: bin/cassiopeia-test
 
 bin/cassiopeia-test: libs ${FS_OBJ}
-	${MKDIR} $(shell dirname $@) && ${LD} ${LDFLAGS} -o $@ ${FS_OBJ} $(filter-out %/main.o,$(wildcard ../obj/*.o))
+	${MKDIR} $(shell dirname $@) && ${LD} ${LDFLAGS} -o $@ ${FS_OBJ} $(filter-out ../obj/apps/%,$(wildcard ../obj/*.o) $(wildcard ../obj/*/*.o))
 
 ${DEP_DIR}/%.d: ${SRC_DIR}/%.cpp
 	${MKDIR} $(shell dirname $@) && $(CXX_DEP) $(CXXFLAGS) -M -MF $@ $<

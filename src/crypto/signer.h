@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include "database.h"
-#include "sslUtil.h"
+#include "db/database.h"
+#include "crypto/sslUtil.h"
 
 class Signer {
 public:

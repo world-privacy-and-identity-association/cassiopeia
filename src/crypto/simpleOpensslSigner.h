@@ -2,9 +2,9 @@
 
 #include <openssl/ssl.h>
 
-#include "database.h"
-#include "sslUtil.h"
-#include "signer.h"
+#include "db/database.h"
+#include "crypto/sslUtil.h"
+#include "crypto/signer.h"
 
 class SimpleOpensslSigner : public Signer {
 private:

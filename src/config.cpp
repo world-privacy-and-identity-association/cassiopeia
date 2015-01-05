@@ -4,7 +4,7 @@
 #include <dirent.h>
 #include <unordered_map>
 
-#include "sslUtil.h"
+#include "crypto/sslUtil.h"
 
 std::string keyDir;
 std::unordered_map<std::string, Profile> profiles;

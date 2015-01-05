@@ -1,11 +1,4 @@
-#include "recordHandler.h"
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <termios.h>
-#include <unistd.h>
+#include "io/recordHandler.h"
 
 #include <iostream>
 #include <fstream>
@@ -14,13 +7,15 @@
 
 #include <openssl/ssl.h>
 
-#include "database.h"
-#include "record.h"
-#include "opensslBIO.h"
-#include "remoteSigner.h"
-#include "simpleOpensslSigner.h"
-#include "sslUtil.h"
-#include "slipBio.h"
+#include "io/record.h"
+#include "io/opensslBIO.h"
+#include "io/slipBio.h"
+
+#include "db/database.h"
+#include "crypto/remoteSigner.h"
+#include "crypto/sslUtil.h"
+
+#include "crypto/simpleOpensslSigner.h"
 
 extern std::vector<Profile> profiles;
 extern std::unordered_map<std::string, std::shared_ptr<CAConfig>> CAs;

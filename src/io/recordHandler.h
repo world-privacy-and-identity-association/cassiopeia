@@ -6,8 +6,8 @@
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 
-#include "record.h"
-#include "signer.h"
+#include "crypto/signer.h"
+#include "io/record.h"
 
 class RecordHandler {
 public:

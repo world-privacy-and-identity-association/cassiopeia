@@ -1,11 +1,10 @@
-#include <iostream>
-
 #include <boost/test/unit_test.hpp>
 
 #include <openssl/err.h>
 
-#include "X509.h"
 #include "util.h"
+
+#include "crypto/X509.h"
 
 BOOST_AUTO_TEST_SUITE( TestX509Req )
 

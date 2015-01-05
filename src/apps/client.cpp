@@ -6,14 +6,14 @@
 #include <streambuf>
 #include <unordered_map>
 
-#include "database.h"
-#include "mysql.h"
-#include "simpleOpensslSigner.h"
+#include "db/database.h"
+#include "db/mysql.h"
+#include "crypto/simpleOpensslSigner.h"
+#include "crypto/remoteSigner.h"
+#include "crypto/sslUtil.h"
 #include "util.h"
-#include "bios.h"
-#include "slipBio.h"
-#include "remoteSigner.h"
-#include "sslUtil.h"
+#include "io/bios.h"
+#include "io/slipBio.h"
 #include "config.h"
 
 #ifdef NO_DAEMON

@@ -232,6 +232,5 @@ bool SlipBIO::unmask() {
     decodePos = j;
     rawPos = j;
     decodeTarget = j;
-
     return 0;
 }

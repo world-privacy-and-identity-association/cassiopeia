@@ -40,7 +40,8 @@ SRC_DIR=src
 OBJ_DIR=obj
 DEP_DIR=dep
 
-FS_SRC=$(filter-out ${SRC_DIR}/mysql--disabled.cpp,$(wildcard ${SRC_DIR}/*.cpp))
+FS_SRC=$(wildcard ${SRC_DIR}/*.cpp) $(wildcard ${SRC_DIR}/io/*.cpp) $(wildcard ${SRC_DIR}/crypto/*.cpp) $(wildcard ${SRC_DIR}/db/*.cpp)
+
 FS_BIN=$(wildcard ${SRC_DIR}/app/*.cpp)
 FS_LIBS=$(wildcard lib/*/)
 FS_OBJ=$(FS_SRC:${SRC_DIR}/%.cpp=${OBJ_DIR}/%.lo)
@@ -103,7 +104,7 @@ bin/cassiopeia: libs ${FS_OBJ} ${OBJ_DIR}/apps/client.lo
 	${MKDIR} $(shell dirname $@) &&  ${LD} ${LDFLAGS} -lmysqlclient -o $@ ${FS_OBJ} ${OBJ_DIR}/apps/client.lo
 
 bin/cassiopeia-signer: libs ${FS_OBJ} ${OBJ_DIR}/apps/signer.lo
-	${MKDIR} $(shell dirname $@) &&  ${LD} ${LDFLAGS} -o $@ $(filter-out ${OBJ_DIR}/mysql.lo,${FS_OBJ}) ${OBJ_DIR}/apps/signer.lo
+	${MKDIR} $(shell dirname $@) &&  ${LD} ${LDFLAGS} -o $@ $(filter-out ${OBJ_DIR}/db/mysql.lo,${FS_OBJ}) ${OBJ_DIR}/apps/signer.lo
 
 ${DEP_DIR}/%.d: ${SRC_DIR}/%.cpp
 	${MKDIR} $(shell dirname $@) && $(CXX_DEP) $(CXXFLAGS) -M -MF $@ $<

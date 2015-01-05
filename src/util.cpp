@@ -4,7 +4,7 @@
 
 #include <fstream>
 
-void writeFile( std::string name, std::string content ) {
+void writeFile( const std::string& name, const std::string& content ) {
     std::ofstream file;
 
     file.open( name );
@@ -20,7 +20,7 @@ std::string readFile( const std::string& name ) {
     return res;
 }
 
-std::string writeBackFile( std::string serial, std::string cert, std::string keydir ) {
+std::string writeBackFile( const std::string& serial, const std::string& cert, const std::string& keydir ) {
     std::string filename = keydir;
     mkdir( filename.c_str(), 0755 );
     filename += "/crt";

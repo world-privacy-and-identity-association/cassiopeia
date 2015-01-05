@@ -2,11 +2,11 @@
 #include <memory>
 #include <openssl/ssl.h>
 
-#include "database.h"
-#include "signer.h"
-#include "bios.h"
-#include "opensslBIO.h"
-#include "record.h"
+#include "db/database.h"
+#include "crypto/signer.h"
+#include "io/bios.h"
+#include "io/opensslBIO.h"
+#include "io/record.h"
 
 
 class RemoteSigner : public Signer {

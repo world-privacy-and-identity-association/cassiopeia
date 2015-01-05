@@ -5,8 +5,8 @@
 
 #include <openssl/ssl.h>
 
-#include "database.h"
-#include "sslUtil.h"
+#include "db/database.h"
+#include "crypto/sslUtil.h"
 
 class X509Req {
 private:

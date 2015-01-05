@@ -1,9 +1,7 @@
-#include <iostream>
-
 #include <boost/test/unit_test.hpp>
 
-#include "bios.h"
-#include "opensslBIO.h"
+#include "io/bios.h"
+#include "io/opensslBIO.h"
 
 class OpensslBIO1 : public OpensslBIO {
 public:
@@ -21,17 +19,20 @@ int OpensslBIO1::write( const char* buf, int num ) {
     ( void ) buf;
     return 0;
 }
+
 int OpensslBIO1::read( char* buf, int size ) {
     state = size * 3;
     ( void ) buf;
     return 0;
 }
+
 long OpensslBIO1::ctrl( int cmod, long arg1, void* arg2 ) {
     state = cmod * 7;
     ( void ) arg1;
     ( void ) arg2;
     return 0;
 }
+
 const char* OpensslBIO1::getName() {
     return "dummyBIO";
 }
