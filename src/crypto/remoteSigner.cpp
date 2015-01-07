@@ -140,7 +140,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     return result;
 }
 
-std::shared_ptr<CRL> RemoteSigner::revoke( std::shared_ptr<CAConfig> ca, std::string serial ) {
+std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_ptr<CAConfig> ca, std::string serial ) {
     ( void )BIO_reset( target.get() );
 
     std::shared_ptr<SSL> ssl( SSL_new( ctx.get() ), SSL_free );
@@ -162,27 +162,45 @@ std::shared_ptr<CRL> RemoteSigner::revoke( std::shared_ptr<CAConfig> ca, std::st
 
     if( length <= 0 ) {
         std::cout << "Error, no response data" << std::endl;
-        return std::shared_ptr<CRL>();
+        return std::pair<std::shared_ptr<CRL>, std::string>( std::shared_ptr<CRL>(), "" );
     }
 
     payload = parseCommand( head, std::string( buffer.data(), length ), log );
 
+    std::shared_ptr<CRL> crl( new CRL( ca->path + std::string( "/ca.crl" ) ) );
+
     switch( ( RecordHeader::SignerResult ) head.command ) {
-    case RecordHeader::SignerResult::REVOKED:
-        std::cout << "CRL: " << std::endl << payload << std::endl;
+    case RecordHeader::SignerResult::REVOKED: {
+        const unsigned char* buffer = ( const unsigned char* ) payload.data();
+        const unsigned char* pos = buffer;
+        ASN1_UTCTIME* time = d2i_ASN1_UTCTIME( NULL, &pos, payload.size() );
+        ASN1_UTCTIME_free( time );
+        std::string rest = payload.substr( pos - buffer );
+        crl->revoke( serial, payload.substr( 0, pos - buffer ) );
+        crl->setSignature( rest );
+        bool ok = crl->verify( ca );
+
+        if( ok ) {
+            ( *log ) << "CRL verificated successfully" << std::endl;
+            writeFile( ca->path + std::string( "/ca.crl" ), crl->toString() );
+        } else {
+            ( *log ) << "CRL is broken" << std::endl;
+        }
+
+        ( *log ) << "CRL: " << std::endl << crl->toString() << std::endl;
         break;
+    }
 
     default:
         throw "Invalid response command.";
     }
 
-    writeFile( ca->path + "/ca.crl", payload );
 
     if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) { // need to close the connection twice
         std::cout << "SSL shutdown failed" << std::endl;
     }
 
-    return std::shared_ptr<CRL>();
+    return std::pair<std::shared_ptr<CRL>, std::string>( std::shared_ptr<CRL>(), "" );
 }
 
 void RemoteSigner::setLog( std::shared_ptr<std::ostream> target ) {

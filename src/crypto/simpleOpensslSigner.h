@@ -15,5 +15,5 @@ public:
     SimpleOpensslSigner();
     ~SimpleOpensslSigner();
     std::shared_ptr<SignedCertificate> sign( std::shared_ptr<TBSCertificate> cert );
-    std::shared_ptr<CRL> revoke( std::shared_ptr<CAConfig> ca, std::string serial );
+    std::pair<std::shared_ptr<CRL>, std::string> revoke( std::shared_ptr<CAConfig> ca, std::string serial );
 };

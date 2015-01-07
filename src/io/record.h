@@ -22,12 +22,14 @@ public:
         SIGN = 0x80,
         LOG_SAVED = 0x81,
         REVOKE = 0x100,
+        GET_FULL_CRL = 0x101,
         GET_TIMESTAMP = 0xC0,
         GET_STATUS_REPORT = 0xD0
     };
 
     enum class SignerResult : uint16_t {
         REVOKED = 0x100,
+        FULL_CRL = 0x101,
         SAVE_LOG = 0x80,
         CERTIFICATE = 0x81
     };

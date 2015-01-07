@@ -9,5 +9,5 @@
 class Signer {
 public:
     virtual std::shared_ptr<SignedCertificate> sign( std::shared_ptr<TBSCertificate> cert ) = 0;
-    virtual std::shared_ptr<CRL> revoke( std::shared_ptr<CAConfig> ca, std::string serial ) = 0;
+    virtual std::pair<std::shared_ptr<CRL>, std::string> revoke( std::shared_ptr<CAConfig> ca, std::string serial ) = 0;
 };

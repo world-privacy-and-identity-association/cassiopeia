@@ -201,9 +201,11 @@ public:
 
             auto reqCA = CAs.at( ca );
             ( *log ) << "CA found" << std::endl;
-            std::shared_ptr<CRL> crl = signer->revoke( reqCA, serial );
+            std::shared_ptr<CRL> crl;
+            std::string date;
+            std::tie<std::shared_ptr<CRL>, std::string>( crl, date ) = signer->revoke( reqCA, serial );
 
-            respondCommand( RecordHeader::SignerResult::REVOKED, crl->toString() );
+            respondCommand( RecordHeader::SignerResult::REVOKED, date + crl->getSignature() );
 
             if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
                 ( *log ) << "ERROR: SSL close failed" << std::endl;
