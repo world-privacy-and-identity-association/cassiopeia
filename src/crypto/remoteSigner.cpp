@@ -1,4 +1,5 @@
 #include "remoteSigner.h"
+#include "util.h"
 
 #include <iostream>
 
@@ -139,7 +140,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     return result;
 }
 
-std::shared_ptr<X509_CRL> RemoteSigner::revoke( std::shared_ptr<CAConfig> ca, std::string serial ) {
+std::shared_ptr<CRL> RemoteSigner::revoke( std::shared_ptr<CAConfig> ca, std::string serial ) {
     ( void )BIO_reset( target.get() );
 
     std::shared_ptr<SSL> ssl( SSL_new( ctx.get() ), SSL_free );
@@ -161,7 +162,7 @@ std::shared_ptr<X509_CRL> RemoteSigner::revoke( std::shared_ptr<CAConfig> ca, st
 
     if( length <= 0 ) {
         std::cout << "Error, no response data" << std::endl;
-        return std::shared_ptr<X509_CRL>();
+        return std::shared_ptr<CRL>();
     }
 
     payload = parseCommand( head, std::string( buffer.data(), length ), log );
@@ -175,11 +176,13 @@ std::shared_ptr<X509_CRL> RemoteSigner::revoke( std::shared_ptr<CAConfig> ca, st
         throw "Invalid response command.";
     }
 
+    writeFile( ca->path + "/ca.crl", payload );
+
     if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) { // need to close the connection twice
         std::cout << "SSL shutdown failed" << std::endl;
     }
 
-    return std::shared_ptr<X509_CRL>();
+    return std::shared_ptr<CRL>();
 }
 
 void RemoteSigner::setLog( std::shared_ptr<std::ostream> target ) {

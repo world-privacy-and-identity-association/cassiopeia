@@ -46,17 +46,7 @@ std::shared_ptr<std::unordered_map<std::string, std::string>> parseConf( std::st
     return map;
 }
 
-int parseConfig( std::string path ) {
-
-    auto masterConf = parseConf( path );
-
-    keyDir = masterConf->at( "key.directory" );
-    sqlHost = masterConf->at( "sql.host" );
-    sqlUser = masterConf->at( "sql.user" );
-    sqlPass = masterConf->at( "sql.password" );
-    sqlDB = masterConf->at( "sql.database" );
-    serialPath = masterConf->at( "serialPath" );
-
+int parseProfiles() {
     CAs = std::unordered_map<std::string, std::shared_ptr<CAConfig>>();
 
     DIR* dp;
@@ -114,8 +104,26 @@ int parseConfig( std::string path ) {
 
     std::cout << profiles.size() << " profiles loaded." << std::endl;
 
+    return 0;
+}
+
+int parseConfig( std::string path ) {
+
+    auto masterConf = parseConf( path );
+
+    keyDir = masterConf->at( "key.directory" );
+    sqlHost = masterConf->at( "sql.host" );
+    sqlUser = masterConf->at( "sql.user" );
+    sqlPass = masterConf->at( "sql.password" );
+    sqlDB = masterConf->at( "sql.database" );
+    serialPath = masterConf->at( "serialPath" );
+
     if( keyDir == "" ) {
         std::cerr << "Missing config property key.directory" << std::endl;
+        return -1;
+    }
+
+    if( parseProfiles() != 0 ) {
         return -1;
     }
 

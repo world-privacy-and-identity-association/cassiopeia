@@ -201,16 +201,9 @@ public:
 
             auto reqCA = CAs.at( ca );
             ( *log ) << "CA found" << std::endl;
-            std::shared_ptr<X509_CRL> crl = signer->revoke( reqCA, serial );
+            std::shared_ptr<CRL> crl = signer->revoke( reqCA, serial );
 
-            std::shared_ptr<BIO> mem( BIO_new( BIO_s_mem() ), BIO_free );
-
-            PEM_write_bio_X509_CRL( mem.get(), crl.get() );
-            BUF_MEM* bptr;
-            BIO_get_mem_ptr( mem.get(), &bptr );
-
-            std::string newCRL( bptr->data, bptr->length );
-            respondCommand( RecordHeader::SignerResult::REVOKED, newCRL );
+            respondCommand( RecordHeader::SignerResult::REVOKED, crl->toString() );
 
             if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
                 ( *log ) << "ERROR: SSL close failed" << std::endl;

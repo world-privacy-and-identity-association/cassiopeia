@@ -3,3 +3,4 @@
 #include <string>
 
 int parseConfig( std::string path );
+void parseProfiles();

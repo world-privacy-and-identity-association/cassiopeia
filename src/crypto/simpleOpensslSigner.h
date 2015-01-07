@@ -5,6 +5,7 @@
 #include "db/database.h"
 #include "crypto/sslUtil.h"
 #include "crypto/signer.h"
+#include "crypto/CRL.h"
 
 class SimpleOpensslSigner : public Signer {
 private:
@@ -14,5 +15,5 @@ public:
     SimpleOpensslSigner();
     ~SimpleOpensslSigner();
     std::shared_ptr<SignedCertificate> sign( std::shared_ptr<TBSCertificate> cert );
-    std::shared_ptr<X509_CRL> revoke( std::shared_ptr<CAConfig> ca, std::string serial );
+    std::shared_ptr<CRL> revoke( std::shared_ptr<CAConfig> ca, std::string serial );
 };
