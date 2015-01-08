@@ -171,12 +171,12 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
 
     switch( ( RecordHeader::SignerResult ) head.command ) {
     case RecordHeader::SignerResult::REVOKED: {
-        const unsigned char* buffer = ( const unsigned char* ) payload.data();
-        const unsigned char* pos = buffer;
+        const unsigned char* buffer2 = ( const unsigned char* ) payload.data();
+        const unsigned char* pos = buffer2;
         ASN1_UTCTIME* time = d2i_ASN1_UTCTIME( NULL, &pos, payload.size() );
         ASN1_UTCTIME_free( time );
-        std::string rest = payload.substr( pos - buffer );
-        crl->revoke( serial, payload.substr( 0, pos - buffer ) );
+        std::string rest = payload.substr( pos - buffer2 );
+        crl->revoke( serial, payload.substr( 0, pos - buffer2 ) );
         crl->setSignature( rest );
         bool ok = crl->verify( ca );
 
@@ -185,6 +185,25 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
             writeFile( ca->path + std::string( "/ca.crl" ), crl->toString() );
         } else {
             ( *log ) << "CRL is broken" << std::endl;
+            send( conn, head, RecordHeader::SignerCommand::GET_FULL_CRL, ca->name );
+            length = conn->read( buffer.data(), buffer.size() );
+
+            if( length <= 0 ) {
+                ( *log ) << "Error, no response data" << std::endl;
+                return std::pair<std::shared_ptr<CRL>, std::string>( std::shared_ptr<CRL>(), "" );
+            }
+
+            payload = parseCommand( head, std::string( buffer.data(), length ), log );
+            writeFile( ca->path + std::string( "/ca.crl.bak" ), payload );
+            crl = std::shared_ptr<CRL>( new CRL( ca->path + std::string( "/ca.crl.bak" ) ) );
+
+            if( crl->verify( ca ) ) {
+                writeFile( ca->path + std::string( "/ca.crl" ), crl->toString() );
+                ( *log ) << "CRL is now valid" << std::endl;
+            } else {
+                ( *log ) << "CRL is still broken... Please, help me" << std::endl;
+            }
+
         }
 
         ( *log ) << "CRL: " << std::endl << crl->toString() << std::endl;

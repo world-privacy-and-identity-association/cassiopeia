@@ -207,6 +207,14 @@ public:
 
             respondCommand( RecordHeader::SignerResult::REVOKED, date + crl->getSignature() );
 
+            break;
+        }
+
+        case RecordHeader::SignerCommand::GET_FULL_CRL: {
+            auto ca = CAs.at( data );
+            CRL c( ca->path + "/ca.crl" );
+            respondCommand( RecordHeader::SignerResult::FULL_CRL, c.toString() );
+
             if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
                 ( *log ) << "ERROR: SSL close failed" << std::endl;
             }
