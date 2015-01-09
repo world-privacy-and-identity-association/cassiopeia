@@ -292,7 +292,34 @@ void MySQLJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<Sign
         throw "Error while writing back";
     }
 
-    std::string q = "UPDATE certs SET crt_name='" + this->escape_string( res->crt_name ) + "', serial='" + this->escape_string( res->serial ) + "', created=NOW() WHERE id='" + this->escape_string( job->target ) + "' LIMIT 1";
+    std::string id = "SELECT id FROM cacerts WHERE keyname='" + this->escape_string( res->ca_name ) + "'";
+
+    int err = 0;
+    std::shared_ptr<MYSQL_RES> resu;
+    std::tie( err, resu ) = query( id );
+
+    if( err ) {
+        throw "Error while looking ca cert id";
+    }
+
+    MYSQL_ROW row = mysql_fetch_row( resu.get() );
+    unsigned long* l = mysql_fetch_lengths( resu.get() );
+
+    std::string read_id;
+
+    if( !row || !l ) {
+        if( query( "INSERT INTO cacerts SET keyname= '" + this->escape_string( res->ca_name ) + "', subroot = 0" ).first ) {
+            throw "Error while inserting new ca cert";
+        }
+
+        my_ulonglong insert_id = mysql_insert_id( conn.get() );
+
+        read_id = std::to_string( insert_id );
+    } else {
+        read_id = std::string( row[0], row[0] + l[0] );
+    }
+
+    std::string q = "UPDATE certs SET crt_name='" + this->escape_string( res->crt_name ) + "', serial='" + this->escape_string( res->serial ) + "', caId = '" + this->escape_string( read_id ) + "', created=NOW() WHERE id='" + this->escape_string( job->target ) + "' LIMIT 1";
 
     // TODO write more thingies back
 

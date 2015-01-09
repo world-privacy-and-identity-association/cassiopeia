@@ -70,7 +70,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     std::shared_ptr<SignedCertificate> result = std::shared_ptr<SignedCertificate>( new SignedCertificate() );
     std::vector<char> buffer( 2048 * 4 );
 
-    for( int i = 0; i < 2; i++ ) {
+    for( int i = 0; i < 3; i++ ) {
         try {
             int length = conn->read( buffer.data(), buffer.size() );
 
@@ -90,6 +90,10 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
 
             case RecordHeader::SignerResult::SAVE_LOG:
                 result->log = payload;
+                break;
+
+            case RecordHeader::SignerResult::SIGNING_CA:
+                result->ca_name = payload;
                 break;
 
             default:

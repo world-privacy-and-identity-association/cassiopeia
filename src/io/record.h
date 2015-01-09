@@ -31,7 +31,8 @@ public:
         REVOKED = 0x100,
         FULL_CRL = 0x101,
         SAVE_LOG = 0x80,
-        CERTIFICATE = 0x81
+        CERTIFICATE = 0x81,
+        SIGNING_CA = 0x82,
     };
 
 public:

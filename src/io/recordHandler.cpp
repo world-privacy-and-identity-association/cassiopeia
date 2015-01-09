@@ -167,6 +167,7 @@ public:
 
         case RecordHeader::SignerCommand::LOG_SAVED:
             if( result ) {
+                respondCommand( RecordHeader::SignerResult::SIGNING_CA, result->ca_name );
                 respondCommand( RecordHeader::SignerResult::CERTIFICATE, result->certificate );
             }
 

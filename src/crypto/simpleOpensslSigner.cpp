@@ -156,6 +156,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     std::shared_ptr<SignedCertificate> output = c.sign( prof.ca->caKey, cert->md );
     signlog << "FINE: all went well" << std::endl;
     signlog << "FINE: crt went to: " << writeBackFile( num, output->certificate, prof.ca->path ) << std::endl;
+    output->ca_name = prof.ca->name;
     output->log = signlog.str();
     return output;
 }
