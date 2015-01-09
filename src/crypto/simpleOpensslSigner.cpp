@@ -25,9 +25,9 @@ SimpleOpensslSigner::SimpleOpensslSigner() {
 SimpleOpensslSigner::~SimpleOpensslSigner() {
 }
 
-std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial( Profile& prof ) {
+std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial( Profile& prof, std::shared_ptr<CAConfig> ca ) {
     uint16_t profile = prof.id;
-    std::string res = readFile( prof.ca->path + "/serial" );
+    std::string res = readFile( ca->path + "/serial" );
 
     BIGNUM* bn = 0;
 
@@ -64,7 +64,7 @@ std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial(
             OPENSSL_free( ref );
         } );
 
-    writeFile( prof.ca->path + "/serial", serStr.get() );
+    writeFile( ca->path + "/serial", serStr.get() );
 
     return std::pair<std::shared_ptr<BIGNUM>, std::string>( std::shared_ptr<BIGNUM>( BN_bin2bn( data.get(), len + 4 + 16 , 0 ), BN_free ), std::string( serStr.get() ) );
 }
@@ -75,8 +75,9 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     signlog << "FINE: profile is " << cert->profile << std::endl;
 
     Profile& prof = profiles.at( cert->profile );
+    std::shared_ptr<CAConfig> ca = prof.getCA();
 
-    if( !prof.ca ) {
+    if( !ca ) {
         throw "CA-key not found";
     }
 
@@ -142,21 +143,21 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
         }
     }
 
-    c.setIssuerNameFrom( prof.ca->ca );
+    c.setIssuerNameFrom( ca->ca );
     c.setPubkeyFrom( req );
 
     std::shared_ptr<BIGNUM> ser;
     std::string num;
-    std::tie( ser, num ) = nextSerial( prof );
+    std::tie( ser, num ) = nextSerial( prof, ca );
     c.setSerialNumber( ser.get() );
     c.setTimes( 0, 60 * 60 * 24 * 10 );
     signlog << "FINE: Setting extensions." << std::endl;
-    c.setExtensions( prof.ca->ca, cert->SANs, prof );
+    c.setExtensions( ca->ca, cert->SANs, prof );
     signlog << "FINE: Signed" << std::endl;
-    std::shared_ptr<SignedCertificate> output = c.sign( prof.ca->caKey, cert->md );
+    std::shared_ptr<SignedCertificate> output = c.sign( ca->caKey, cert->md );
     signlog << "FINE: all went well" << std::endl;
-    signlog << "FINE: crt went to: " << writeBackFile( num, output->certificate, prof.ca->path ) << std::endl;
-    output->ca_name = prof.ca->name;
+    signlog << "FINE: crt went to: " << writeBackFile( num, output->certificate, ca->path ) << std::endl;
+    output->ca_name = ca->name;
     output->log = signlog.str();
     return output;
 }

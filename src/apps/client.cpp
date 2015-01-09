@@ -148,8 +148,13 @@ int main( int argc, const char* argv[] ) {
                 std::cout << " [" << x.first << ']' << std::endl;
             }
 
-            sign->revoke( CAs.at( "unassured" ), "12345" );
-            jp->finishJob( job );
+            try {
+                auto data = jp->getRevocationInfo( job );
+                sign->revoke( CAs.at( data.second ), data.first );
+                jp->finishJob( job );
+            } catch( const char* c ) {
+                std::cout << "Exception: " << c << std::endl;
+            }
         } else {
             log << "Unknown job type" << job->task << std::endl;
             jp->failJob( job );

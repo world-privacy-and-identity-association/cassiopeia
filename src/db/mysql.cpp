@@ -327,3 +327,23 @@ void MySQLJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<Sign
         throw "Error while writing back";
     }
 }
+
+std::pair<std::string, std::string> MySQLJobProvider::getRevocationInfo( std::shared_ptr<Job> job ) {
+    std::string q = "SELECT certs.serial, cacerts.keyname FROM certs INNER JOIN cacerts ON certs.caId = cacerts.id WHERE certs.id = '" + this->escape_string( job->target ) + "' ";
+    int err = 0;
+    std::shared_ptr<MYSQL_RES> resu;
+    std::tie( err, resu ) = query( q );
+
+    if( err ) {
+        throw "Error while looking ca cert id";
+    }
+
+    MYSQL_ROW row = mysql_fetch_row( resu.get() );
+    unsigned long* l = mysql_fetch_lengths( resu.get() );
+
+    if( !row || !l ) {
+        throw "Error while inserting new ca cert";
+    }
+
+    return std::pair<std::string, std::string>( std::string( row[0], row[0] + l[0] ), std::string( row[1], row[1] + l[1] ) );
+}

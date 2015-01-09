@@ -118,7 +118,7 @@ void CRL::setSignature( std::string signature ) {
     const unsigned char* data = ( unsigned char* )( signature.data() );
     const unsigned char* buffer = data;
     d2i_X509_ALGOR( &crl->sig_alg, &buffer, signature.size() );
-    d2i_ASN1_BIT_STRING( &crl->signature, &buffer, signature.size() + buffer - data );
-    d2i_ASN1_UTCTIME( &crl->crl->lastUpdate, &buffer, signature.size() + buffer - data );
-    d2i_ASN1_UTCTIME( &crl->crl->nextUpdate, &buffer, signature.size() + buffer - data );
+    d2i_ASN1_BIT_STRING( &crl->signature, &buffer, signature.size() + data - buffer );
+    d2i_ASN1_UTCTIME( &crl->crl->lastUpdate, &buffer, signature.size() + data - buffer );
+    d2i_ASN1_UTCTIME( &crl->crl->nextUpdate, &buffer, signature.size() + data - buffer );
 }

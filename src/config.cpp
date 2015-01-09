@@ -88,12 +88,29 @@ int parseProfiles() {
         prof.eku = map->at( "eku" );
         prof.ku = map->at( "ku" );
 
-        if( CAs.find( map->at( "ca" ) ) == CAs.end() ) {
-            std::shared_ptr<CAConfig> ca( new CAConfig( map->at( "ca" ) ) );
-            CAs.emplace( map->at( "ca" ), ca );
-        }
+        std::string cas = map->at( "ca" );
 
-        prof.ca = CAs.at( map->at( "ca" ) );
+        for( size_t pos = 0; pos != std::string::npos; ) {
+            size_t end = cas.find( ",", pos );
+            std::string sub;
+
+            if( end == std::string::npos ) {
+                sub = cas.substr( pos );
+            } else {
+                sub = cas.substr( pos, end - pos );
+                end++;
+            }
+
+            pos = end;
+
+            if( CAs.find( sub ) == CAs.end() ) {
+                std::shared_ptr<CAConfig> ca( new CAConfig( sub ) );
+                CAs.emplace( sub, ca );
+            }
+
+            prof.ca.push_back( CAs.at( sub ) );
+
+        }
 
         profiles.emplace( profileName, prof );
         std::cout << "Profile: " << profileName << " up and running." << std::endl;

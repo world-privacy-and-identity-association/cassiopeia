@@ -46,6 +46,7 @@ struct SignedCertificate {
     std::string certHash;
     std::string crt_name;
     std::string log;
+    std::string ca_name;
 };
 
 class JobProvider {
@@ -55,4 +56,5 @@ public:
     virtual void failJob( std::shared_ptr<Job> job ) = 0;
     virtual std::shared_ptr<TBSCertificate> fetchTBSCert( std::shared_ptr<Job> job ) = 0;
     virtual void writeBack( std::shared_ptr<Job> job, std::shared_ptr<SignedCertificate> res ) = 0;
+    virtual std::pair<std::string, std::string> getRevocationInfo( std::shared_ptr<Job> job ) = 0;
 };

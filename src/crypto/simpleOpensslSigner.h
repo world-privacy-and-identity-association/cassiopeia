@@ -10,7 +10,7 @@
 class SimpleOpensslSigner : public Signer {
 private:
     static std::shared_ptr<int> lib_ref;
-    std::pair<std::shared_ptr<BIGNUM>, std::string> nextSerial( Profile& prof );
+    std::pair<std::shared_ptr<BIGNUM>, std::string> nextSerial( Profile& prof, std::shared_ptr<CAConfig> ca );
 public:
     SimpleOpensslSigner();
     ~SimpleOpensslSigner();

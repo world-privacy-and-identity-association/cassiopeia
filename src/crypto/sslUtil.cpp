@@ -168,7 +168,6 @@ std::shared_ptr<BIO> openSerial( const std::string name ) {
     }
 
     setupSerial( f );
-
     std::shared_ptr<BIO> b( BIO_new_fd( fileno( f ), 0 ), BIO_free );
     return b;
 }
@@ -178,4 +177,6 @@ CAConfig::CAConfig( std::string name ) {
     this->path = "ca/" + name;
     ca = loadX509FromFile( path + "/ca.crt" );
     caKey = loadPkeyFromFile( path + "/ca.key" );
+    ASN1_TIME* tm = X509_get_notBefore( ca );
+    notBefore = std::shared_ptr<ASN1_TIME>( tm, ASN1_TIME_free );
 }

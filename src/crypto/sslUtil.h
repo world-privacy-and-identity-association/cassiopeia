@@ -2,6 +2,7 @@
 #include <openssl/ssl.h>
 #include <memory>
 #include <string>
+#include <vector>
 #include <cinttypes>
 
 class CAConfig {
@@ -11,10 +12,10 @@ public:
 
     std::shared_ptr<X509> ca;
     std::shared_ptr<EVP_PKEY> caKey;
+    std::shared_ptr<ASN1_TIME> notBefore;
     CAConfig( std::string name );
 
 };
-
 
 struct Profile {
     uint16_t id;
@@ -22,7 +23,16 @@ struct Profile {
     std::string eku;
     std::string ku;
 
-    std::shared_ptr<CAConfig> ca;
+    std::vector<std::shared_ptr<CAConfig>> ca;
+    std::shared_ptr<CAConfig> getCA() {
+        for( auto it = ca.rbegin(); it != ca.rend(); it++ ) {
+            if( X509_cmp_current_time( ( *it )->notBefore.get() ) < 0 ) {
+                return *it;
+            }
+        }
+
+        return ca[0];
+    }
 };
 
 extern std::shared_ptr<int> ssl_lib_ref;
