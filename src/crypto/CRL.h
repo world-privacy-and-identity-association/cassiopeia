@@ -15,7 +15,7 @@ public:
      * Adds the serial to this serial.
      * @param serial the serial to remove (as hex string)
      * @param time the "revokation time" (der-encoded)
-     * @returns DER-encoded UTCTIME of the revoked time
+     * @returns DER-encoded TIME of the revoked time
      */
     std::string revoke( std::string serial, std::string time );
 

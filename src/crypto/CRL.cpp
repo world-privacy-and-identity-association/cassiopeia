@@ -38,17 +38,17 @@ std::string CRL::revoke( std::string serial, std::string time ) {
 
     if( time != "" ) {
         const unsigned char* data = ( unsigned char* )( time.data() );
-        d2i_ASN1_UTCTIME( &rev->revocationDate, &data, time.size() );
+        d2i_ASN1_TIME( &rev->revocationDate, &data, time.size() );
     } else {
         X509_REVOKED_set_revocationDate( rev, tmptm.get() );
     }
 
     X509_CRL_add0_revoked( crl.get(), rev );
 
-    int len = i2d_ASN1_UTCTIME( tmptm.get(), NULL );
+    int len = i2d_ASN1_TIME( tmptm.get(), NULL );
     unsigned char* buffer = ( unsigned char* ) OPENSSL_malloc( len );
     unsigned char* pos = buffer;
-    i2d_ASN1_UTCTIME( tmptm.get(), &pos );
+    i2d_ASN1_TIME( tmptm.get(), &pos );
     std::string rettime = std::string( ( char* ) buffer, len );
     OPENSSL_free( buffer );
     return rettime;
@@ -99,15 +99,15 @@ std::string CRL::toString() {
 std::string CRL::getSignature() {
     int len = i2d_X509_ALGOR( crl->sig_alg, NULL );
     len += i2d_ASN1_BIT_STRING( crl->signature, NULL );
-    len += i2d_ASN1_UTCTIME( crl->crl->lastUpdate, NULL );
-    len += i2d_ASN1_UTCTIME( crl->crl->nextUpdate, NULL );
+    len += i2d_ASN1_TIME( crl->crl->lastUpdate, NULL );
+    len += i2d_ASN1_TIME( crl->crl->nextUpdate, NULL );
 
     unsigned char* buffer = ( unsigned char* ) OPENSSL_malloc( len );
     unsigned char* pos = buffer;
     i2d_X509_ALGOR( crl->sig_alg, &pos );
     i2d_ASN1_BIT_STRING( crl->signature, &pos );
-    i2d_ASN1_UTCTIME( crl->crl->lastUpdate, &pos );
-    i2d_ASN1_UTCTIME( crl->crl->nextUpdate, &pos );
+    i2d_ASN1_TIME( crl->crl->lastUpdate, &pos );
+    i2d_ASN1_TIME( crl->crl->nextUpdate, &pos );
     std::string res = std::string( ( char* ) buffer, len );
     OPENSSL_free( buffer );
 
@@ -119,6 +119,6 @@ void CRL::setSignature( std::string signature ) {
     const unsigned char* buffer = data;
     d2i_X509_ALGOR( &crl->sig_alg, &buffer, signature.size() );
     d2i_ASN1_BIT_STRING( &crl->signature, &buffer, signature.size() + data - buffer );
-    d2i_ASN1_UTCTIME( &crl->crl->lastUpdate, &buffer, signature.size() + data - buffer );
-    d2i_ASN1_UTCTIME( &crl->crl->nextUpdate, &buffer, signature.size() + data - buffer );
+    d2i_ASN1_TIME( &crl->crl->lastUpdate, &buffer, signature.size() + data - buffer );
+    d2i_ASN1_TIME( &crl->crl->nextUpdate, &buffer, signature.size() + data - buffer );
 }

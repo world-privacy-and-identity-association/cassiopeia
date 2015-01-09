@@ -177,8 +177,8 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
     case RecordHeader::SignerResult::REVOKED: {
         const unsigned char* buffer2 = ( const unsigned char* ) payload.data();
         const unsigned char* pos = buffer2;
-        ASN1_UTCTIME* time = d2i_ASN1_UTCTIME( NULL, &pos, payload.size() );
-        ASN1_UTCTIME_free( time );
+        ASN1_TIME* time = d2i_ASN1_TIME( NULL, &pos, payload.size() );
+        ASN1_TIME_free( time );
         std::string rest = payload.substr( pos - buffer2 );
         crl->revoke( serial, payload.substr( 0, pos - buffer2 ) );
         crl->setSignature( rest );
