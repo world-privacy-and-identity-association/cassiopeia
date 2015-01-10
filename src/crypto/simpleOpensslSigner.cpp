@@ -38,7 +38,7 @@ std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial(
             throw "Initing serial failed";
         }
     } else {
-        if( !BN_hex2bn( &bn, res.c_str() + 1 ) ) {
+        if( !BN_hex2bn( &bn, res.c_str() ) ) {
             throw "Parsing serial failed.";
         }
     }
