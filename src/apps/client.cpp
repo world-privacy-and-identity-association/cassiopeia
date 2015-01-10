@@ -142,12 +142,6 @@ int main( int argc, const char* argv[] ) {
                 log << "ERROR: " << c << std::endl;
             }
         } else if( job->task == "revoke" ) {
-            std::cout << "Revoking!" << std::endl;
-
-            for( auto& x : CAs ) {
-                std::cout << " [" << x.first << ']' << std::endl;
-            }
-
             try {
                 auto data = jp->getRevocationInfo( job );
                 std::pair<std::shared_ptr<CRL>, std::string> rev = sign->revoke( CAs.at( data.second ), data.first );

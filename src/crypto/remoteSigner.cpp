@@ -165,8 +165,7 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
     int length = conn->read( buffer.data(), buffer.size() );
 
     if( length <= 0 ) {
-        std::cout << "Error, no response data" << std::endl;
-        return std::pair<std::shared_ptr<CRL>, std::string>( std::shared_ptr<CRL>(), "" );
+        throw "Error, no response data";
     }
 
     payload = parseCommand( head, std::string( buffer.data(), length ), log );
@@ -174,52 +173,51 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
     std::shared_ptr<CRL> crl( new CRL( ca->path + std::string( "/ca.crl" ) ) );
     std::string date;
 
-    switch( ( RecordHeader::SignerResult ) head.command ) {
-    case RecordHeader::SignerResult::REVOKED: {
-        const unsigned char* buffer2 = ( const unsigned char* ) payload.data();
-        const unsigned char* pos = buffer2;
-        ASN1_TIME* time = d2i_ASN1_TIME( NULL, &pos, payload.size() );
-        ASN1_TIME_free( time );
-        date = payload.substr( 0, pos - buffer2 );
-        std::string rest = payload.substr( pos - buffer2 );
-        crl->revoke( serial, date );
-        crl->setSignature( rest );
-        bool ok = crl->verify( ca );
+    if( ( RecordHeader::SignerResult ) head.command != RecordHeader::SignerResult::REVOKED ) {
+        throw "Protocol violation";
+    }
 
-        if( ok ) {
-            ( *log ) << "CRL verificated successfully" << std::endl;
-            writeFile( ca->path + std::string( "/ca.crl" ), crl->toString() );
-        } else {
-            ( *log ) << "CRL is broken" << std::endl;
-            send( conn, head, RecordHeader::SignerCommand::GET_FULL_CRL, ca->name );
-            length = conn->read( buffer.data(), buffer.size() );
+    const unsigned char* buffer2 = ( const unsigned char* ) payload.data();
+    const unsigned char* pos = buffer2;
+    ASN1_TIME* time = d2i_ASN1_TIME( NULL, &pos, payload.size() );
+    ASN1_TIME_free( time );
+    date = payload.substr( 0, pos - buffer2 );
+    std::string rest = payload.substr( pos - buffer2 );
+    crl->revoke( serial, date );
+    crl->setSignature( rest );
+    bool ok = crl->verify( ca );
 
-            if( length <= 0 ) {
-                ( *log ) << "Error, no response data" << std::endl;
-                return std::pair<std::shared_ptr<CRL>, std::string>( std::shared_ptr<CRL>(), "" );
-            }
+    if( ok ) {
+        ( *log ) << "CRL verificated successfully" << std::endl;
+        writeFile( ca->path + std::string( "/ca.crl" ), crl->toString() );
+    } else {
+        ( *log ) << "CRL is broken" << std::endl;
+        send( conn, head, RecordHeader::SignerCommand::GET_FULL_CRL, ca->name );
+        length = conn->read( buffer.data(), buffer.size() );
 
-            payload = parseCommand( head, std::string( buffer.data(), length ), log );
-            writeFile( ca->path + std::string( "/ca.crl.bak" ), payload );
-            crl = std::shared_ptr<CRL>( new CRL( ca->path + std::string( "/ca.crl.bak" ) ) );
-
-            if( crl->verify( ca ) ) {
-                writeFile( ca->path + std::string( "/ca.crl" ), crl->toString() );
-                ( *log ) << "CRL is now valid" << std::endl;
-            } else {
-                ( *log ) << "CRL is still broken... Please, help me" << std::endl;
-            }
-
+        if( length <= 0 ) {
+            throw "Error, no response data";
         }
 
-        ( *log ) << "CRL: " << std::endl << crl->toString() << std::endl;
-        break;
+        payload = parseCommand( head, std::string( buffer.data(), length ), log );
+
+        if( ( RecordHeader::SignerResult ) head.command != RecordHeader::SignerResult::FULL_CRL ) {
+            throw "Protocol violation";
+        }
+
+        writeFile( ca->path + std::string( "/ca.crl.bak" ), payload );
+        crl = std::shared_ptr<CRL>( new CRL( ca->path + std::string( "/ca.crl.bak" ) ) );
+
+        if( crl->verify( ca ) ) {
+            writeFile( ca->path + std::string( "/ca.crl" ), crl->toString() );
+            ( *log ) << "CRL is now valid" << std::endl;
+        } else {
+            ( *log ) << "CRL is still broken... Please, help me" << std::endl;
+        }
+
     }
 
-    default:
-        throw "Invalid response command.";
-    }
-
+    ( *log ) << "CRL: " << std::endl << crl->toString() << std::endl;
 
     if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) { // need to close the connection twice
         std::cout << "SSL shutdown failed" << std::endl;
