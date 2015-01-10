@@ -172,6 +172,7 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
     payload = parseCommand( head, std::string( buffer.data(), length ), log );
 
     std::shared_ptr<CRL> crl( new CRL( ca->path + std::string( "/ca.crl" ) ) );
+    std::string date;
 
     switch( ( RecordHeader::SignerResult ) head.command ) {
     case RecordHeader::SignerResult::REVOKED: {
@@ -179,8 +180,9 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
         const unsigned char* pos = buffer2;
         ASN1_TIME* time = d2i_ASN1_TIME( NULL, &pos, payload.size() );
         ASN1_TIME_free( time );
+        date = payload.substr( 0, pos - buffer2 );
         std::string rest = payload.substr( pos - buffer2 );
-        crl->revoke( serial, payload.substr( 0, pos - buffer2 ) );
+        crl->revoke( serial, date );
         crl->setSignature( rest );
         bool ok = crl->verify( ca );
 
@@ -223,7 +225,7 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
         std::cout << "SSL shutdown failed" << std::endl;
     }
 
-    return std::pair<std::shared_ptr<CRL>, std::string>( std::shared_ptr<CRL>(), "" );
+    return std::pair<std::shared_ptr<CRL>, std::string>( crl, date );
 }
 
 void RemoteSigner::setLog( std::shared_ptr<std::ostream> target ) {

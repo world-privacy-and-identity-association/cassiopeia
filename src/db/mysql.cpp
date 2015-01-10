@@ -347,3 +347,9 @@ std::pair<std::string, std::string> MySQLJobProvider::getRevocationInfo( std::sh
 
     return std::pair<std::string, std::string>( std::string( row[0], row[0] + l[0] ), std::string( row[1], row[1] + l[1] ) );
 }
+
+void MySQLJobProvider::writeBackRevocation( std::shared_ptr<Job> job, std::string date ) {
+    if( query( "UPDATE certs SET revoked = '" + this->escape_string( date ) + "' WHERE id = '" + this->escape_string( job->target ) + "'" ).first ) {
+        throw "Error while writing back revocation";
+    }
+}

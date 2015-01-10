@@ -150,7 +150,18 @@ int main( int argc, const char* argv[] ) {
 
             try {
                 auto data = jp->getRevocationInfo( job );
-                sign->revoke( CAs.at( data.second ), data.first );
+                std::pair<std::shared_ptr<CRL>, std::string> rev = sign->revoke( CAs.at( data.second ), data.first );
+                std::string date = rev.second;
+                const unsigned char* pos = ( const unsigned char* ) date.data();
+                std::shared_ptr<ASN1_TIME> time( d2i_ASN1_TIME( NULL, &pos, date.size() ), ASN1_TIME_free );
+                std::shared_ptr<ASN1_GENERALIZEDTIME> gtime( ASN1_TIME_to_generalizedtime( time.get(), 0 ) );
+                std::string strdate( ( char* ) ASN1_STRING_data( gtime.get() ), ASN1_STRING_length( gtime.get() ) );
+
+                if( strdate[strdate.size() - 1] != 'Z' ) {
+                    throw "Got invalid date?";
+                }
+
+                jp->writeBackRevocation( job, strdate.substr( 0, strdate.size() - 1 ) );
                 jp->finishJob( job );
             } catch( const char* c ) {
                 std::cout << "Exception: " << c << std::endl;
