@@ -147,7 +147,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     return result;
 }
 
-std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_ptr<CAConfig> ca, std::string serial ) {
+std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_ptr<CAConfig> ca, std::vector<std::string> serials ) {
     ( void )BIO_reset( target.get() );
 
     std::shared_ptr<SSL> ssl( SSL_new( ctx.get() ), SSL_free );
@@ -161,7 +161,11 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
     head.flags = 0;
     head.sessid = 13;
 
-    std::string payload = ca->name + std::string( "\0", 1 ) + serial;
+    for( std::string serial : serials ) {
+        send( conn, head, RecordHeader::SignerCommand::ADD_SERIAL, serial );
+    }
+
+    std::string payload = ca->name;
     send( conn, head, RecordHeader::SignerCommand::REVOKE, payload );
 
     std::vector<char> buffer( 2048 * 4 );
@@ -186,7 +190,11 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
     ASN1_TIME_free( time );
     date = payload.substr( 0, pos - buffer2 );
     std::string rest = payload.substr( pos - buffer2 );
-    crl->revoke( serial, date );
+
+    for( std::string serial : serials ) {
+        crl->revoke( serial, date );
+    }
+
     crl->setSignature( rest );
     bool ok = crl->verify( ca );
 

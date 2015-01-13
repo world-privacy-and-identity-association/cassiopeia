@@ -23,6 +23,7 @@ public:
         LOG_SAVED = 0x81,
         REVOKE = 0x100,
         GET_FULL_CRL = 0x101,
+        ADD_SERIAL = 0x102,
         GET_TIMESTAMP = 0xC0,
         GET_STATUS_REPORT = 0xD0
     };

@@ -144,7 +144,9 @@ int main( int argc, const char* argv[] ) {
         } else if( job->task == "revoke" ) {
             try {
                 auto data = jp->getRevocationInfo( job );
-                std::pair<std::shared_ptr<CRL>, std::string> rev = sign->revoke( CAs.at( data.second ), data.first );
+                std::vector<std::string> serials;
+                serials.push_back( data.first );
+                std::pair<std::shared_ptr<CRL>, std::string> rev = sign->revoke( CAs.at( data.second ), serials );
                 std::string date = rev.second;
                 const unsigned char* pos = ( const unsigned char* ) date.data();
                 std::shared_ptr<ASN1_TIME> time( d2i_ASN1_TIME( NULL, &pos, date.size() ), ASN1_TIME_free );

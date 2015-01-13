@@ -35,6 +35,7 @@ public:
     std::shared_ptr<Signer> signer;
 
     std::shared_ptr<std::ofstream> log;
+    std::vector<std::string> serials;
 
     RecordHandlerSession( DefaultRecordHandler* parent, std::shared_ptr<Signer> signer, std::shared_ptr<SSL_CTX> ctx, std::shared_ptr<BIO> output ) :
         tbs( new TBSCertificate() ) {
@@ -177,34 +178,17 @@ public:
 
             break;
 
+        case RecordHeader::SignerCommand::ADD_SERIAL:
+            serials.push_back( data );
+            break;
+
         case RecordHeader::SignerCommand::REVOKE: {
-            ( *log ) << "got revoking command: " << data.size() << std::endl;
-            std::string nullstr( "\0", 1 );
-            size_t t = data.find( nullstr );
-
-            if( t == std::string::npos ) {
-                // error
-                ( *log ) << "error while parsing revoking command." << data << std::endl;
-                break;
-            }
-
-            std::string ca = data.substr( 0, t );
-            std::string serial = data.substr( t + 1 );
-            ( *log ) << "revoking " << ca << "<->" << serial << std::endl;
-
-            ( *log ) << "[";
-
-            for( auto x : CAs ) {
-                ( *log ) << x.first << ", ";
-            }
-
-            ( *log ) << "]" << std::endl;
-
+            std::string ca = data;
             auto reqCA = CAs.at( ca );
             ( *log ) << "CA found" << std::endl;
             std::shared_ptr<CRL> crl;
             std::string date;
-            std::tie<std::shared_ptr<CRL>, std::string>( crl, date ) = signer->revoke( reqCA, serial );
+            std::tie<std::shared_ptr<CRL>, std::string>( crl, date ) = signer->revoke( reqCA, serials );
 
             respondCommand( RecordHeader::SignerResult::REVOKED, date + crl->getSignature() );
 
