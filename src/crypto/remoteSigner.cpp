@@ -134,6 +134,9 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
             []( char* p ) {
                 OPENSSL_free( p );
             } ); // OPENSSL_free is a macro...
+
+        extractTimes( pem, result );
+
         result->serial = std::string( serStr.get() );
     }
 

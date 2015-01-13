@@ -319,8 +319,7 @@ void MySQLJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<Sign
         read_id = std::string( row[0], row[0] + l[0] );
     }
 
-    std::string q = "UPDATE certs SET crt_name='" + this->escape_string( res->crt_name ) + "', serial='" + this->escape_string( res->serial ) + "', caId = '" + this->escape_string( read_id ) + "', created=NOW() WHERE id='" + this->escape_string( job->target ) + "' LIMIT 1";
-
+    std::string q = "UPDATE certs SET crt_name='" + this->escape_string( res->crt_name ) + "', serial='" + this->escape_string( res->serial ) + "', caId = '" + this->escape_string( read_id ) + "', created='" + this->escape_string( res->before ) + "', expire='" + this->escape_string( res->after ) + "'  WHERE id='" + this->escape_string( job->target ) + "' LIMIT 1";
     // TODO write more thingies back
 
     if( query( q ).first ) {

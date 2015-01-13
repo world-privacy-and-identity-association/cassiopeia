@@ -180,3 +180,19 @@ CAConfig::CAConfig( std::string name ) {
     ASN1_TIME* tm = X509_get_notBefore( ca );
     notBefore = std::shared_ptr<ASN1_TIME>( tm, ASN1_TIME_free );
 }
+
+std::string timeToString( std::shared_ptr<ASN1_TIME> time ) {
+    std::shared_ptr<ASN1_GENERALIZEDTIME> gtime( ASN1_TIME_to_generalizedtime( time.get(), 0 ) );
+    std::string strdate( ( char* ) ASN1_STRING_data( gtime.get() ), ASN1_STRING_length( gtime.get() ) );
+
+    if( strdate[strdate.size() - 1] != 'Z' ) {
+        throw "Got invalid date?";
+    }
+
+    return strdate.substr( 0, strdate.size() - 1 );
+}
+
+void extractTimes( std::shared_ptr<X509> target,  std::shared_ptr<SignedCertificate> cert ) {
+    cert->before = timeToString( std::shared_ptr<ASN1_TIME>( X509_get_notBefore( target.get() ), ASN1_TIME_free ) );
+    cert->after = timeToString( std::shared_ptr<ASN1_TIME>( X509_get_notAfter( target.get() ), ASN1_TIME_free ) );
+}
