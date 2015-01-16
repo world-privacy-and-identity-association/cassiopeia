@@ -122,3 +122,17 @@ void CRL::setSignature( std::string signature ) {
     d2i_ASN1_TIME( &crl->crl->lastUpdate, &buffer, signature.size() + data - buffer );
     d2i_ASN1_TIME( &crl->crl->nextUpdate, &buffer, signature.size() + data - buffer );
 }
+
+bool CRL::needsResign() {
+    time_t current;
+    time( &current );
+    current += 60 * 60;// 1 hour
+    auto time = X509_CRL_get_nextUpdate( crl.get() );
+
+    if( !time ) {
+        return true;
+    }
+
+    int cmp =  X509_cmp_time( time, &current );
+    return cmp < 0;
+}

@@ -18,6 +18,7 @@ public:
     std::shared_ptr<EVP_PKEY> caKey;
     std::shared_ptr<ASN1_TIME> notBefore;
     CAConfig( std::string name );
+    bool crlNeedsResign();
 };
 
 struct Profile {

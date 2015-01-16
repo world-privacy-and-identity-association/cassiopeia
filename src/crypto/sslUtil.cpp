@@ -3,7 +3,10 @@
 #include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
+
 #include <iostream>
+
+#include "crypto/CRL.h"
 
 std::shared_ptr<int> ssl_lib_ref(
     new int( SSL_library_init() ),
@@ -195,4 +198,9 @@ std::string timeToString( std::shared_ptr<ASN1_TIME> time ) {
 void extractTimes( std::shared_ptr<X509> target,  std::shared_ptr<SignedCertificate> cert ) {
     cert->before = timeToString( std::shared_ptr<ASN1_TIME>( X509_get_notBefore( target.get() ), ASN1_TIME_free ) );
     cert->after = timeToString( std::shared_ptr<ASN1_TIME>( X509_get_notAfter( target.get() ), ASN1_TIME_free ) );
+}
+
+bool CAConfig::crlNeedsResign() {
+    std::shared_ptr<CRL> crl( new CRL( path + "/ca.crl" ) );
+    return crl->needsResign();
 }

@@ -19,6 +19,8 @@ public:
      */
     std::string revoke( std::string serial, std::string time );
 
+    bool needsResign();
+
     /**
      * Signs this CRL.
      * @param ca the CA to sign with

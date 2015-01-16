@@ -27,6 +27,28 @@ extern std::string sqlHost, sqlUser, sqlPass, sqlDB;
 extern std::string serialPath;
 extern std::unordered_map<std::string, std::shared_ptr<CAConfig>> CAs;
 
+void checkCRLs( std::shared_ptr<Signer> sign ) {
+    std::cout << "Signing CRLs" << std::endl;
+
+    for( auto x : CAs ) {
+        std::cout << "Checking: " << x.first << std::endl;
+
+        if( !x.second->crlNeedsResign() ) {
+            std::cout << "Skipping Resigning CRL: " + x.second->name << std::endl;
+            continue;
+        }
+
+        std::cout << "Resigning CRL: " + x.second->name << std::endl;
+
+        try {
+            std::vector<std::string> serials;
+            std::pair<std::shared_ptr<CRL>, std::string> rev = sign->revoke( x.second, serials );
+        } catch( const char* c ) {
+            std::cout << "Exception: " << c << std::endl;
+        }
+    }
+}
+
 int main( int argc, const char* argv[] ) {
     ( void ) argc;
     ( void ) argv;
@@ -60,7 +82,23 @@ int main( int argc, const char* argv[] ) {
     std::shared_ptr<RemoteSigner> sign( new RemoteSigner( slip1, generateSSLContext( false ) ) );
     // std::shared_ptr<Signer> sign( new SimpleOpensslSigner() );
 
+    time_t lastCRLCheck = 0;
+
     while( true ) {
+        time_t current;
+        time( &current );
+
+        if( lastCRLCheck + 30 * 60 < current ) {
+            // todo set good log TODO FIXME
+            sign->setLog( std::shared_ptr<std::ostream>(
+                &std::cout,
+                []( std::ostream * o ) {
+                    ( void ) o;
+                } ) );
+            checkCRLs( sign );
+            lastCRLCheck = current;
+        }
+
         std::shared_ptr<Job> job = jp->fetchJob();
 
         if( !job ) {
