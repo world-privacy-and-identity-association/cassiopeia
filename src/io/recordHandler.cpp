@@ -128,6 +128,14 @@ public:
             tbs->profile = data;
             break;
 
+        case RecordHeader::SignerCommand::SET_WISH_FROM:
+            tbs->wishFrom = data;
+            break;
+
+        case RecordHeader::SignerCommand::SET_WISH_TO:
+            tbs->wishTo = data;
+            break;
+
         case RecordHeader::SignerCommand::ADD_SAN: {
             size_t pos = data.find( "," );
 

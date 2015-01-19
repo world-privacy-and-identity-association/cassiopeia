@@ -16,6 +16,8 @@ public:
         SET_SPKAC = 0x02,
         SET_SIGNATURE_TYPE = 0x10,
         SET_PROFILE = 0x11,
+        SET_WISH_FROM = 0x12,
+        SET_WISH_TO = 0x13,
         ADD_SAN = 0x18,
         ADD_AVA = 0x19,
         ADD_PROOF_LINE = 0x40,

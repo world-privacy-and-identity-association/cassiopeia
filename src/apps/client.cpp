@@ -125,6 +125,8 @@ int main( int argc, const char* argv[] ) {
         if( job->task == "sign" ) {
             try {
                 std::shared_ptr<TBSCertificate> cert = jp->fetchTBSCert( job );
+                cert->wishFrom = job->from;
+                cert->wishTo = job->to;
                 log << "INFO: message digest: " << cert->md << std::endl;
                 log << "INFO: profile id: " << cert->profile << std::endl;
 

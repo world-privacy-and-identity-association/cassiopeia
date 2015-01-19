@@ -46,6 +46,8 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
 
     send( conn, head, RecordHeader::SignerCommand::SET_SIGNATURE_TYPE, cert->md );
     send( conn, head, RecordHeader::SignerCommand::SET_PROFILE, cert->profile );
+    send( conn, head, RecordHeader::SignerCommand::SET_WISH_FROM, cert->wishFrom );
+    send( conn, head, RecordHeader::SignerCommand::SET_WISH_TO, cert->wishTo );
 
     for( auto ava : cert->AVAs ) {
         if( ava->name.find( "," ) != std::string::npos ) {

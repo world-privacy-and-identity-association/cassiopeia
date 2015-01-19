@@ -138,8 +138,8 @@ void X509Cert::setSerialNumber( BIGNUM* num ) {
 }
 
 void X509Cert::setTimes( uint32_t before, uint32_t after ) {
-    X509_gmtime_adj( X509_get_notBefore( target.get() ), before );
-    X509_gmtime_adj( X509_get_notAfter( target.get() ), after );
+    ASN1_TIME_set( X509_get_notBefore( target.get() ), before );
+    ASN1_TIME_set( X509_get_notAfter( target.get() ), after );
 }
 
 static X509_EXTENSION* do_ext_i2d( int ext_nid, int crit, ASN1_VALUE* ext_struc ) {

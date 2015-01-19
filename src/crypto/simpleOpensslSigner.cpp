@@ -1,6 +1,5 @@
 #include "simpleOpensslSigner.h"
 
-#include <iostream>
 #include <sstream>
 #include <unordered_map>
 
@@ -85,6 +84,8 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     signlog << "FINE: Profile id is: " << prof.id << std::endl;
     signlog << "FINE: ku is: " << prof.ku << std::endl;
     signlog << "FINE: eku is: " << prof.eku << std::endl;
+    signlog << "FINE: Signing is wanted from: " << cert->wishFrom << std::endl;
+    signlog << "FINE: Signing is wanted to: " << cert->wishTo << std::endl;
 
     std::shared_ptr<X509Req> req;
 
@@ -150,7 +151,46 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     std::string num;
     std::tie( ser, num ) = nextSerial( prof, ca );
     c.setSerialNumber( ser.get() );
-    c.setTimes( 0, 60 * 60 * 24 * 10 );
+
+    std::time_t from, to;
+    std::time_t now = time( 0 );
+    std::pair<bool, std::time_t> parsed;
+
+    if( ( parsed = parseDate( cert->wishFrom ) ).first /* is of yyyy-mm-dd */ ) {
+        if( parsed.second > now ) {
+            from = parsed.second;
+        } else { // fail
+            from = now;
+        }
+    } else {
+        from = now;
+    }
+
+    if( from - now > /* 2 Weeks */ 2 * 7 * 24 * 60 * 60 || now - from >= 0 ) {
+        from = now;
+    }
+
+    if( ( parsed = parseDate( cert->wishTo ) ).first /*is of yyyy-mm-dd */ ) {
+        if( parsed.second > from ) {
+            to = parsed.second;
+        } else {
+            to = from + /*2 Years */ 2 * 365 * 24 * 60 * 60;
+        }
+    } else if( ( parsed = parseYearInterval( from, cert->wishTo ) ).first /*is of [0-9]+y */ ) {
+        to = parsed.second;
+    } else if( ( parsed = parseMonthInterval( from, cert->wishTo ) ).first /*is of [0-9]+m */ ) {
+        to = parsed.second;
+    } else {
+        to = from + /*2 Years */ 2 * 365 * 24 * 60 * 60;
+    }
+
+    time_t limit = /*2 Years (max possible) */ 2 * 366 * 24 * 60 * 60;
+
+    if( to - from > limit || to - from < 0 ) {
+        to = from + limit;
+    }
+
+    c.setTimes( from, to );
     signlog << "FINE: Setting extensions." << std::endl;
     c.setExtensions( ca->ca, cert->SANs, prof );
     signlog << "FINE: Signed" << std::endl;

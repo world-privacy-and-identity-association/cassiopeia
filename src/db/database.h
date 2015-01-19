@@ -34,6 +34,9 @@ struct TBSCertificate {
     std::string csr_content;
     std::vector<std::shared_ptr<SAN>> SANs;
     std::vector<std::shared_ptr<AVA>> AVAs;
+
+    std::string wishFrom;
+    std::string wishTo;
 };
 
 
