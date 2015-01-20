@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <cinttypes>
+#include <ctime>
 
 #include <openssl/ssl.h>
 
@@ -28,6 +29,7 @@ struct Profile {
     std::string ku;
 
     std::vector<std::shared_ptr<CAConfig>> ca;
+    std::time_t maxValidity;
     std::shared_ptr<CAConfig> getCA() {
         for( auto it = ca.rbegin(); it != ca.rend(); it++ ) {
             if( X509_cmp_current_time( ( *it )->notBefore.get() ) < 0 ) {

@@ -87,6 +87,7 @@ int parseProfiles() {
         prof.id = std::stoi( id );
         prof.eku = map->at( "eku" );
         prof.ku = map->at( "ku" );
+        prof.maxValidity = std::stoi( map->at( "days" ) ) * /* DAYS */24 * 60 * 60;
 
         std::string cas = map->at( "ca" );
 

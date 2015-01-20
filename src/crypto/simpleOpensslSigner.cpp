@@ -109,12 +109,6 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
 
     // Construct the Certificate
     X509Cert c = X509Cert();
-    std::shared_ptr<X509> retsh = std::shared_ptr<X509>( X509_new(), X509_free );
-    X509* ret = retsh.get();
-
-    if( !ret ) {
-        throw "Creating X509 failed.";
-    }
 
     X509_NAME* subjectP = X509_NAME_new();
 
@@ -184,7 +178,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
         to = from + /*2 Years */ 2 * 365 * 24 * 60 * 60;
     }
 
-    time_t limit = /*2 Years (max possible) */ 2 * 366 * 24 * 60 * 60;
+    time_t limit = prof.maxValidity;
 
     if( to - from > limit || to - from < 0 ) {
         to = from + limit;

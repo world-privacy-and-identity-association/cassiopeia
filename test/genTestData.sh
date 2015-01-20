@@ -25,6 +25,7 @@ cat > profiles/0001-type1.cfg <<EOF
 ca=unassured
 eku=
 ku=
+days=10
 EOF
 
 mkdir -p ca/unassured
