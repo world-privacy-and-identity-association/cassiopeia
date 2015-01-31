@@ -46,7 +46,7 @@ int main( int argc, const char* argv[] ) {
 
     std::shared_ptr<BIO> conn = openSerial( serialPath );
     std::shared_ptr<BIO> slip1( BIO_new( toBio<SlipBIO>() ), BIO_free );
-    ( ( SlipBIO* )slip1->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( conn ) ) );
+    static_cast<SlipBIO*>( slip1->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( conn ) ) );
 
     DefaultRecordHandler* dh = new DefaultRecordHandler( std::shared_ptr<Signer>( new SimpleOpensslSigner( ) ), slip1 );
 

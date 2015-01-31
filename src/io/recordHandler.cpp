@@ -221,14 +221,8 @@ public:
     }
 };
 
-DefaultRecordHandler::DefaultRecordHandler( std::shared_ptr<Signer> signer, std::shared_ptr<BIO> bio ) :
-    currentSession() {
-
-    this->signer = signer;
-
-    ctx = generateSSLContext( true );
-
-    this->bio = bio;
+DefaultRecordHandler::DefaultRecordHandler( std::shared_ptr<Signer> signer, std::shared_ptr<BIO> bio )
+    : bio( bio ), ctx( generateSSLContext( true ) ), signer( signer ), currentSession() {
 }
 
 void DefaultRecordHandler::reset() {

@@ -78,7 +78,7 @@ int main( int argc, const char* argv[] ) {
     std::shared_ptr<JobProvider> jp( new MySQLJobProvider( sqlHost, sqlUser, sqlPass, sqlDB ) );
     std::shared_ptr<BIO> b = openSerial( serialPath );
     std::shared_ptr<BIO> slip1( BIO_new( toBio<SlipBIO>() ), BIO_free );
-    ( ( SlipBIO* )slip1->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( b ) ) );
+    static_cast<SlipBIO*>( slip1->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( b ) ) );
     std::shared_ptr<RemoteSigner> sign( new RemoteSigner( slip1, generateSSLContext( false ) ) );
     // std::shared_ptr<Signer> sign( new SimpleOpensslSigner() );
 
@@ -170,7 +170,7 @@ int main( int argc, const char* argv[] ) {
                 continue;
             } catch( const char* c ) {
                 log << "ERROR: " << c << std::endl;
-            } catch( std::string c ) {
+            } catch( std::string& c ) {
                 log << "ERROR: " << c << std::endl;
             }
 
@@ -178,7 +178,7 @@ int main( int argc, const char* argv[] ) {
                 jp->failJob( job );
             } catch( const char* c ) {
                 log << "ERROR: " << c << std::endl;
-            } catch( std::string c ) {
+            } catch( std::string& c ) {
                 log << "ERROR: " << c << std::endl;
             }
         } else if( job->task == "revoke" ) {

@@ -5,27 +5,27 @@
 namespace BIOWrapper {
 
     int write( BIO* b, const char* buf, int num ) {
-        return ( ( OpensslBIO* )b->ptr )->write( buf, num );
+        return static_cast<OpensslBIO*>( b->ptr )->write( buf, num );
     }
 
     int read( BIO* b, char* buf, int size ) {
-        return ( ( OpensslBIO* )b->ptr )->read( buf, size );
+        return static_cast<OpensslBIO*>( b->ptr )->read( buf, size );
     }
 
     int puts( BIO* b, const char* str ) {
-        return ( ( OpensslBIO* )b->ptr )->puts( str );
+        return static_cast<OpensslBIO*>( b->ptr )->puts( str );
     }
 
     int gets( BIO* b, char* str, int size ) {
-        return ( ( OpensslBIO* )b->ptr )->gets( str, size );
+        return static_cast<OpensslBIO*>( b->ptr )->gets( str, size );
     }
 
     long ctrl( BIO* b, int cmod, long arg1, void* arg2 ) {
-        return ( ( OpensslBIO* )b->ptr )->ctrl( cmod, arg1, arg2 );
+        return static_cast<OpensslBIO*>( b->ptr )->ctrl( cmod, arg1, arg2 );
     }
 
     int free( BIO* b ) {
-        delete( ( OpensslBIO* ) b->ptr );
+        delete static_cast<OpensslBIO*>( b->ptr );
         b->ptr = 0;
         return 0;
     }

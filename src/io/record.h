@@ -52,12 +52,12 @@ public:
     }
 
     template <class T>
-    void append( std::string& str, T val ) {
+    static void append( std::string& str, T val ) {
         str.append( ( char* ) &val, sizeof( T ) );
     }
 
     template <class T>
-    void read( std::string::iterator& it, T& val ) {
+    static void read( std::string::iterator& it, T& val ) {
         char* data = ( char* ) &val;
 
         for( size_t i = 0; i < sizeof( T ); i++ ) {
@@ -96,6 +96,6 @@ public:
 
 };
 
-std::string parseCommand( RecordHeader& head, const std::string input, std::shared_ptr<std::ostream> log );
+std::string parseCommand( RecordHeader& head, const std::string& input, std::shared_ptr<std::ostream> log );
 
 void sendCommand( RecordHeader& head, const std::string& data, std::shared_ptr<OpensslBIO> bio, std::shared_ptr<std::ostream> log );

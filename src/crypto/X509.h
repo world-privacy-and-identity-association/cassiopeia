@@ -19,7 +19,7 @@ public:
     static std::shared_ptr<X509Req> parseCSR( std::string content );
     static std::shared_ptr<X509Req> parseSPKAC( std::string content );
     int verify();
-    std::shared_ptr<EVP_PKEY> getPkey();
+    std::shared_ptr<EVP_PKEY> getPkey() const;
 };
 
 class X509Cert {

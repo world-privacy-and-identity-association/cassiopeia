@@ -17,7 +17,7 @@ std::shared_ptr<int> ssl_lib_ref(
         CRYPTO_cleanup_all_ex_data();
     } );
 
-std::shared_ptr<X509> loadX509FromFile( std::string filename ) {
+std::shared_ptr<X509> loadX509FromFile( const std::string& filename ) {
     FILE* f = fopen( filename.c_str(), "r" );
 
     if( !f ) {
@@ -38,7 +38,7 @@ std::shared_ptr<X509> loadX509FromFile( std::string filename ) {
         } );
 }
 
-std::shared_ptr<EVP_PKEY> loadPkeyFromFile( std::string filename ) {
+std::shared_ptr<EVP_PKEY> loadPkeyFromFile( const std::string& filename ) {
     FILE* f = fopen( filename.c_str(), "r" );
 
     if( !f ) {
@@ -162,7 +162,7 @@ void setupSerial( FILE* f ) {
     }
 }
 
-std::shared_ptr<BIO> openSerial( const std::string name ) {
+std::shared_ptr<BIO> openSerial( const std::string& name ) {
     FILE* f = fopen( name.c_str(), "r+" );
 
     if( !f ) {
@@ -175,9 +175,7 @@ std::shared_ptr<BIO> openSerial( const std::string name ) {
     return b;
 }
 
-CAConfig::CAConfig( std::string name ) {
-    this->name = name;
-    this->path = "ca/" + name;
+CAConfig::CAConfig( const std::string& name ) : path( "ca/" + name ), name( name ) {
     ca = loadX509FromFile( path + "/ca.crt" );
     caKey = loadPkeyFromFile( path + "/ca.key" );
     ASN1_TIME* tm = X509_get_notBefore( ca );

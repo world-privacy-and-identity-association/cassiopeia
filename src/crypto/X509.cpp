@@ -7,8 +7,7 @@
 #include <openssl/bio.h>
 #include <openssl/x509v3.h>
 
-X509Req::X509Req( X509_REQ* csr ) {
-    req = std::shared_ptr<X509_REQ>( csr, X509_REQ_free );
+X509Req::X509Req( X509_REQ* csr ) : req( csr, X509_REQ_free ) {
     EVP_PKEY* pkt = X509_REQ_get_pubkey( req.get() );
 
     if( !pkt ) {
@@ -48,7 +47,7 @@ int X509Req::verify() {
     return X509_REQ_verify( req.get(), pk.get() );
 }
 
-std::shared_ptr<EVP_PKEY> X509Req::getPkey() {
+std::shared_ptr<EVP_PKEY> X509Req::getPkey() const {
     return pk;
 }
 

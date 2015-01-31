@@ -1,7 +1,6 @@
 #include "opensslBIO.h"
 
-OpensslBIOWrapper::OpensslBIOWrapper( std::shared_ptr<BIO> b ) {
-    this->b = b;
+OpensslBIOWrapper::OpensslBIOWrapper( std::shared_ptr<BIO> b ) : b( b ) {
 }
 
 OpensslBIOWrapper::~OpensslBIOWrapper() {

@@ -52,7 +52,7 @@ int32_t fromHexDigit( char c ) {
     return res;
 }
 
-std::string parseCommand( RecordHeader& head, const std::string input, std::shared_ptr<std::ostream> log ) {
+std::string parseCommand( RecordHeader& head, const std::string& input, std::shared_ptr<std::ostream> log ) {
     if( log ) {
         ( *log.get() ) << "FINE: RECORD input: " << input << std::endl;
     }

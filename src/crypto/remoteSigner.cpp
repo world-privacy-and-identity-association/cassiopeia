@@ -6,9 +6,7 @@
 #include <openssl/ssl.h>
 #include <openssl/bn.h>
 
-RemoteSigner::RemoteSigner( std::shared_ptr<BIO> target, std::shared_ptr<SSL_CTX> ctx ) {
-    this->target = target;
-    this->ctx = ctx;
+RemoteSigner::RemoteSigner( std::shared_ptr<BIO> target, std::shared_ptr<SSL_CTX> ctx ) : target( target ), ctx( ctx ) {
 }
 
 RemoteSigner::~RemoteSigner() {

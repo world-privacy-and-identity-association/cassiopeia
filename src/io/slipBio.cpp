@@ -37,27 +37,14 @@ std::string toHex( const char* buf, int len ) {
     return data;
 }
 
-SlipBIO::SlipBIO() {
-    this->buffer = std::vector<char>( BUFFER_SIZE );
-    this->decodeTarget = 0;
-    this->decodePos = 0;
-    this->rawPos = 0;
-    this->failed = false;
+SlipBIO::SlipBIO() : buffer( std::vector<char>( BUFFER_SIZE ) ), decodeTarget( 0 ), decodePos( 0 ), rawPos( 0 ), failed( false ) {
 }
 
 void SlipBIO::setTarget( std::shared_ptr<OpensslBIO> target ) {
     this->target = target;
 }
 
-SlipBIO::SlipBIO( std::shared_ptr<OpensslBIO> target ) {
-    this->target = target;
-
-    this->buffer = std::vector<char>( BUFFER_SIZE );
-    this->decodeTarget = 0;
-    this->decodePos = 0;
-    this->rawPos = 0;
-
-    this->failed = false;
+SlipBIO::SlipBIO( std::shared_ptr<OpensslBIO> target ) : target( target ), buffer( std::vector<char>( BUFFER_SIZE ) ), decodeTarget( 0 ), decodePos( 0 ), rawPos( 0 ), failed( false ) {
 }
 
 SlipBIO::~SlipBIO() {}
