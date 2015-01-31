@@ -12,15 +12,12 @@
 
 class OpensslBIOVector : public OpensslBIO {
 private:
-    std::vector<std::vector<char>>::iterator it, end;
     std::vector<std::vector<char>> input;
+    std::vector<std::vector<char>>::iterator it, end;
 
 public:
     std::vector<std::vector<char>> result = std::vector<std::vector<char>>();
-    OpensslBIOVector( std::vector<std::vector<char>> data ) {
-        input = data;
-        it = input.begin();
-        end = input.end();
+    OpensslBIOVector( std::vector<std::vector<char>> data ) : input( data ), it( input.begin() ), end( input.end() ) {
     }
 
     int write( const char* buf, int num );
@@ -46,7 +43,7 @@ int OpensslBIOVector::read( char* buf, int size ) {
 
     std::copy( it->begin(), it->end(), buf );
     auto result = it->size();
-    it++;
+    ++it;
     return result;
 }
 
