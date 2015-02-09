@@ -23,6 +23,12 @@ CFLAGS+=${ADDFLAGS} -Wall -Werror -Wextra -pedantic -std=c++11 -I../src -I../lib
 CXXFLAGS=$(CFLAGS)
 LDFLAGS+=${ADDFLAGS} -lmysqlclient -lssl -lcrypto -ldl -lboost_unit_test_framework -L../lib/openssl -L/usr/lib/i386-linux-gnu
 
+ifneq (,$(filter coverage,$(DEB_BUILD_OPTIONS)))
+    LDFLAGS += -lgcov
+    CFLAGS += -fprofile-arcs -ftest-coverage
+endif
+
+
 SRC_DIR=src
 OBJ_DIR=obj
 DEP_DIR=dep

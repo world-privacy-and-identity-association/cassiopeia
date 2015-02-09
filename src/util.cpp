@@ -78,7 +78,7 @@ std::pair<bool, time_t> parseDate( const std::string& date ) {
     std::size_t siz = strftime( check, 11, "%Y-%m-%d", &t );
 
     if( siz != 10 ) {
-        return std::pair<bool, time_t>( false, 0 );
+        return std::pair<bool, time_t>( false, 0 ); // NO-COVERAGE (by contract of strftime)
     }
 
     std::string checkS( check, siz );

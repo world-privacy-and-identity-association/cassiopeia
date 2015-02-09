@@ -8,10 +8,6 @@
 BOOST_AUTO_TEST_SUITE( TestTime )
 
 BOOST_AUTO_TEST_CASE( testParseDate ) {
-    if( 1 ) {
-        return;
-    }
-
     auto r = parseDate( "2012-01-01" );
     BOOST_CHECK( r.first );
     BOOST_CHECK( r.second == 1325376000 );
@@ -24,6 +20,7 @@ BOOST_AUTO_TEST_CASE( testParseDate ) {
     BOOST_CHECK( !( parseDate( "hallo" ) ).first );
     BOOST_CHECK( !( parseDate( "aaaa-aa-aa" ) ).first );
     BOOST_CHECK( !( parseDate( "32-12-12" ) ).first );
+    BOOST_CHECK( !( parseDate( "2000-12-01z" ) ).first );
     BOOST_CHECK( !( parseDate( "2000-13-01" ) ).first );
     BOOST_CHECK( !( parseDate( "2000-00-01" ) ).first );
     BOOST_CHECK( !( parseDate( "2000-02-30" ) ).first );
@@ -71,6 +68,7 @@ BOOST_AUTO_TEST_CASE( testInvalidInverval ) {
     BOOST_CHECK( !( parseMonthInterval( base, "--2m" ).first ) );
     BOOST_CHECK( !( parseMonthInterval( base, "25m" ).first ) ); // too big
 
+    BOOST_CHECK( !( parseYearInterval( base, "12k" ).first ) );
     BOOST_CHECK( !( parseYearInterval( base, "12my" ).first ) );
     BOOST_CHECK( !( parseYearInterval( base, "-2m2y" ).first ) );
     BOOST_CHECK( !( parseYearInterval( base, "--2y" ).first ) );

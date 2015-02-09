@@ -36,6 +36,12 @@ CFLAGS+=${ADDFLAGS} -Wall -Werror -Wextra -pedantic -std=c++11 -Ilib/openssl/inc
 CXXFLAGS=$(CFLAGS)
 LDFLAGS+=${ADDFLAGS} -L/usr/lib/i386-linux-gnu/ -lssl -lcrypto -ldl -Llib/openssl
 
+ifneq (,$(filter coverage,$(DEB_BUILD_OPTIONS)))
+    LDFLAGS += -lgcov
+    CFLAGS += -fprofile-arcs -ftest-coverage
+endif
+
+
 SRC_DIR=src
 OBJ_DIR=obj
 DEP_DIR=dep
@@ -55,6 +61,8 @@ all: build
 .PHONY: clean
 clean::
 	-rm -rf .libs
+	-rm -rf *.gcov
+	-rm -rf gcov.log
 	-rm -rf *.a
 	-rm -rf *.d
 	-rm -rf *.o
@@ -95,6 +103,13 @@ openssl:
 .PHONY: collissiondetect
 collissiondetect:
 	${MAKE} -C lib/collissiondetect
+
+.PHONY: coverage
+coverage:
+	find . -name "*.gcda" -exec rm {} +
+	${MAKE} "DEB_BUILD_OPTIONS=coverage noopt"
+	find obj -name "*.gcda" -exec gcov -p {} + > gcov.log
+
 
 # --------
 
