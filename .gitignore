@@ -37,3 +37,6 @@ config.txt
 serial
 *.gcov
 gcov.log
+
+coverage
+coverage.info
