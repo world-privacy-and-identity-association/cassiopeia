@@ -14,7 +14,6 @@ BOOST_AUTO_TEST_CASE( SeperateSignature ) {
     std::shared_ptr<CAConfig> ca = CAs.at( "unassured" );
 
     CRL c( "" );
-    c.setSignature( c.getSignature() );
     c.sign( ca );
     std::string oldsig = c.getSignature();
     BOOST_CHECK( c.verify( ca ) );
