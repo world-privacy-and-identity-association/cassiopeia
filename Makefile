@@ -108,10 +108,11 @@ collissiondetect:
 coverage:
 	find . -name "*.gcda" -exec rm {} + &&\
 	rm -rf coverage &&\
-	rm -rf coverage.info &&\
+	rm -rf coverage.info coverage_stripped.info &&\
 	${MAKE} "DEB_BUILD_OPTIONS=coverage noopt" &&\
 	lcov -c --directory obj --directory test/obj --output-file coverage.info &&\
-	genhtml -p $(shell pwd) coverage.info --output-directory coverage
+	lcov -r coverage.info "/usr/**" -o coverage_stripped.info &&\
+	genhtml -p $(shell pwd) coverage_stripped.info --output-directory coverage
 
 # --------
 
