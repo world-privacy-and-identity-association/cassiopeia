@@ -57,8 +57,8 @@ public:
     }
 
     template <class T>
-    static void read( std::string::iterator& it, T& val ) {
-        char* data = ( char* ) &val;
+    static void read( std::string::iterator& it, T&& val ) {
+        char* data = reinterpret_cast<char*>( &val );
 
         for( size_t i = 0; i < sizeof( T ); i++ ) {
             data[i] = *it;
