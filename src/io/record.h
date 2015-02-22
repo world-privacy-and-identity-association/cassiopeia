@@ -57,13 +57,21 @@ public:
     }
 
     template <class T>
-    static void read( std::string::iterator& it, T&& val ) {
-        char* data = reinterpret_cast<char*>( &val );
+    static void read( std::string::const_iterator& it, T& val ) {
+        union typeConversion {
+            char buf[sizeof(T)];
+            T value;
+
+            typeConversion(const T& v) : value(v) {}
+        };
+
+        typeConversion data( 0 );
 
         for( size_t i = 0; i < sizeof( T ); i++ ) {
-            data[i] = *it;
-            it++;
+            data.buf[i] = *it++;
         }
+
+        val = data.value;
     }
 
     std::string packToString() {
@@ -79,12 +87,12 @@ public:
         return res;
     }
 
-    void unpackFromString( std::string str ) {
+    void unpackFromString( const std::string& str ) {
         if( str.size() != RECORD_HEADER_SIZE ) {
             throw "Invalid string length";
         }
 
-        auto it =  str.begin();
+        auto it =  str.cbegin();
         read( it, command );
         read( it, flags );
         read( it, sessid );
