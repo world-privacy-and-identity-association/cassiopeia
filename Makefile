@@ -52,6 +52,8 @@ FS_BIN=$(wildcard ${SRC_DIR}/app/*.cpp)
 FS_LIBS=$(wildcard lib/*/)
 FS_OBJ=$(FS_SRC:${SRC_DIR}/%.cpp=${OBJ_DIR}/%.lo)
 FS_DEP=$(FS_SRC:${SRC_DIR}/%.cpp=${DEP_DIR}/%.d)
+LIB_OPENSSL=lib/openssl/libssl.a
+
 
 .SUFFIXES: .c .cpp .d
 
@@ -97,7 +99,7 @@ install: build
 libs: ${LIBS}
 
 .PHONY: openssl
-openssl:
+openssl lib/openssl/libssl.a lib/openssl/libcrypto.a:
 	${MAKE} -C lib openssl
 
 .PHONY: collissiondetect
@@ -124,9 +126,9 @@ bin/cassiopeia: libs ${FS_OBJ} ${OBJ_DIR}/apps/client.lo
 bin/cassiopeia-signer: libs ${FS_OBJ} ${OBJ_DIR}/apps/signer.lo
 	${MKDIR} $(shell dirname $@) &&  ${LD} ${LDFLAGS} -o $@ $(filter-out ${OBJ_DIR}/db/mysql.lo,${FS_OBJ}) ${OBJ_DIR}/apps/signer.lo
 
-${DEP_DIR}/%.d: ${SRC_DIR}/%.cpp
+${DEP_DIR}/%.d: ${SRC_DIR}/%.cpp ${LIB_OPENSSL}
 	${MKDIR} $(shell dirname $@) && $(CXX_DEP) $(CXXFLAGS) -M -MF $@ $<
-${DEP_DIR}/%.d: ${SRC_DIR}/%.c
+${DEP_DIR}/%.d: ${SRC_DIR}/%.c ${LIB_OPENSSL}
 	${MKDIR} $(shell dirname $@) && $(CC) $(CXXFLAGS) -M -MF $@ $<
 
 ${OBJ_DIR}/%.lo ${OBJ_DIR}/%.o: ${SRC_DIR}/%.c ${DEP_DIR}/%.d
