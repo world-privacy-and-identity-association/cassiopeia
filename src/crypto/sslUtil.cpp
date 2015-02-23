@@ -94,7 +94,9 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
     SSL_CTX_set_verify( ctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, verify_callback );
     SSL_CTX_use_certificate_file( ctx.get(), server ? "keys/signer_server.crt" : "keys/signer_client.crt", SSL_FILETYPE_PEM );
     SSL_CTX_use_PrivateKey_file( ctx.get(), server ? "keys/signer_server.key" : "keys/signer_client.key", SSL_FILETYPE_PEM );
-    SSL_CTX_load_verify_locations( ctx.get(), "keys/ca.crt", 0 );
+    if( 1 != SSL_CTX_load_verify_locations( ctx.get(), "keys/ca.crt", 0 ) ) {
+        throw "Cannot load CA store for certificate validation.";
+    }
 
     if( server ) {
         STACK_OF( X509_NAME ) *names = SSL_load_client_CA_file( "keys/env.crt" );
