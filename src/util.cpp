@@ -25,10 +25,17 @@ std::string readFile( const std::string& name ) {
 }
 
 std::string writeBackFile( const std::string& serial, const std::string& cert, const std::string& keydir ) {
+    errno = 0;
+
     std::string filename = keydir;
-    mkdir( filename.c_str(), 0755 );
+    if( 0 != mkdir( filename.c_str(), 0755 ) ) {
+        return "";
+    }
+
     filename += "/crt";
-    mkdir( filename.c_str(), 0755 );
+    if( 0 != mkdir( filename.c_str(), 0755 ) ) {
+        return "";
+    }
     std::string first;
 
     if( serial.length() < 3 ) {
@@ -38,12 +45,15 @@ std::string writeBackFile( const std::string& serial, const std::string& cert, c
     }
 
     filename += "/" + first;
-    mkdir( filename.c_str(), 0755 );
+    if( 0 != mkdir( filename.c_str(), 0755 ) ) {
+        return "";
+    }
     filename += "/" + serial + ".crt";
     writeFile( filename, cert );
 
     return filename;
 }
+
 bool isDigit( char c ) {
     return ( c >= '0' ) && ( c <= '9' );
 }
