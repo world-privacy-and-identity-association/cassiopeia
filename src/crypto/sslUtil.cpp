@@ -18,14 +18,13 @@ std::shared_ptr<int> ssl_lib_ref(
     } );
 
 std::shared_ptr<X509> loadX509FromFile( const std::string& filename ) {
-    FILE* f = fopen( filename.c_str(), "r" );
+    std::shared_ptr<FILE> f( fopen( filename.c_str(), "r" ), fclose );
 
     if( !f ) {
         return std::shared_ptr<X509>();
     }
 
-    X509* key = PEM_read_X509( f, NULL, NULL, 0 );
-    fclose( f );
+    X509* key = PEM_read_X509( f.get(), NULL, NULL, 0 );
 
     if( !key ) {
         return std::shared_ptr<X509>();
@@ -39,14 +38,13 @@ std::shared_ptr<X509> loadX509FromFile( const std::string& filename ) {
 }
 
 std::shared_ptr<EVP_PKEY> loadPkeyFromFile( const std::string& filename ) {
-    FILE* f = fopen( filename.c_str(), "r" );
+    std::shared_ptr<FILE> f( fopen( filename.c_str(), "r" ), fclose );
 
     if( !f ) {
         return std::shared_ptr<EVP_PKEY>();
     }
 
-    EVP_PKEY* key = PEM_read_PrivateKey( f, NULL, NULL, 0 );
-    fclose( f );
+    EVP_PKEY* key = PEM_read_PrivateKey( f.get(), NULL, NULL, 0 );
 
     if( !key ) {
         return std::shared_ptr<EVP_PKEY>();
@@ -108,11 +106,10 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
         }
 
         if( !dh_param ) {
-            FILE* paramfile = fopen( "dh_param.pem", "r" );
+            std::shared_ptr<FILE> paramfile( fopen( "dh_param.pem", "r" ), fclose );
 
             if( paramfile ) {
-                dh_param = std::shared_ptr<DH>( PEM_read_DHparams( paramfile, NULL, NULL, NULL ), DH_free );
-                fclose( paramfile );
+                dh_param = std::shared_ptr<DH>( PEM_read_DHparams( paramfile.get(), NULL, NULL, NULL ), DH_free );
             } else {
                 dh_param = std::shared_ptr<DH>( DH_new(), DH_free );
                 std::cout << "Generating DH params" << std::endl;
@@ -126,11 +123,10 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
                 }
 
                 std::cout << std::endl;
-                paramfile = fopen( "dh_param.pem", "w" );
+                paramfile = std::shared_ptr<FILE>( fopen( "dh_param.pem", "w" ), fclose );
 
                 if( paramfile ) {
-                    PEM_write_DHparams( paramfile, dh_param.get() );
-                    fclose( paramfile );
+                    PEM_write_DHparams( paramfile.get(), dh_param.get() );
                 }
             }
         }
@@ -143,10 +139,10 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
     return ctx;
 }
 
-void setupSerial( FILE* f ) {
+void setupSerial( std::shared_ptr<FILE> f ) {
     struct termios attr;
 
-    if( tcgetattr( fileno( f ), &attr ) ) {
+    if( tcgetattr( fileno( f.get() ), &attr ) ) {
         throw "failed to get attrs";
     }
 
@@ -159,13 +155,13 @@ void setupSerial( FILE* f ) {
     cfsetispeed( &attr, B115200 );
     cfsetospeed( &attr, B115200 );
 
-    if( tcsetattr( fileno( f ), TCSANOW, &attr ) ) {
+    if( tcsetattr( fileno( f.get() ), TCSANOW, &attr ) ) {
         throw "failed to get attrs";
     }
 }
 
 std::shared_ptr<BIO> openSerial( const std::string& name ) {
-    FILE* f = fopen( name.c_str(), "r+" );
+    std::shared_ptr<FILE> f( fopen( name.c_str(), "r+" ), fclose );
 
     if( !f ) {
         std::cout << "Opening serial device failed" << std::endl;
@@ -173,8 +169,11 @@ std::shared_ptr<BIO> openSerial( const std::string& name ) {
     }
 
     setupSerial( f );
-    std::shared_ptr<BIO> b( BIO_new_fd( fileno( f ), 0 ), BIO_free );
-    return b;
+    return std::shared_ptr<BIO>(
+        BIO_new_fd( fileno( f.get() ), 0 ),
+        [f]( BIO* b ) {
+            BIO_free(b);
+        } );
 }
 
 CAConfig::CAConfig( const std::string& name ) : path( "ca/" + name ), name( name ) {
