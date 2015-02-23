@@ -247,15 +247,28 @@ std::shared_ptr<SignedCertificate> X509Cert::sign( std::shared_ptr<EVP_PKEY> caK
     //X509_print_fp( stdout, target.get() );
 
     std::shared_ptr<BIO> mem = std::shared_ptr<BIO>( BIO_new( BIO_s_mem() ), BIO_free );
+    if( !mem ) {
+        throw "Failed to allocate memory for the signed certificate.";
+    }
     PEM_write_bio_X509( mem.get(), target.get() );
-    BUF_MEM* buf;
+
+    BUF_MEM* buf = NULL;
     BIO_get_mem_ptr( mem.get(), &buf );
+
     std::shared_ptr<SignedCertificate> res = std::shared_ptr<SignedCertificate>( new SignedCertificate() );
     res->certificate = std::string( buf->data, buf->data + buf->length );
-    BIGNUM* ser = ASN1_INTEGER_to_BN( target->cert_info->serialNumber, NULL );
-    char* serStr = BN_bn2hex( ser );
-    res->serial = std::string( serStr );
-    OPENSSL_free( serStr );
-    BN_free( ser );
+
+    std::shared_ptr<BIGNUM> ser( ASN1_INTEGER_to_BN( target->cert_info->serialNumber, NULL ), BN_free );
+    if( !ser ) {
+        throw "Failed to retrieve certificate serial of signed certificate.";
+    }
+
+    std::shared_ptr<char> serStr(
+        BN_bn2hex( ser.get() ),
+        []( char *p ) {
+            OPENSSL_free(p);
+        } ); // OPENSSL_free is a macro...
+    res->serial = serStr ? std::string( serStr.get() ) : "";
+
     return res;
 }
