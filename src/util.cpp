@@ -14,6 +14,8 @@ void writeFile( const std::string& name, const std::string& content ) {
     file.open( name );
     file << content;
     file.close();
+
+    //! \FIXME: Error checking
 }
 
 std::string readFile( const std::string& name ) {
@@ -29,12 +31,20 @@ std::string writeBackFile( const std::string& serial, const std::string& cert, c
 
     std::string filename = keydir;
     if( 0 != mkdir( filename.c_str(), 0755 ) ) {
-        return "";
+        if( EEXIST != errno ) {
+            return "";
+        }
+
+        //! \FIXME: Check this is a directory
     }
 
     filename += "/crt";
     if( 0 != mkdir( filename.c_str(), 0755 ) ) {
-        return "";
+        if( EEXIST != errno ) {
+            return "";
+        }
+
+        //! \FIXME: Check this is a directory
     }
     std::string first;
 
@@ -46,8 +56,13 @@ std::string writeBackFile( const std::string& serial, const std::string& cert, c
 
     filename += "/" + first;
     if( 0 != mkdir( filename.c_str(), 0755 ) ) {
-        return "";
+        if( EEXIST != errno ) {
+            return "";
+        }
+
+        //! \FIXME: Check this is a directory
     }
+
     filename += "/" + serial + ".crt";
     writeFile( filename, cert );
 
