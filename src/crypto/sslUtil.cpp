@@ -38,7 +38,11 @@ std::shared_ptr<X509> loadX509FromFile( const std::string& filename ) {
 }
 
 std::shared_ptr<EVP_PKEY> loadPkeyFromFile( const std::string& filename ) {
-    std::shared_ptr<FILE> f( fopen( filename.c_str(), "r" ), fclose );
+    std::shared_ptr<FILE> f( fopen( filename.c_str(), "r" ), []( FILE * ptr ) {
+        if( ptr ) {
+            fclose( ptr );
+        }
+    } );
 
     if( !f ) {
         return std::shared_ptr<EVP_PKEY>();
