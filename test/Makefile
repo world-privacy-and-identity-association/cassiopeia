@@ -63,7 +63,7 @@ testdata:
 	./genTestData.sh
 
 build: cassiopeia-test testdata
-	${BIN}
+	${BIN} --log_level=warning
 
 .PHONY: install
 install: build

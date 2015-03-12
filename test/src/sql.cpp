@@ -3,11 +3,18 @@
 #include <db/mysql.h>
 #include <config.h>
 
+#include <fstream>
+
 extern std::string sqlHost, sqlUser, sqlPass, sqlDB;
 
-BOOST_AUTO_TEST_SUITE( TestTime )
+BOOST_AUTO_TEST_SUITE( TestSQL )
 
 BOOST_AUTO_TEST_CASE( testSQL ) {
+    std::ifstream conf("config.txt");
+    if( !conf ) {
+        BOOST_WARN_MESSAGE( 0, "Config file is missing. Exiting." );
+	return;
+    }
     BOOST_REQUIRE( parseConfig("config.txt") == 0 );
     std::shared_ptr<MySQLJobProvider> jp( new MySQLJobProvider( sqlHost, sqlUser, sqlPass, sqlDB ) );
     BOOST_REQUIRE( jp->query( "TRUNCATE TABLE profiles" ).first == 0 );
@@ -53,6 +60,11 @@ BOOST_AUTO_TEST_CASE( testSQL ) {
 }
 
 BOOST_AUTO_TEST_CASE( testSQLDisconnected ) {
+    std::ifstream conf("config.txt");
+    if( !conf ) {
+        BOOST_WARN_MESSAGE( 0, "Config file is missing. Exiting." );
+	return;
+    }
     //if(1) return;
     //BOOST_REQUIRE( parseConfig("config.txt") == 0 );
     std::shared_ptr<MySQLJobProvider> jp( new MySQLJobProvider( sqlHost, sqlUser, sqlPass, sqlDB ) );
