@@ -7,7 +7,7 @@ else
 endif
 
 BIN="bin/cassiopeia-test"
-LIBS=openssl collissiondetect
+LIBS=openssl collisiondetect
 
 CC=libtool --mode=compile gcc
 CC_DEP=g++
@@ -75,9 +75,9 @@ libs: ${LIBS}
 openssl:
 	${MAKE} -C ../lib openssl
 
-.PHONY: collissiondetect
-collissiondetect:
-	${MAKE} -C ../lib/collissiondetect
+.PHONY: collisiondetect
+collisiondetect:
+	${MAKE} -C ../lib/collisiondetect
 
 # --------
 

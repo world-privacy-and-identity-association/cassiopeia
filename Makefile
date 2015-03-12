@@ -15,7 +15,7 @@ ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
 endif
 
 BIN="bin/cassiopeia"
-LIBS=openssl collissiondetect
+LIBS=openssl collisiondetect
 
 CC=libtool --mode=compile gcc
 CC_DEP=g++
@@ -81,7 +81,7 @@ endif
 .PHONY: dist-clean
 dist-clean: clean
 	${MAKE} -C lib/openssl clean
-	${MAKE} -C lib/collissiondetect clean
+	${MAKE} -C lib/collisiondetect clean
 
 
 build: cassiopeia
@@ -102,9 +102,9 @@ libs: ${LIBS}
 openssl lib/openssl/libssl.a lib/openssl/libcrypto.a:
 	${MAKE} -C lib openssl
 
-.PHONY: collissiondetect
-collissiondetect:
-	${MAKE} -C lib/collissiondetect
+.PHONY: collisiondetect
+collisiondetect:
+	${MAKE} -C lib collisiondetect
 
 .PHONY: coverage
 coverage:
