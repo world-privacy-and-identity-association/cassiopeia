@@ -107,14 +107,9 @@ int main( int argc, const char* argv[] ) {
             continue;
         }
 
-        std::ofstream* logP = new std::ofstream( std::string( "logs/" ) + job->id + std::string( "_" ) + job->warning + std::string( ".log" ) );
-        std::shared_ptr<std::ofstream> logPtr(
-            logP,
-            []( std::ofstream * ptr ) {
-                ( *ptr ).close();
-                delete ptr;
-            } );
-        std::ofstream& log = *logP;
+        std::shared_ptr<std::ofstream> logPtr = openLogfile( std::string( "logs/" ) + job->id + std::string( "_" ) + job->warning + std::string( ".log" ) );
+
+        std::ofstream& log = *( logPtr.get() );
 
         sign->setLog( logPtr );
         log << "TASK ID: " << job->id << std::endl;
@@ -201,6 +196,8 @@ int main( int argc, const char* argv[] ) {
                 jp->writeBackRevocation( job, timeToString( time ) );
                 jp->finishJob( job );
             } catch( const char* c ) {
+                std::cout << "Exception: " << c << std::endl;
+            } catch( const std::string& c ) {
                 std::cout << "Exception: " << c << std::endl;
             }
         } else {

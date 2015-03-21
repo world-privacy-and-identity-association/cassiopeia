@@ -181,3 +181,21 @@ std::pair<bool, time_t> parseYearInterval( std::time_t t, const std::string& dat
         return std::pair<bool, time_t>( false, 0 );
     }
 }
+
+std::shared_ptr<std::ofstream> openLogfile( const std::string name) {
+    struct stat buffer;
+    std::string tname = name;
+    int ctr = 2;
+    while(stat (tname.c_str(), &buffer) == 0) {
+        tname = name + "_" + std::to_string(ctr++);
+    }
+    auto res = std::shared_ptr<std::ofstream>(new std::ofstream( tname ),
+        [](std::ofstream *p){
+            p->close();
+            delete p;
+        });
+    if(! res->good() ){
+        throw std::string("Failed to open file for logging: ") + name;
+    }
+    return res;
+}

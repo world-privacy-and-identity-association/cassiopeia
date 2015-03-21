@@ -55,6 +55,8 @@ int main( int argc, const char* argv[] ) {
             dh->handle();
             //} catch( const std::exception &ch ) {
             //std::cout << "Real exception: " << typeid(ch).name() << ", " << ch.what() << std::endl;
+        } catch( const std::string& ch ) {
+            std::cout << "Exception: " << ch << std::endl;
         } catch( char const* ch ) {
             std::cout << "Exception: " << ch << std::endl;
         }

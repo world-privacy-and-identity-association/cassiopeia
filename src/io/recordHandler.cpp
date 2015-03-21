@@ -7,6 +7,7 @@
 
 #include <openssl/ssl.h>
 
+#include "util.h"
 #include "io/record.h"
 #include "io/opensslBIO.h"
 #include "io/slipBio.h"
@@ -49,12 +50,7 @@ public:
             throw "Error while fetching time?";
         }
 
-        log = std::shared_ptr<std::ofstream>(
-            new std::ofstream( std::string( "logs/log_" ) + std::to_string( c_time ) ),
-            []( std::ofstream * ptr ) {
-                ptr->close();
-                delete ptr;
-            } );
+        log = openLogfile( std::string( "logs/log_" ) + std::to_string( c_time ) );
 
         ssl = std::shared_ptr<SSL>( SSL_new( ctx.get() ), SSL_free );
         std::shared_ptr<BIO> bio(
@@ -185,6 +181,7 @@ public:
             if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
                 ( *log ) << "ERROR: SSL close failed" << std::endl;
             }
+            parent->reset(); // Connection ended
 
             break;
 
@@ -213,7 +210,7 @@ public:
             if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
                 ( *log ) << "ERROR: SSL close failed" << std::endl;
             }
-
+            parent->reset(); // Connection ended
             break;
         }
 
