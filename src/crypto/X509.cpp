@@ -247,9 +247,11 @@ std::shared_ptr<SignedCertificate> X509Cert::sign( std::shared_ptr<EVP_PKEY> caK
     //X509_print_fp( stdout, target.get() );
 
     std::shared_ptr<BIO> mem = std::shared_ptr<BIO>( BIO_new( BIO_s_mem() ), BIO_free );
+
     if( !mem ) {
         throw "Failed to allocate memory for the signed certificate.";
     }
+
     PEM_write_bio_X509( mem.get(), target.get() );
 
     BUF_MEM* buf = NULL;
@@ -259,6 +261,7 @@ std::shared_ptr<SignedCertificate> X509Cert::sign( std::shared_ptr<EVP_PKEY> caK
     res->certificate = std::string( buf->data, buf->data + buf->length );
 
     std::shared_ptr<BIGNUM> ser( ASN1_INTEGER_to_BN( target->cert_info->serialNumber, NULL ), BN_free );
+
     if( !ser ) {
         throw "Failed to retrieve certificate serial of signed certificate.";
     }

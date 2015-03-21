@@ -40,7 +40,7 @@ public:
     RecordHandlerSession( DefaultRecordHandler* parent, std::shared_ptr<Signer> signer, std::shared_ptr<SSL_CTX> ctx, std::shared_ptr<BIO> output ) :
         sessid( 0 ),
         lastCommandCount( 0 ),
-        tbs( new TBSCertificate() ){
+        tbs( new TBSCertificate() ) {
         this->parent = parent;
         this->signer = signer;
         time_t c_time;

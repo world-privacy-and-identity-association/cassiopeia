@@ -59,10 +59,10 @@ public:
     template <class T>
     static void read( std::string::const_iterator& it, T& val ) {
         union typeConversion {
-            char buf[sizeof(T)];
+            char buf[sizeof( T )];
             T value;
 
-            typeConversion(const T& v) : value(v) {}
+            typeConversion( const T& v ) : value( v ) {}
         };
 
         typeConversion data( 0 );

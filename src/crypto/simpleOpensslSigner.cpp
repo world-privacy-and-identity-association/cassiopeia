@@ -191,6 +191,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     std::shared_ptr<SignedCertificate> output = c.sign( ca->caKey, cert->md );
     signlog << "FINE: all went well" << std::endl;
     std::string fn = writeBackFile( num, output->certificate, ca->path );
+
     if( fn.empty() ) {
         signlog << "ERROR: failed to get filename for storage of signed certificate." << std::endl;
         throw "Storage location could not be determined";

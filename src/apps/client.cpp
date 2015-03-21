@@ -159,6 +159,7 @@ int main( int argc, const char* argv[] ) {
                 log << "FINE: CERTIFICATE LOG: " << res->log << std::endl;
                 log << "FINE: CERTIFICATE:" << std::endl << res->certificate << std::endl;
                 std::string fn = writeBackFile( job->target.c_str(), res->certificate, keyDir );
+
                 if( fn.empty() ) {
                     log << "ERROR: Writeback of the certificate failed." << std::endl;
                     jp->failJob( job );

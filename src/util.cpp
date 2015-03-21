@@ -30,6 +30,7 @@ std::string writeBackFile( const std::string& serial, const std::string& cert, c
     errno = 0;
 
     std::string filename = keydir;
+
     if( 0 != mkdir( filename.c_str(), 0755 ) ) {
         if( EEXIST != errno ) {
             return "";
@@ -39,6 +40,7 @@ std::string writeBackFile( const std::string& serial, const std::string& cert, c
     }
 
     filename += "/crt";
+
     if( 0 != mkdir( filename.c_str(), 0755 ) ) {
         if( EEXIST != errno ) {
             return "";
@@ -46,6 +48,7 @@ std::string writeBackFile( const std::string& serial, const std::string& cert, c
 
         //! \FIXME: Check this is a directory
     }
+
     std::string first;
 
     if( serial.length() < 3 ) {
@@ -55,6 +58,7 @@ std::string writeBackFile( const std::string& serial, const std::string& cert, c
     }
 
     filename += "/" + first;
+
     if( 0 != mkdir( filename.c_str(), 0755 ) ) {
         if( EEXIST != errno ) {
             return "";
