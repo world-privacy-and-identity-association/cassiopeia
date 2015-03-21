@@ -184,7 +184,7 @@ void X509Cert::setExtensions( std::shared_ptr<X509> caCert, std::vector<std::sha
     add_ext( caCert, target, NID_info_access, "OCSP;URI:http://ocsp.cacert.org" );
     add_ext( caCert, target, NID_crl_distribution_points, "URI:http://crl.cacert.org/class3-revoke.crl" );
 
-    if( sans.size() == 0 ) {
+    if( sans.empty() ) {
         return;
     }
 
