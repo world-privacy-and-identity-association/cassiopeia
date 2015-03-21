@@ -112,13 +112,13 @@ public:
         case RecordHeader::SignerCommand::SET_CSR:
             tbs->csr_content = data;
             tbs->csr_type = "CSR";
-            ( *log ) << "INFO: CSR read:" << std::endl << tbs->csr_content;
+            ( *log ) << "INFO: CSR read: " << tbs->csr_content << std::endl;
             break;
 
         case RecordHeader::SignerCommand::SET_SPKAC:
             tbs->csr_content = data;
             tbs->csr_type = "SPKAC";
-            ( *log ) << "INFO: SPKAC read:" << std::endl << tbs->csr_content;
+            ( *log ) << "INFO: SPKAC read: " << tbs->csr_content << std::endl;
             break;
 
         case RecordHeader::SignerCommand::SET_SIGNATURE_TYPE:
