@@ -202,8 +202,20 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
 
         c.setTimes( from, to );
         signlog << "FINE: Setting validity period successful:" << std::endl;
-        signlog << "FINE: - Valid not before: " << timeToString(from) << std::endl;
-        signlog << "FINE: - Valid not after:  " << timeToString(to) << std::endl;
+        {
+            struct tm* timeobj;
+            std::vector<char> timebuf;
+
+            timeobj = gmtime(&from);
+            timebuf.resize(128);
+            timebuf.resize(std::strftime(const_cast<char *>(timebuf.data()), timebuf.size(), "%F %T %Z", timeobj));
+            signlog << "FINE: - Valid not before: " << std::string(timebuf.cbegin(), timebuf.cend()) << std::endl;
+
+            timeobj = gmtime(&to);
+            timebuf.resize(128);
+            timebuf.resize(std::strftime(const_cast<char *>(timebuf.data()), timebuf.size(), "%F %T %Z", timeobj));
+            signlog << "FINE: - Valid not after:  " << std::string(timebuf.cbegin(), timebuf.cend()) << std::endl;
+        }
     }
 
     signlog << "INFO: Setting extensions:" << std::endl;
