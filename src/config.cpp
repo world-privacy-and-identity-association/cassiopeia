@@ -91,26 +91,26 @@ int parseProfiles() {
 
         std::string cas = map->at( "ca" );
 
-        for( size_t pos = 0; pos != std::string::npos; ) {
-            size_t end = cas.find( ",", pos );
-            std::string sub;
+        DIR *dir;
+        struct dirent *ent;
+        if ((dir = opendir ("ca")) != NULL) {
+            while ((ent = readdir (dir)) != NULL) {
+                std::string caName = std::string(ent->d_name);
+                if( caName.find( cas ) != 0 ){
+                    continue;
+                }
 
-            if( end == std::string::npos ) {
-                sub = cas.substr( pos );
-            } else {
-                sub = cas.substr( pos, end - pos );
-                end++;
+                if( CAs.find( caName ) == CAs.end() ) {
+                    std::shared_ptr<CAConfig> ca( new CAConfig( caName ) );
+                    CAs.emplace( caName, ca );
+                }
+
+                prof.ca.push_back( CAs.at( caName ) );
+                std::cout << "Adding CA: " << caName << std::endl;
             }
-
-            pos = end;
-
-            if( CAs.find( sub ) == CAs.end() ) {
-                std::shared_ptr<CAConfig> ca( new CAConfig( sub ) );
-                CAs.emplace( sub, ca );
-            }
-
-            prof.ca.push_back( CAs.at( sub ) );
-
+            closedir (dir);
+        } else {
+            throw "Directory with CAConfigs not found";
         }
 
         profiles.emplace( profileName, prof );
