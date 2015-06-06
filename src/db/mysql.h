@@ -19,7 +19,6 @@ private:
 
 public:
     MySQLJobProvider( const std::string& server, const std::string& user, const std::string& password, const std::string& database );
-    ~MySQLJobProvider();
 
 public:
     bool connect( const std::string& server, const std::string& user, const std::string& password, const std::string& database );

@@ -36,19 +36,8 @@ MySQLJobProvider::MySQLJobProvider( const std::string& server, const std::string
     connect( server, user, password, database );
 }
 
-MySQLJobProvider::~MySQLJobProvider() {
-    disconnect();
-}
-
 bool MySQLJobProvider::connect( const std::string& server, const std::string& user, const std::string& password, const std::string& database ) {
-    if( conn ) {
-        if( !disconnect() ) {
-            return false;
-        }
-
-        conn.reset();
-    }
-
+    disconnect();
     conn = _connect( server, user, password, database );
 
     return !!conn;
