@@ -47,13 +47,13 @@ std::shared_ptr<MYSQL> MySQLJobProvider::_connect( const std::string& server, co
     MYSQL* tmp( mysql_init( NULL ) );
 
     if( !tmp ) {
-        return std::shared_ptr<MYSQL>();
+        return nullptr;
     }
 
     tmp = mysql_real_connect( tmp, server.c_str(), user.c_str(), password.c_str(), database.c_str(), 3306, NULL, CLIENT_COMPRESS );
 
     if( !tmp ) {
-        return std::shared_ptr<MYSQL>();
+        return nullptr;
     }
 
     auto l = lib_ref;
@@ -110,7 +110,7 @@ std::shared_ptr<Job> MySQLJobProvider::fetchJob() {
     std::tie( err, res ) = query( q );
 
     if( err ) {
-        return std::shared_ptr<Job>();
+        return nullptr;
     }
 
     unsigned int num = mysql_num_fields( res.get() );
@@ -118,7 +118,7 @@ std::shared_ptr<Job> MySQLJobProvider::fetchJob() {
     MYSQL_ROW row = mysql_fetch_row( res.get() );
 
     if( !row ) {
-        return std::shared_ptr<Job>();
+        return nullptr;
     }
 
     auto job = std::make_shared<Job>();
@@ -126,7 +126,7 @@ std::shared_ptr<Job> MySQLJobProvider::fetchJob() {
     unsigned long* l = mysql_fetch_lengths( res.get() );
 
     if( !l ) {
-        return std::shared_ptr<Job>();
+        return nullptr;
     }
 
     job->id = std::string( row[0], row[0] + l[0] );
@@ -197,19 +197,19 @@ std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<
     std::tie( err, res ) = query( q );
 
     if( err ) {
-        return std::shared_ptr<TBSCertificate>();
+        return nullptr;
     }
 
     MYSQL_ROW row = mysql_fetch_row( res.get() );
 
     if( !row ) {
-        return std::shared_ptr<TBSCertificate>();
+        return nullptr;
     }
 
     unsigned long* l = mysql_fetch_lengths( res.get() );
 
     if( !l ) {
-        return std::shared_ptr<TBSCertificate>();
+        return nullptr;
     }
 
     std::string profileName = std::string( row[4], row[4] + l[4] );
@@ -233,7 +233,7 @@ std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<
 
     if( err ) {
         std::cout << mysql_error( this->conn.get() );
-        return std::shared_ptr<TBSCertificate>();
+        return nullptr;
     }
 
     std::cout << "Fetching SANs" << std::endl;
@@ -242,7 +242,7 @@ std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<
         unsigned long* l = mysql_fetch_lengths( res.get() );
 
         if( !l ) {
-            return std::shared_ptr<TBSCertificate>();
+            return nullptr;
         }
 
         std::shared_ptr<SAN> nSAN = std::shared_ptr<SAN>( new SAN() );
@@ -256,7 +256,7 @@ std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<
 
     if( err ) {
         std::cout << mysql_error( this->conn.get() );
-        return std::shared_ptr<TBSCertificate>();
+        return nullptr;
 
     }
 
@@ -264,7 +264,7 @@ std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<
         unsigned long* l = mysql_fetch_lengths( res.get() );
 
         if( !l ) {
-            return std::shared_ptr<TBSCertificate>();
+            return nullptr;
         }
 
         std::shared_ptr<AVA> nAVA = std::shared_ptr<AVA>( new AVA() );
