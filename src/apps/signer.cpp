@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <streambuf>
+#include <stdexcept>
 
 #include "db/database.h"
 #include "db/mysql.h"
@@ -21,7 +22,7 @@
 
 extern std::string serialPath;
 
-int main( int argc, const char* argv[] ) {
+int main( int argc, const char* argv[] ) try {
     ( void ) argc;
     ( void ) argv;
 
@@ -62,5 +63,12 @@ int main( int argc, const char* argv[] ) {
         }
     }
 
+    return -1;
+
+} catch(std::exception& e) {
+    std::cerr << "Fatal Error: " << e.what() << "!\n";
+    return -1;
+} catch(...) {
+    std::cerr << "Fatal Error: Unknown Exception!\n";
     return -1;
 }
