@@ -121,7 +121,7 @@ std::shared_ptr<Job> MySQLJobProvider::fetchJob() {
         return std::shared_ptr<Job>();
     }
 
-    std::shared_ptr<Job> job( new Job() );
+    auto job = std::make_shared<Job>();
 
     unsigned long* l = mysql_fetch_lengths( res.get() );
 
@@ -187,7 +187,7 @@ void MySQLJobProvider::failJob( std::shared_ptr<Job> job ) {
 }
 
 std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<Job> job ) {
-    std::shared_ptr<TBSCertificate> cert = std::shared_ptr<TBSCertificate>( new TBSCertificate() );
+    auto cert = std::make_shared<TBSCertificate>();
     std::string q = "SELECT md, profile, csr_name, csr_type, keyname FROM certs INNER JOIN profiles ON profiles.id = certs.profile WHERE certs.id='" + this->escape_string( job->target ) + "'";
 
     int err = 0;
