@@ -50,11 +50,9 @@ void checkCRLs( std::shared_ptr<Signer> sign ) {
 }
 
 int main( int argc, const char* argv[] ) {
-    ( void ) argc;
-    ( void ) argv;
     bool once = false;
 
-    if( argc == 2 && std::string( "--once" ) == std::string( argv[1] ) ) {
+    if( argc == 2 && std::string( "--once" ) == argv[1] ) {
         once = true;
     }
 
