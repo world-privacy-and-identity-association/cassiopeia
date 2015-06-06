@@ -54,6 +54,7 @@ struct SignedCertificate {
 
 class JobProvider {
 public:
+    virtual ~JobProvider() = default;
     virtual std::shared_ptr<Job> fetchJob() = 0;
     virtual void finishJob( std::shared_ptr<Job> job ) = 0;
     virtual void failJob( std::shared_ptr<Job> job ) = 0;
