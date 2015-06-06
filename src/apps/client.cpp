@@ -30,7 +30,7 @@ extern std::unordered_map<std::string, std::shared_ptr<CAConfig>> CAs;
 void checkCRLs( std::shared_ptr<Signer> sign ) {
     std::cout << "Signing CRLs" << std::endl;
 
-    for( auto x : CAs ) {
+    for( auto& x : CAs ) {
         std::cout << "Checking: " << x.first << std::endl;
 
         if( !x.second->crlNeedsResign() ) {
