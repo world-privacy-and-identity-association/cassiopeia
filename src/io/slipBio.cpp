@@ -4,6 +4,8 @@
 
 #include <iostream>
 
+#include "log/logger.hpp"
+
 #define BUFFER_SIZE 8192
 
 #define SLIP_ESCAPE_CHAR ( (char) 0xDB)
@@ -51,7 +53,7 @@ SlipBIO::~SlipBIO() {}
 
 int SlipBIO::write( const char* buf, int num ) {
 #ifdef SLIP_IO_DEBUG
-    std::cout << "Out: " << toHex( buf, num ) << std::endl;
+    logger::debug( "Out: " << toHex( buf, num ) );
 #endif
 
     int badOnes = 0;
@@ -145,7 +147,7 @@ int SlipBIO::read( char* buf, int size ) {
     }
 
 #ifdef SLIP_IO_DEBUG
-    std::cout << "in: " << toHex( buf, len ) << std::endl;
+    logger::debug( "in: " << toHex( buf, len ) );
 #endif
 
     return len;
@@ -162,7 +164,7 @@ long SlipBIO::ctrl( int cmod, long arg1, void* arg2 ) {
         decodePos = 0;
         decodeTarget = 0;
         rawPos = 0;
-        std::cout << "resetting SLIP" << std::endl;
+        logger::note( "Resetting SLIP layer" );
         return 0;
     }
 

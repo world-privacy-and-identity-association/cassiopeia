@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 
-#include "bios.h"
+#include "io/bios.h"
 
 class SlipBIO : public OpensslBIO {
 private:

@@ -15,8 +15,9 @@
 #include "db/database.h"
 #include "crypto/remoteSigner.h"
 #include "crypto/sslUtil.h"
-
 #include "crypto/simpleOpensslSigner.h"
+
+#include "log/logger.hpp"
 
 extern std::vector<Profile> profiles;
 extern std::unordered_map<std::string, std::shared_ptr<CAConfig>> CAs;
@@ -78,7 +79,7 @@ public:
         int res = io->read( buffer.data(), buffer.capacity() );
 
         if( res <= 0 ) {
-            ( *log ) << "Stream error, resetting SSL" << std::endl;
+            logger::error( "Stream error, resetting SSL" );
             parent->reset();
             return;
         }
@@ -91,7 +92,7 @@ public:
             execute( head, payload );
         } catch( const char* msg ) {
             if( log ) {
-                ( *log ) << "ERROR: " << msg << std::endl;
+                logger::error( "ERROR: ", msg );
             }
 
             parent->reset();
@@ -108,13 +109,13 @@ public:
         case RecordHeader::SignerCommand::SET_CSR:
             tbs->csr_content = data;
             tbs->csr_type = "CSR";
-            ( *log ) << "INFO: CSR read: " << tbs->csr_content << std::endl;
+            logger::note( "INFO: CSR read:\n", tbs->csr_content );
             break;
 
         case RecordHeader::SignerCommand::SET_SPKAC:
             tbs->csr_content = data;
             tbs->csr_type = "SPKAC";
-            ( *log ) << "INFO: SPKAC read: " << tbs->csr_content << std::endl;
+            logger::note( "INFO: SPKAC read:\n", tbs->csr_content );
             break;
 
         case RecordHeader::SignerCommand::SET_SIGNATURE_TYPE:
@@ -167,8 +168,8 @@ public:
 
         case RecordHeader::SignerCommand::SIGN:
             result = signer->sign( tbs );
-            ( *log ) << "INFO: signlog: " << result->log << std::endl;
-            ( *log ) << "INFO: res: " << result->certificate << std::endl;
+            logger::note( "INFO: signlog:\n", result->log );
+            logger::note( "INFO: res:\n", result->certificate );
             respondCommand( RecordHeader::SignerResult::SAVE_LOG, result->log );
             break;
 
@@ -179,8 +180,9 @@ public:
             }
 
             if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
-                ( *log ) << "ERROR: SSL close failed" << std::endl;
+                logger::warn( "ERROR: SSL shutdown failed." );
             }
+
             parent->reset(); // Connection ended
 
             break;
@@ -192,7 +194,7 @@ public:
         case RecordHeader::SignerCommand::REVOKE: {
             std::string ca = data;
             auto reqCA = CAs.at( ca );
-            ( *log ) << "CA found" << std::endl;
+            logger::note( "CA found" );
             std::shared_ptr<CRL> crl;
             std::string date;
             std::tie<std::shared_ptr<CRL>, std::string>( crl, date ) = signer->revoke( reqCA, serials );
@@ -208,8 +210,9 @@ public:
             respondCommand( RecordHeader::SignerResult::FULL_CRL, c.toString() );
 
             if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
-                ( *log ) << "ERROR: SSL close failed" << std::endl;
+                logger::error( "ERROR: SSL shutdown failed." );
             }
+
             parent->reset(); // Connection ended
             break;
         }
@@ -230,7 +233,7 @@ void DefaultRecordHandler::reset() {
 
 void DefaultRecordHandler::handle() {
     if( !currentSession ) {
-        std::cout << "session allocated" << std::endl;
+        logger::note( "New session allocated." );
         currentSession = std::shared_ptr<RecordHandlerSession>( new RecordHandlerSession( this, signer, ctx, bio ) );
     }
 

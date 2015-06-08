@@ -6,6 +6,8 @@
 
 #include "crypto/sslUtil.h"
 
+#include "log/logger.hpp"
+
 std::string keyDir;
 std::unordered_map<std::string, Profile> profiles;
 std::unordered_map<std::string, std::shared_ptr<CAConfig>> CAs;
@@ -18,7 +20,7 @@ std::shared_ptr<std::unordered_map<std::string, std::string>> parseConf( std::st
     config.open( path );
 
     if( !config.is_open() ) {
-        std::cout << "Where is " << path << "?" << std::endl;
+        logger::notef( "Where is \"%s\"?", path );
         throw "Config missing";
     }
 
@@ -32,7 +34,7 @@ std::shared_ptr<std::unordered_map<std::string, std::string>> parseConf( std::st
         int splitter = line1.find( "=" );
 
         if( splitter == -1 ) {
-            std::cerr << "Ignoring malformed config line: " << line1 << std::endl;
+            logger::warn( "Ignoring malformed config line: ", line1 );
             continue;
         }
 
@@ -54,7 +56,7 @@ int parseProfiles() {
     dp = opendir( "profiles" );
 
     if( dp == NULL ) {
-        std::cerr << "Profiles not found " << std::endl;
+        logger::error( "Profiles directory not found" );
         return -1;
     }
 
@@ -68,14 +70,14 @@ int parseProfiles() {
         int splitter = profileName.find( "-" );
 
         if( splitter == -1 ) {
-            std::cerr << "Ignoring malformed profile: " << profileName << std::endl;
+            logger::warn( "Ignoring malformed profile: ", profileName );
             continue;
         }
 
         std::string id = profileName.substr( 0, splitter );
 
         if( profileName.substr( profileName.size() - 4 ) != ".cfg" ) {
-            std::cerr << "Ignoring malformed profile: " << profileName << std::endl;
+            logger::warn( "Ignoring malformed profile: ", profileName );
             continue;
         }
 
@@ -91,12 +93,14 @@ int parseProfiles() {
 
         std::string cas = map->at( "ca" );
 
-        DIR *dir;
-        struct dirent *ent;
-        if ((dir = opendir ("ca")) != NULL) {
-            while ((ent = readdir (dir)) != NULL) {
-                std::string caName = std::string(ent->d_name);
-                if( caName.find( cas ) != 0 ){
+        DIR* dir;
+        struct dirent* ent;
+
+        if( ( dir = opendir( "ca" ) ) != NULL ) {
+            while( ( ent = readdir( dir ) ) != NULL ) {
+                std::string caName = std::string( ent->d_name );
+
+                if( caName.find( cas ) != 0 ) {
                     continue;
                 }
 
@@ -106,21 +110,21 @@ int parseProfiles() {
                 }
 
                 prof.ca.push_back( CAs.at( caName ) );
-                std::cout << "Adding CA: " << caName << std::endl;
+                logger::note( "Adding CA: ", caName );
             }
-            closedir (dir);
+
+            closedir( dir );
         } else {
             throw "Directory with CAConfigs not found";
         }
 
         profiles.emplace( profileName, prof );
-        std::cout << "Profile: " << profileName << " up and running." << std::endl;
+        logger::notef( "Profile: \"%s\" up and running.", profileName );
     }
 
     ( void ) closedir( dp );
 
-
-    std::cout << profiles.size() << " profiles loaded." << std::endl;
+    logger::notef( "%s profiles loaded.", profiles.size() );
 
     return 0;
 }
@@ -137,7 +141,7 @@ int parseConfig( std::string path ) {
     serialPath = masterConf->at( "serialPath" );
 
     if( keyDir == "" ) {
-        std::cerr << "Missing config property key.directory" << std::endl;
+        logger::error( "Missing config property key.directory" );
         return -1;
     }
 

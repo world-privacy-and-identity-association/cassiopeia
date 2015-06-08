@@ -11,6 +11,7 @@
 #include "io/bios.h"
 #include "io/slipBio.h"
 #include "io/recordHandler.h"
+#include "log/logger.hpp"
 #include "util.h"
 #include "config.h"
 
@@ -35,13 +36,14 @@ int main( int argc, const char* argv[] ) try {
 #endif
 
     if( parseConfig( path ) != 0 ) {
+        logger::fatal("Could not parse configuration file.");
         return -1;
     }
 
     std::shared_ptr<int> ssl_lib = ssl_lib_ref;
 
     if( serialPath == "" ) {
-        std::cout << "Error: no serial device is given" << std::endl;
+        logger::fatal( "Error: No device for the serial connection was given." );
         return -1;
     }
 
@@ -57,18 +59,18 @@ int main( int argc, const char* argv[] ) try {
             //} catch( const std::exception &ch ) {
             //std::cout << "Real exception: " << typeid(ch).name() << ", " << ch.what() << std::endl;
         } catch( const std::string& ch ) {
-            std::cout << "Exception: " << ch << std::endl;
+            logger::error( "Exception: ", ch );
         } catch( char const* ch ) {
-            std::cout << "Exception: " << ch << std::endl;
+            logger::error( "Exception: ", ch );
         }
     }
 
     return -1;
 
-} catch(std::exception& e) {
-    std::cerr << "Fatal Error: " << e.what() << "!\n";
+} catch( std::exception& e ) {
+    logger::fatalf( "Fatal Error: %s!\n", e.what() );
     return -1;
-} catch(...) {
-    std::cerr << "Fatal Error: Unknown Exception!\n";
+} catch( ... ) {
+    logger::fatal( "Fatal Error: Unknown Exception!\n" );
     return -1;
 }

@@ -1,4 +1,6 @@
 #include "remoteSigner.h"
+
+#include "log/logger.hpp"
 #include "util.h"
 
 #include <iostream>
@@ -17,7 +19,6 @@ void RemoteSigner::send( std::shared_ptr<OpensslBIOWrapper> bio, RecordHeader& h
     head.command_count++;
     head.totalLength = data.size();
     sendCommand( head, data, bio, log );
-
 }
 
 std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertificate> cert ) {
@@ -38,7 +39,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     } else if( cert->csr_type == "SPKAC" ) {
         send( conn, head, RecordHeader::SignerCommand::SET_SPKAC, cert->csr_content );
     } else {
-        std::cout << "Unknown csr_type: " << cert->csr_type;
+        logger::error( "Unknown csr_type: ", cert->csr_type );
         return std::shared_ptr<SignedCertificate>();
     }
 
@@ -75,7 +76,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
             int length = conn->read( buffer.data(), buffer.size() );
 
             if( length <= 0 ) {
-                std::cout << "Error, no response data" << std::endl;
+                logger::error( "Error, no response data" );
                 result = std::shared_ptr<SignedCertificate>();
                 break;
             }
@@ -97,11 +98,11 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
                 break;
 
             default:
-                std::cout << "Invalid Message" << std::endl;
+                logger::error( "Invalid Message" );
                 break;
             }
         } catch( const char* msg ) {
-            std::cout << msg << std::endl;
+            logger::error( msg );
             return std::shared_ptr<SignedCertificate>();
         }
     }
@@ -141,7 +142,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     }
 
     if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) { // need to close the connection twice
-        std::cout << "SSL shutdown failed" << std::endl;
+        logger::warn( "SSL shutdown failed" );
     }
 
     return result;
@@ -199,10 +200,10 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
     bool ok = crl->verify( ca );
 
     if( ok ) {
-        ( *log ) << "CRL verificated successfully" << std::endl;
+        logger::note( "CRL verificated successfully" );
         writeFile( ca->path + std::string( "/ca.crl" ), crl->toString() );
     } else {
-        ( *log ) << "CRL is broken" << std::endl;
+        logger::warn( "CRL is broken, trying to recover" );
         send( conn, head, RecordHeader::SignerCommand::GET_FULL_CRL, ca->name );
         length = conn->read( buffer.data(), buffer.size() );
 
@@ -221,17 +222,16 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
 
         if( crl->verify( ca ) ) {
             writeFile( ca->path + std::string( "/ca.crl" ), crl->toString() );
-            ( *log ) << "CRL is now valid" << std::endl;
+            logger::note( "CRL is now valid again" );
         } else {
-            ( *log ) << "CRL is still broken... Please, help me" << std::endl;
+            logger::warn( "CRL is still broken... Please, help me" );
         }
-
     }
 
-    ( *log ) << "CRL: " << std::endl << crl->toString() << std::endl;
+    logger::debug( "CRL:\n", crl->toString() );
 
     if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) { // need to close the connection twice
-        std::cout << "SSL shutdown failed" << std::endl;
+        logger::warn( "SSL shutdown failed" );
     }
 
     return std::pair<std::shared_ptr<CRL>, std::string>( crl, date );

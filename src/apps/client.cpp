@@ -11,6 +11,7 @@
 #include "crypto/simpleOpensslSigner.h"
 #include "crypto/remoteSigner.h"
 #include "crypto/sslUtil.h"
+#include "log/logger.hpp"
 #include "util.h"
 #include "io/bios.h"
 #include "io/slipBio.h"
@@ -28,23 +29,24 @@ extern std::string serialPath;
 extern std::unordered_map<std::string, std::shared_ptr<CAConfig>> CAs;
 
 void checkCRLs( std::shared_ptr<Signer> sign ) {
-    std::cout << "Signing CRLs" << std::endl;
+
+    logger::note( "Signing CRLs" );
 
     for( auto& x : CAs ) {
-        std::cout << "Checking: " << x.first << std::endl;
+        logger::notef( "Checking: %s ...", x.first );
 
         if( !x.second->crlNeedsResign() ) {
-            std::cout << "Skipping Resigning CRL: " + x.second->name << std::endl;
+            logger::warnf( "Skipping Resigning CRL: %s ...", x.second->name );
             continue;
         }
 
-        std::cout << "Resigning CRL: " + x.second->name << std::endl;
+        logger::notef( "Resigning CRL: %s ...", x.second->name );
 
         try {
             std::vector<std::string> serials;
             std::pair<std::shared_ptr<CRL>, std::string> rev = sign->revoke( x.second, serials );
         } catch( const char* c ) {
-            std::cout << "Exception: " << c << std::endl;
+            logger::error( "Exception: ", c );
         }
     }
 }
@@ -65,11 +67,12 @@ int main( int argc, const char* argv[] ) {
 #endif
 
     if( parseConfig( path ) != 0 ) {
+        logger::fatal( "Error: Could not parse the configuration file." );
         return -1;
     }
 
     if( serialPath == "" ) {
-        std::cout << "Error: no serial device is given" << std::endl;
+        logger::fatal( "Error: no serial device is given!" );
         return -1;
     }
 
@@ -100,7 +103,7 @@ int main( int argc, const char* argv[] ) {
         std::shared_ptr<Job> job = jp->fetchJob();
 
         if( !job ) {
-            std::cout << "Nothing to work on" << std::endl;
+            logger::debug( "Nothing to work on." );
             sleep( 5 );
             continue;
         }
@@ -110,58 +113,58 @@ int main( int argc, const char* argv[] ) {
         std::ofstream& log = *( logPtr.get() );
 
         sign->setLog( logPtr );
-        log << "TASK ID: " << job->id << std::endl;
-        log << "TRY: " << job->warning << std::endl;
-        log << "TARGET: " << job->target << std::endl;
-        log << "TASK: " << job->task << std::endl << std::endl;
+        logger::note( "TASK ID: ", job->id );
+        logger::note( "TRY:     ", job->warning );
+        logger::note( "TARGET:  ", job->target );
+        logger::note( "TASK:    ", job->task );
 
         if( job->task == "sign" ) {
             try {
                 std::shared_ptr<TBSCertificate> cert = jp->fetchTBSCert( job );
                 cert->wishFrom = job->from;
                 cert->wishTo = job->to;
-                log << "INFO: message digest: " << cert->md << std::endl;
-                log << "INFO: profile id: " << cert->profile << std::endl;
+                logger::note( "INFO: Message Digest: ", cert->md );
+                logger::note( "INFO: Profile ID: ", cert->profile );
 
                 for( auto& SAN : cert->SANs ) {
-                    log << "INFO: SAN " << SAN->type << ": " << SAN->content;
+                    logger::notef( "INFO: SAN %s: %s", SAN->type, SAN->content );
                 }
 
                 for( auto& AVA : cert->AVAs ) {
-                    log << "INFO: AVA " << AVA->name << ": " << AVA->value;
+                    logger::notef( "INFO: AVA %s: %s", AVA->name, AVA->value );
                 }
 
                 if( !cert ) {
-                    std::cout << "wasn't able to load CSR" << std::endl;
+                    logger::error( "Unable to load CSR" );
                     jp->failJob( job );
                     continue;
                 }
 
-                log << "FINE: Found the CSR at '" << cert->csr << "'" << std::endl;
+                logger::notef( "FINE: Found the CSR at '%s'", cert->csr );
                 cert->csr_content = readFile( keyDir + "/../" + cert->csr );
-                log << "FINE: CSR is " << std::endl << cert->csr_content << std::endl;
+                logger::note( "FINE: CSR content:\n", cert->csr_content );
 
                 std::shared_ptr<SignedCertificate> res = sign->sign( cert );
 
                 if( !res ) {
-                    log << "ERROR: The signer failed. There was no certificate." << std::endl;
+                    logger::error( "ERROR: The signer failed. No certificate was returned." );
                     jp->failJob( job );
                     continue;
                 }
 
-                log << "FINE: CERTIFICATE LOG: " << res->log << std::endl;
-                log << "FINE: CERTIFICATE:" << std::endl << res->certificate << std::endl;
+                logger::note( "FINE: CERTIFICATE LOG:\n", res->log );
+                logger::note( "FINE: CERTIFICATE:\n", res->certificate );
                 std::string fn = writeBackFile( job->target.c_str(), res->certificate, keyDir );
 
                 if( fn.empty() ) {
-                    log << "ERROR: Writeback of the certificate failed." << std::endl;
+                    logger::error( "ERROR: Writeback of the certificate failed." );
                     jp->failJob( job );
                     continue;
                 }
 
                 res->crt_name = fn;
                 jp->writeBack( job, res ); //! \FIXME: Check return value
-                log << "FINE: signing done." << std::endl;
+                logger::note( "FINE: signing done." );
 
                 if( DAEMON ) {
                     jp->finishJob( job );
@@ -169,17 +172,17 @@ int main( int argc, const char* argv[] ) {
 
                 continue;
             } catch( const char* c ) {
-                log << "ERROR: " << c << std::endl;
+                logger::error( "ERROR: ", c );
             } catch( std::string& c ) {
-                log << "ERROR: " << c << std::endl;
+                logger::error( "ERROR: ", c );
             }
 
             try {
                 jp->failJob( job );
             } catch( const char* c ) {
-                log << "ERROR: " << c << std::endl;
+                logger::error( "ERROR: ", c );
             } catch( std::string& c ) {
-                log << "ERROR: " << c << std::endl;
+                logger::error( "ERROR: ", c );
             }
         } else if( job->task == "revoke" ) {
             try {
@@ -194,12 +197,12 @@ int main( int argc, const char* argv[] ) {
                 jp->writeBackRevocation( job, timeToString( time ) );
                 jp->finishJob( job );
             } catch( const char* c ) {
-                std::cout << "Exception: " << c << std::endl;
+                logger::error( "Exception: ", c );
             } catch( const std::string& c ) {
-                std::cout << "Exception: " << c << std::endl;
+                logger::error( "Exception: ", c );
             }
         } else {
-            log << "Unknown job type" << job->task << std::endl;
+            logger::errorf( "Unknown job type (\"%s\")", job->task );
             jp->failJob( job );
         }
 

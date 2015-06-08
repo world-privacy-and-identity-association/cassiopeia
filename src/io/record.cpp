@@ -5,8 +5,9 @@
 #include <memory>
 #include <sstream>
 
-#include "bios.h"
-#include "opensslBIO.h"
+#include "io/bios.h"
+#include "io/opensslBIO.h"
+#include "log/logger.hpp"
 
 std::string toHexAndChecksum( const std::string& src ) {
     char checksum = 0;
@@ -32,7 +33,7 @@ void sendCommand( RecordHeader& head, const std::string& data, std::shared_ptr<O
     std::string res = toHexAndChecksum( s );
 
     if( log ) {
-        ( *log.get() ) << "FINE: RECORD output: " << res << std::endl;
+        logger::debug( "FINE: RECORD output: ", res );
     }
 
     bio->write( res.data(), res.size() );
@@ -54,7 +55,7 @@ int32_t fromHexDigit( char c ) {
 
 std::string parseCommand( RecordHeader& head, const std::string& input, std::shared_ptr<std::ostream> log ) {
     if( log ) {
-        ( *log.get() ) << "FINE: RECORD input: " << input << std::endl;
+        logger::debug( "FINE: RECORD input: ", input );
     }
 
     int32_t dlen = ( input.size() - 2 ) / 2;

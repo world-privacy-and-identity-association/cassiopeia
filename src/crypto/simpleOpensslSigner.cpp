@@ -10,6 +10,8 @@
 #include <openssl/engine.h>
 #include <openssl/x509v3.h>
 
+#include "log/logger.hpp"
+
 #include "X509.h"
 #include "util.h"
 #include "sslUtil.h"
@@ -71,25 +73,25 @@ std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial(
 std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TBSCertificate> cert ) {
     std::stringstream signlog;
 
-    signlog << "FINE: profile is " << cert->profile << std::endl;
+    logger::note( "FINE: Profile name is: ", cert->profile );
 
     Profile& prof = profiles.at( cert->profile );
-    signlog << "FINE: Profile id is: " << prof.id << std::endl;
+    logger::note( "FINE: Profile ID is: ", prof.id );
 
     std::shared_ptr<CAConfig> ca = prof.getCA();
 
     if( !ca ) {
-        signlog << "ERROR: Signing CA specified in profile could not be loaded." << std::endl;
+        logger::error( "ERROR: Signing CA specified in profile could not be loaded." );
         throw "CA-key not found";
     }
 
-    signlog << "FINE: Key for Signing CA is correctly loaded." << std::endl;
+    logger::note( "FINE: Key for Signing CA is correctly loaded." );
 
-    signlog << "INFO: Baseline Key Usage is: " << prof.ku << std::endl;
-    signlog << "INFO: Extended Key Usage is: " << prof.eku << std::endl;
+    logger::note( "INFO: Baseline Key Usage is: ", prof.ku );
+    logger::note( "INFO: Extended Key Usage is: ", prof.eku );
 
-    signlog << "FINE: Signing is wanted by: " << cert->wishFrom << std::endl;
-    signlog << "FINE: Signing is wanted for: " << cert->wishTo << std::endl;
+    logger::note( "FINE: Signing is wanted by: ", cert->wishFrom );
+    logger::note( "FINE: Signing is wanted for: ", cert->wishTo );
 
     std::shared_ptr<X509Req> req;
 
@@ -98,8 +100,8 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     } else if( cert->csr_type == "CSR" ) {
         req = X509Req::parseCSR( cert->csr_content );
     } else {
-        signlog << "ERROR: Unknown type of certification in request: " << cert->csr_type << std::endl;
-        throw "Error, unknown REQ rype " + ( cert->csr_type );
+        logger::errorf( "ERROR: Unknown type (\"%s\") of certification in request.", cert->csr_type );
+        throw "Error, unknown REQ rype " + ( cert->csr_type ); //! \fixme: Pointer instead of string, please use proper exception classes
     }
 
     int i = req->verify();
@@ -109,15 +111,16 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     } else if( i == 0 ) {
         throw "Request contains a Signature that does not match ...";
     } else {
-        signlog << "FINE: Request contains valid self-signature." << std::endl;
+        logger::note( "FINE: Request contains valid self-signature." );
     }
 
     // Construct the Certificate
     X509Cert c = X509Cert();
 
-    signlog << "INFO: Populating RDN ..." << std::endl;
+    logger::note( "INFO: Populating RDN ..." );
+
     for( std::shared_ptr<AVA> a : cert->AVAs ) {
-        signlog << "INFO: Trying to add RDN: " << a->name << ": " << a->value << std::endl;
+        logger::notef( "INFO: Trying to add RDN: %s: %s", a->name, a->value );
 
         if( a->name == "CN" ) {
             c.addRDN( NID_commonName, a->value );
@@ -134,34 +137,34 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
         } else if( a->name == "OU" ) {
             c.addRDN( NID_organizationalUnitName, a->value );
         } else {
-            signlog << "ERROR: Trying to add illegal RDN/AVA type: " << a->name << std::endl;
+            logger::error( "ERROR: Trying to add illegal RDN/AVA type: ", a->name );
             throw "Unhandled/Illegal AVA type";
         }
     }
 
-    signlog << "INFO: Populating Issuer ..." << std::endl;
+    logger::note( "INFO: Populating Issuer ..." );
     c.setIssuerNameFrom( ca->ca );
 
-    signlog << "INFO: Validating Public key for use in certificate" << std::endl;
-    signlog << "INFO: - Checking generic key parameters" << std::endl;
-    signlog << "FINE:   ->Public Key parameters are okay" << std::endl;
+    logger::note( "INFO: Validating Public key for use in certificate" );
+    logger::note( "INFO: - Checking generic key parameters" );
+    logger::note( "FINE:   ->Public Key parameters are okay" );
 
-    signlog << "INFO: - Checking blacklists" << std::endl;
-    signlog << "FINE:   ->Does not appear on any blacklist" << std::endl;
+    logger::note( "INFO: - Checking blacklists" );
+    logger::note( "FINE:   ->Does not appear on any blacklist" );
 
-    signlog << "INFO: - Checking trivial factorization" << std::endl;
-    signlog << "FINE:   ->Trivial factorization not possible" << std::endl;
+    logger::note( "INFO: - Checking trivial factorization" );
+    logger::note( "FINE:   ->Trivial factorization not possible" );
 
-    signlog << "INFO: - Checking astrological signs" << std::endl;
-    signlog << "FINE:   ->The stars look good for this one" << std::endl;
-    signlog << "FINE: Public key is fine for use in certificate" << std::endl;
+    logger::note( "INFO: - Checking astrological signs" );
+    logger::note( "FINE:   ->The stars look good for this one" );
+    logger::note( "FINE: Public key is fine for use in certificate" );
 
-    signlog << "INFO: Copying Public Key from Request ..." << std::endl;
+    logger::note( "INFO: Copying Public Key from Request ..." );
     c.setPubkeyFrom( req );
-    signlog << "FINE: Public Key successfully copied from Request." << std::endl;
+    logger::note( "FINE: Public Key successfully copied from Request." );
 
     {
-        signlog << "INFO: Determining Validity Period ..." << std::endl;
+        logger::note( "INFO: Determining Validity Period ..." );
         std::time_t from, to;
         std::time_t now = time( 0 );
         std::pair<bool, std::time_t> parsed;
@@ -176,7 +179,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
             from = now;
         }
 
-        if( ((from - now) > /* 2 Weeks */ (2 * 7 * 24 * 60 * 60)) || ((now - from) >= 0) ) {
+        if( ( ( from - now ) > /* 2 Weeks */ ( 2 * 7 * 24 * 60 * 60 ) ) || ( ( now - from ) >= 0 ) ) {
             from = now;
         }
 
@@ -196,51 +199,52 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
 
         time_t limit = prof.maxValidity;
 
-        if( (to - from > limit) || (to - from < 0) ) {
+        if( ( to - from > limit ) || ( to - from < 0 ) ) {
             to = from + limit;
         }
 
         c.setTimes( from, to );
-        signlog << "FINE: Setting validity period successful:" << std::endl;
+        logger::note( "FINE: Setting validity period successful:" );
         {
             struct tm* timeobj;
             std::vector<char> timebuf;
 
-            timeobj = gmtime(&from);
-            timebuf.resize(128);
-            timebuf.resize(std::strftime(const_cast<char *>(timebuf.data()), timebuf.size(), "%F %T %Z", timeobj));
-            signlog << "FINE: - Valid not before: " << std::string(timebuf.cbegin(), timebuf.cend()) << std::endl;
+            timeobj = gmtime( &from );
+            timebuf.resize( 128 );
+            timebuf.resize( std::strftime( const_cast<char*>( timebuf.data() ), timebuf.size(), "%F %T %Z", timeobj ) );
+            logger::note( "FINE: - Valid not before: ", std::string( timebuf.cbegin(), timebuf.cend() ) );
 
-            timeobj = gmtime(&to);
-            timebuf.resize(128);
-            timebuf.resize(std::strftime(const_cast<char *>(timebuf.data()), timebuf.size(), "%F %T %Z", timeobj));
-            signlog << "FINE: - Valid not after:  " << std::string(timebuf.cbegin(), timebuf.cend()) << std::endl;
+            timeobj = gmtime( &to );
+            timebuf.resize( 128 );
+            timebuf.resize( std::strftime( const_cast<char*>( timebuf.data() ), timebuf.size(), "%F %T %Z", timeobj ) );
+            logger::note( "FINE: - Valid not after:  ", std::string( timebuf.cbegin(), timebuf.cend() ) );
         }
     }
 
-    signlog << "INFO: Setting extensions:" << std::endl;
+    logger::note( "INFO: Setting extensions:" );
     c.setExtensions( ca->ca, cert->SANs, prof );
-    signlog << "FINE: Setting extensions successful." << std::endl;
+    logger::note( "FINE: Setting extensions successful." );
 
-    signlog << "INFO: Generating next Serial Number ..." << std::endl;
+    logger::note( "INFO: Generating next Serial Number ..." );
     std::shared_ptr<BIGNUM> ser;
     std::string num;
     std::tie( ser, num ) = nextSerial( prof, ca );
     c.setSerialNumber( ser.get() );
-    signlog << "FINE: Certificate Serial Number set to:" << num << std::endl;
+    logger::note( "FINE: Certificate Serial Number set to: ", num );
 
     {
-        signlog << "INFO: Trying to sign Certificate:" << std::endl;
+        logger::note( "INFO: Trying to sign Certificate:" );
         std::shared_ptr<SignedCertificate> output = c.sign( ca->caKey, cert->md );
-        signlog << "INFO: Writing certificate to local file." << std::endl;
+        logger::note( "INFO: Writing certificate to local file." );
         std::string fn = writeBackFile( num, output->certificate, ca->path );
 
         if( fn.empty() ) {
-            signlog << "ERROR: failed to get filename for storage of signed certificate." << std::endl;
+            logger::error( "ERROR: failed to get filename for storage of signed certificate." );
             throw "Storage location could not be determined";
         }
-        signlog << "FINE: Certificate signed successfully." << std::endl;
-        signlog << "FINE: - Certificate written to: " << fn << std::endl;
+
+        logger::note( "FINE: Certificate signed successfully." );
+        logger::note( "FINE: - Certificate written to: ", fn );
 
         output->ca_name = ca->name;
         output->log = signlog.str();

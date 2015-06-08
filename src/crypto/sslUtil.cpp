@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "crypto/CRL.h"
+#include "log/logger.hpp"
 
 std::shared_ptr<int> ssl_lib_ref(
     new int( SSL_library_init() ),
@@ -76,7 +77,7 @@ static int verify_callback( int preverify_ok, X509_STORE_CTX* ctx ) {
         //X509_print_ex(o, cert, XN_FLAG_COMPAT, X509_FLAG_COMPAT);
         //BIO_free(o);
 
-        std::cout << "Verification failed: " << preverify_ok << " because " << X509_STORE_CTX_get_error( ctx ) << std::endl;
+        logger::errorf( "Verification failed: %s because %s", preverify_ok, X509_STORE_CTX_get_error( ctx ) );
     }
 
     return preverify_ok;
@@ -117,7 +118,7 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
                 dh_param = std::shared_ptr<DH>( PEM_read_DHparams( paramfile.get(), NULL, NULL, NULL ), DH_free );
             } else {
                 dh_param = std::shared_ptr<DH>( DH_new(), DH_free );
-                std::cout << "Generating DH params" << std::endl;
+                logger::note( "Generating DH params" );
                 BN_GENCB cb;
                 cb.ver = 2;
                 cb.arg = 0;
@@ -169,7 +170,7 @@ std::shared_ptr<BIO> openSerial( const std::string& name ) {
     std::shared_ptr<FILE> f( fopen( name.c_str(), "r+" ), fclose );
 
     if( !f ) {
-        std::cout << "Opening serial device failed" << std::endl;
+        logger::error( "Opening serial device failed." );
         return std::shared_ptr<BIO>();
     }
 
