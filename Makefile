@@ -46,7 +46,7 @@ SRC_DIR=src
 OBJ_DIR=obj
 DEP_DIR=dep
 
-FS_SRC=$(wildcard ${SRC_DIR}/*.cpp) $(wildcard ${SRC_DIR}/io/*.cpp) $(wildcard ${SRC_DIR}/crypto/*.cpp) $(wildcard ${SRC_DIR}/db/*.cpp)
+FS_SRC=$(wildcard ${SRC_DIR}/*.cpp) $(wildcard ${SRC_DIR}/log/*.cpp) $(wildcard ${SRC_DIR}/io/*.cpp) $(wildcard ${SRC_DIR}/crypto/*.cpp) $(wildcard ${SRC_DIR}/db/*.cpp)
 
 FS_BIN=$(wildcard ${SRC_DIR}/app/*.cpp)
 FS_LIBS=$(wildcard lib/*/)
