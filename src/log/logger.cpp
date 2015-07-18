@@ -1,23 +1,153 @@
 #include "log/logger.hpp"
 
+#include <cassert>
+#include <iterator>
 #include <algorithm>
 #include <chrono>
 #include <cstring>
-#include <iostream>
+#include <ostream>
 #include <iterator>
 
 namespace logger {
 
+    namespace impl {
+
+        /**
+         * Manages the standard-logger and the logger-stack.
+         *
+         * CAREFULL: THIS FUNCTION CONTAINS GLOBAL STATE!
+         */
+        std::vector<logger_set*>& logger_stack() {
+            static auto stack = std::vector<logger_set*> {};
+            // To avoid infinite recursion, the base-logger must
+            // not auto-register but be added manually
+            static auto std_logger = logger_set {{std::cout}, auto_register::off};
+            // in order to avoid use-after-free bugs, the logger must be created after
+            // the stack, to avoid that it's destructor tries to access
+            // parts of the destroyed stack
+
+            static auto dummy = [&] {
+                stack.push_back( &std_logger );
+                return 0;
+            }();
+
+            ( void ) dummy;
+            return stack;
+        }
+
+        void reassign_stack_pointer( logger_set*& ptr ) {
+            const auto old_ptr = ptr;
+
+            if( ptr ) {
+                ptr->m_stackpointer = &ptr;
+            }
+
+            ( void ) old_ptr;
+            assert( ptr == old_ptr );
+        }
+
+        void register_logger( logger_set& set ) {
+            auto& stack = logger_stack();
+
+            // we need to reassign everything if the vector reallocated:
+            const auto old_capacity = stack.capacity();
+            stack.push_back( &set );
+
+            if( stack.capacity() == old_capacity ) {
+                reassign_stack_pointer( stack.back() );
+            } else {
+                for( auto& ptr : stack ) {
+                    reassign_stack_pointer( ptr );
+                }
+            }
+        }
+
+        /**
+         * Pops loggers from the stack until the last one is not a nullptr
+         */
+        void pop_loggers() {
+            auto& stack = logger_stack();
+
+            while( !stack.empty() and stack.back() == nullptr ) {
+                stack.pop_back();
+            }
+
+            assert( stack.empty() or stack.back() != nullptr );
+        }
+
+        logger_set& active_logger() {
+            const auto result = logger_stack().back();
+            assert( result != nullptr );
+            return *result;
+        }
+
+    } // namespace impl
+
+    logger_set::logger_set( std::initializer_list<log_target> lst, auto_register r ):
+        m_loggers{lst}, m_min_level{default_level} {
+        if( lst.size() > 0 ) {
+            m_min_level = std::min_element( lst.begin(), lst.end(),
+                []( const log_target& l, const log_target& r ) {
+                    return l.min_level < r.min_level;
+                } )->min_level;
+        }
+
+        if( r == auto_register::on ) {
+            impl::register_logger( *this );
+        }
+    }
+
+    logger_set::~logger_set() {
+        if( m_stackpointer ) {
+            *m_stackpointer = nullptr;
+            impl::pop_loggers();
+        }
+    }
+
+    logger_set::logger_set( logger_set&& other ) noexcept :
+        m_loggers{std::move( other.m_loggers )}, m_stackpointer{other.m_stackpointer}, m_min_level{other.m_min_level} {
+        other.m_stackpointer = nullptr;
+
+        if( m_stackpointer ) {
+            *m_stackpointer = this;
+        }
+    }
+
+    logger_set& logger_set::operator=( logger_set && other ) noexcept {
+        if( m_stackpointer ) {
+            *m_stackpointer = nullptr;
+            impl::pop_loggers();
+        }
+
+        m_loggers = std::move( other.m_loggers );
+        m_stackpointer = other.m_stackpointer;
+        m_min_level = other.m_min_level;
+        other.m_stackpointer = nullptr;
+
+        if( m_stackpointer ) {
+            *m_stackpointer = this;
+        }
+
+        return *this;
+    }
+
+    void logger_set::log_impl( level l, const std::string& msg ) {
+        for( auto& logger : m_loggers ) {
+            if( l >= logger.min_level ) {
+                *logger.stream << msg << std::flush;
+            }
+        }
+    }
+
+    logger_set current_logger_extended( std::initializer_list<log_target> further_targets ) {
+        auto& active = impl::active_logger();
+        auto returnvalue = logger_set{further_targets};
+        returnvalue.m_loggers.insert( returnvalue.m_loggers.end(), active.m_loggers.begin(), active.m_loggers.end() );
+        returnvalue.m_min_level = active.m_min_level;
+        return returnvalue;
+    }
+
     namespace {
-
-        std::ostream*& ostream_pointer() {
-            static std::ostream* stream = &std::cout;
-            return stream;
-        }
-
-        std::ostream& get_stream() {
-            return *ostream_pointer();
-        }
 
         std::string make_prefix( level l ) {
             auto prefix = std::string {};
@@ -74,18 +204,20 @@ namespace logger {
             return returnstring;
         }
 
-        void log( level l, const std::vector<std::string>& args ) {
-            const auto prefix = make_prefix( l );
-            const auto length = prefix.length();
-            get_stream() << prefix;
-            std::transform( args.begin(), args.end(), std::ostream_iterator<std::string> {get_stream()},
-                [length]( const std::string & str ) {
-                    return replace_newlines( str, length );
-                } );
-            get_stream() << '\n' << std::flush;
+
+        std::string concat_msg( level l, const std::vector<std::string>& args ) {
+            auto msg = make_prefix( l );
+            const auto prefix_length = msg.length();
+
+            for( const auto& arg : args ) {
+                msg += replace_newlines( arg, prefix_length );
+            }
+
+            msg += '\n';
+            return msg;
         }
 
-        void logf( level l, const std::string& format, std::vector<std::string> args ) {
+        std::string format_msg( level l, const std::string& format, std::vector<std::string> args ) {
             const auto prefix = make_prefix( l );
             const auto length = prefix.length();
             const auto fmt = replace_newlines( format, length );
@@ -94,14 +226,14 @@ namespace logger {
                     return replace_newlines( str, length );
                 } );
 
-            auto mesg = prefix;
+            auto msg = prefix;
             auto arg_index = std::size_t {0};
             auto it = fmt.begin();
             const auto end = fmt.end();
 
             while( it != end ) {
                 auto pos = std::find( it, end, '%' );
-                mesg.append( it, pos );
+                msg.append( it, pos );
 
                 if( pos == end ) {
                     break;
@@ -115,7 +247,7 @@ namespace logger {
 
                 switch( *pos ) {
                 case '%':
-                    mesg.push_back( '%' );
+                    msg.push_back( '%' );
                     break;
 
                 case 's':
@@ -123,7 +255,7 @@ namespace logger {
                         throw std::invalid_argument {"Invalid formatstring (not enough arguments)"};
                     }
 
-                    mesg.append( args[arg_index++] );
+                    msg.append( args[arg_index++] );
                     break;
 
                 default:
@@ -133,14 +265,10 @@ namespace logger {
                 it = std::next( pos );
             }
 
-            mesg.push_back( '\n' );
-            get_stream() << mesg << std::flush;
+            msg.push_back( '\n' );
+            return msg;
         }
 
     } //  namespace impl
-
-    void set_stream( std::ostream& stream ) {
-        ostream_pointer() = &stream;
-    }
 
 } // namespace logger
