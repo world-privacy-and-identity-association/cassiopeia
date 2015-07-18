@@ -135,33 +135,35 @@ public:
             tbs->wishTo = data;
             break;
 
-        case RecordHeader::SignerCommand::ADD_SAN: {
-            size_t pos = data.find( "," );
+        case RecordHeader::SignerCommand::ADD_SAN:
+            {
+                size_t pos = data.find( "," );
 
-            if( pos == std::string::npos ) {
-                // error
-            } else {
-                std::shared_ptr<SAN> san( new SAN() );
-                san->type = data.substr( 0, pos );
-                san->content = data.substr( pos + 1 );
-                tbs->SANs.push_back( san );
+                if( pos == std::string::npos ) {
+                    // error
+                } else {
+                    std::shared_ptr<SAN> san( new SAN() );
+                    san->type = data.substr( 0, pos );
+                    san->content = data.substr( pos + 1 );
+                    tbs->SANs.push_back( san );
+                }
             }
-        }
-        break;
+            break;
 
-        case RecordHeader::SignerCommand::ADD_AVA: {
-            size_t pos = data.find( "," );
+        case RecordHeader::SignerCommand::ADD_AVA:
+            {
+                size_t pos = data.find( "," );
 
-            if( pos == std::string::npos ) {
-                // error
-            } else {
-                std::shared_ptr<AVA> ava( new AVA() );
-                ava->name = data.substr( 0, pos );
-                ava->value = data.substr( pos + 1 );
-                tbs->AVAs.push_back( ava );
+                if( pos == std::string::npos ) {
+                    // error
+                } else {
+                    std::shared_ptr<AVA> ava( new AVA() );
+                    ava->name = data.substr( 0, pos );
+                    ava->value = data.substr( pos + 1 );
+                    tbs->AVAs.push_back( ava );
+                }
             }
-        }
-        break;
+            break;
 
         case RecordHeader::SignerCommand::ADD_PROOF_LINE:
             break;
@@ -191,31 +193,32 @@ public:
             serials.push_back( data );
             break;
 
-        case RecordHeader::SignerCommand::REVOKE: {
-            std::string ca = data;
-            auto reqCA = CAs.at( ca );
-            logger::note( "CA found" );
-            std::shared_ptr<CRL> crl;
-            std::string date;
-            std::tie<std::shared_ptr<CRL>, std::string>( crl, date ) = signer->revoke( reqCA, serials );
+        case RecordHeader::SignerCommand::REVOKE:
+            {
+                std::string ca = data;
+                auto reqCA = CAs.at( ca );
+                logger::note( "CA found" );
+                std::shared_ptr<CRL> crl;
+                std::string date;
+                std::tie<std::shared_ptr<CRL>, std::string>( crl, date ) = signer->revoke( reqCA, serials );
 
-            respondCommand( RecordHeader::SignerResult::REVOKED, date + crl->getSignature() );
-
-            break;
-        }
-
-        case RecordHeader::SignerCommand::GET_FULL_CRL: {
-            auto ca = CAs.at( data );
-            CRL c( ca->path + "/ca.crl" );
-            respondCommand( RecordHeader::SignerResult::FULL_CRL, c.toString() );
-
-            if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
-                logger::error( "ERROR: SSL shutdown failed." );
+                respondCommand( RecordHeader::SignerResult::REVOKED, date + crl->getSignature() );
             }
-
-            parent->reset(); // Connection ended
             break;
-        }
+
+        case RecordHeader::SignerCommand::GET_FULL_CRL:
+            {
+                auto ca = CAs.at( data );
+                CRL c( ca->path + "/ca.crl" );
+                respondCommand( RecordHeader::SignerResult::FULL_CRL, c.toString() );
+
+                if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
+                    logger::error( "ERROR: SSL shutdown failed." );
+                }
+
+                parent->reset(); // Connection ended
+            }
+            break;
 
         default:
             throw "Unimplemented";
@@ -223,8 +226,8 @@ public:
     }
 };
 
-DefaultRecordHandler::DefaultRecordHandler( std::shared_ptr<Signer> signer, std::shared_ptr<BIO> bio )
-    : bio( bio ), ctx( generateSSLContext( true ) ), signer( signer ), currentSession() {
+DefaultRecordHandler::DefaultRecordHandler( std::shared_ptr<Signer> signer, std::shared_ptr<BIO> bio ) :
+    bio( bio ), ctx( generateSSLContext( true ) ), signer( signer ), currentSession() {
 }
 
 void DefaultRecordHandler::reset() {

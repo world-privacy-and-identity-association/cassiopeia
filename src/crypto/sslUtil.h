@@ -10,15 +10,16 @@
 
 #include "db/database.h"
 
-class CAConfig {
-public:
+struct CAConfig {
     std::string path;
     std::string name;
 
     std::shared_ptr<X509> ca;
     std::shared_ptr<EVP_PKEY> caKey;
     std::shared_ptr<ASN1_TIME> notBefore;
+
     CAConfig( const std::string& name );
+
     bool crlNeedsResign();
 };
 
@@ -49,4 +50,5 @@ std::shared_ptr<EVP_PKEY> loadPkeyFromFile( const std::string& filename );
 std::shared_ptr<SSL_CTX> generateSSLContext( bool server );
 std::shared_ptr<BIO> openSerial( const std::string& name );
 std::string timeToString( std::shared_ptr<ASN1_TIME> time );
+
 void extractTimes( std::shared_ptr<X509> source, std::shared_ptr<SignedCertificate> cert );

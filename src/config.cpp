@@ -130,7 +130,6 @@ int parseProfiles() {
 }
 
 int parseConfig( std::string path ) {
-
     auto masterConf = parseConf( path );
 
     keyDir = masterConf->at( "key.directory" );

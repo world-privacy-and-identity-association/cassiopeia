@@ -10,6 +10,7 @@
 std::shared_ptr<int> MySQLJobProvider::lib_ref(
     //Initializer: Store the return code as a pointer to an integer
     new int( mysql_library_init( 0, NULL, NULL ) ),
+
     //Finalizer: Check the pointer and free resources
     []( int* ref ) {
         if( !ref ) {
@@ -171,7 +172,6 @@ void MySQLJobProvider::finishJob( std::shared_ptr<Job> job ) {
     if( query( q ).first ) {
         throw "No database entry found.";
     }
-
 }
 
 void MySQLJobProvider::failJob( std::shared_ptr<Job> job ) {

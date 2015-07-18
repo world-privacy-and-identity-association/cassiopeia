@@ -138,7 +138,6 @@ std::pair<bool, time_t> addMonths( std::time_t t, int32_t count ) {
     }
 
     return std::pair<bool, time_t>( true, res );
-
 }
 
 std::pair<bool, time_t> parseMonthInterval( std::time_t t, const std::string& date ) {
@@ -161,6 +160,7 @@ std::pair<bool, time_t> parseMonthInterval( std::time_t t, const std::string& da
         return std::pair<bool, time_t>( false, 0 );
     }
 }
+
 std::pair<bool, time_t> parseYearInterval( std::time_t t, const std::string& date ) {
     if( date[date.size() - 1] != 'y' ) {
         return  std::pair<bool, time_t>( false, 0 );

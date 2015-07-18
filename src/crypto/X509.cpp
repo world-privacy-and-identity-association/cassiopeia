@@ -268,8 +268,8 @@ std::shared_ptr<SignedCertificate> X509Cert::sign( std::shared_ptr<EVP_PKEY> caK
 
     std::shared_ptr<char> serStr(
         BN_bn2hex( ser.get() ),
-        []( char *p ) {
-            OPENSSL_free(p);
+        []( char* p ) {
+            OPENSSL_free( p );
         } ); // OPENSSL_free is a macro...
     res->serial = serStr ? std::string( serStr.get() ) : "";
 

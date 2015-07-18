@@ -36,7 +36,7 @@ int main( int argc, const char* argv[] ) try {
 #endif
 
     if( parseConfig( path ) != 0 ) {
-        logger::fatal("Could not parse configuration file.");
+        logger::fatal( "Could not parse configuration file." );
         return -1;
     }
 

@@ -26,6 +26,7 @@ struct AVA {
 struct TBSCertificate {
     std::string md;
     std::string profile;
+
     /**
      * CSR path
      */
@@ -38,7 +39,6 @@ struct TBSCertificate {
     std::string wishFrom;
     std::string wishTo;
 };
-
 
 struct SignedCertificate {
     std::string certificate;

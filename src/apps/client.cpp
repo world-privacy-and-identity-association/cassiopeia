@@ -93,7 +93,7 @@ int main( int argc, const char* argv[] ) {
             // todo set good log TODO FIXME
             sign->setLog( std::shared_ptr<std::ostream>(
                 &std::cout,
-                []( std::ostream * o ) {
+                []( std::ostream* o ) {
                     ( void ) o;
                 } ) );
             checkCRLs( sign );
