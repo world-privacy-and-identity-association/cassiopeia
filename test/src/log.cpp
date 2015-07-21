@@ -17,7 +17,7 @@ static inline bool head_and_tail_equal( const std::string& str, const std::strin
 }
 
 BOOST_AUTO_TEST_CASE( basic_log ) {
-    auto stream = std::ostringstream{};
+    std::ostringstream stream{};
     auto logger = logger::logger_set{stream};
 
     logger.log( logger::level::note, "foo", " bar ", 23, ' ', 42.0, " baz" );
@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE( basic_log ) {
 }
 
 BOOST_AUTO_TEST_CASE( basic_logf ) {
-    auto stream = std::ostringstream{};
+    std::ostringstream stream{};
     auto logger = logger::logger_set{stream};
 
     logger.logf( logger::level::note, "bla%sblub%s%%", "foo", 42 );
@@ -35,10 +35,10 @@ BOOST_AUTO_TEST_CASE( basic_logf ) {
 }
 
 BOOST_AUTO_TEST_CASE( log_hiding ) {
-    auto stream1 = std::ostringstream{};
+    std::ostringstream stream1{};
     auto logger1 = logger::logger_set{stream1};
 
-    auto stream2 = std::ostringstream{};
+    std::ostringstream stream2{};
     auto logger2 = logger::logger_set{stream2};
 
     logger::note( "foobar" );
@@ -48,11 +48,11 @@ BOOST_AUTO_TEST_CASE( log_hiding ) {
 }
 
 BOOST_AUTO_TEST_CASE( log_restoration ) {
-    auto stream1 = std::ostringstream{};
+    std::ostringstream stream1{};
     auto logger1 = logger::logger_set{stream1};
 
     {
-        auto stream2 = std::ostringstream{};
+        std::ostringstream stream2{};
         auto logger2 = logger::logger_set{stream2};
     }
 
@@ -62,10 +62,10 @@ BOOST_AUTO_TEST_CASE( log_restoration ) {
 }
 
 BOOST_AUTO_TEST_CASE( non_global_log ) {
-    auto stream1 = std::ostringstream{};
+    std::ostringstream stream1{};
     auto logger1 = logger::logger_set{stream1};
 
-    auto stream2 = std::ostringstream{};
+    std::ostringstream stream2{};
     auto logger2 = logger::logger_set{{stream2}, logger::auto_register::off};
 
     logger::note( "foobar" );
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE( non_global_log ) {
 
 BOOST_AUTO_TEST_CASE( concat_alias_methods ) {
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::debug}};
 
         logger.debug( "foo" );
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE( concat_alias_methods ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::note}};
 
         logger.note( "foo" );
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE( concat_alias_methods ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::warn}};
 
         logger.warn( "foo" );
@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE( concat_alias_methods ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::error}};
 
         logger.error( "foo" );
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE( concat_alias_methods ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::fatal}};
 
         logger.fatal( "foo" );
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE( concat_alias_methods ) {
 
 BOOST_AUTO_TEST_CASE( format_alias_methods ) {
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::debug}};
 
         logger.debugf( "foo" );
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE( format_alias_methods ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::note}};
 
         logger.notef( "foo" );
@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE( format_alias_methods ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::warn}};
 
         logger.warnf( "foo" );
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE( format_alias_methods ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::error}};
 
         logger.errorf( "foo" );
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE( format_alias_methods ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::fatal}};
 
         logger.fatalf( "foo" );
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE( format_alias_methods ) {
 
 BOOST_AUTO_TEST_CASE( concat_alias_functions ) {
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::debug}};
 
         logger::debug( "foo" );
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE( concat_alias_functions ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::note}};
 
         logger::note( "foo" );
@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE( concat_alias_functions ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::warn}};
 
         logger::warn( "foo" );
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE( concat_alias_functions ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::error}};
 
         logger::error( "foo" );
@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE( concat_alias_functions ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::fatal}};
 
         logger::fatal( "foo" );
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE( concat_alias_functions ) {
 
 BOOST_AUTO_TEST_CASE( format_alias_functions ) {
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::debug}};
 
         logger::debugf( "foo" );
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE( format_alias_functions ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::note}};
 
         logger::notef( "foo" );
@@ -235,7 +235,7 @@ BOOST_AUTO_TEST_CASE( format_alias_functions ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::warn}};
 
         logger::warnf( "foo" );
@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_CASE( format_alias_functions ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::error}};
 
         logger::errorf( "foo" );
@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE( format_alias_functions ) {
     }
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{{stream, logger::level::fatal}};
 
         logger::fatalf( "foo" );
@@ -263,7 +263,7 @@ BOOST_AUTO_TEST_CASE( format_alias_functions ) {
 }
 
 BOOST_AUTO_TEST_CASE( formatting_exceptions ) {
-    auto stream = std::ostringstream{};
+    std::ostringstream stream{};
     auto logger = logger::logger_set{stream};
 
     BOOST_CHECK_THROW( logger.notef( "%" ), std::invalid_argument );
@@ -272,7 +272,7 @@ BOOST_AUTO_TEST_CASE( formatting_exceptions ) {
 }
 
 BOOST_AUTO_TEST_CASE( multiple_calls ) {
-    auto stream = std::ostringstream{};
+    std::ostringstream stream{};
     auto logger = logger::logger_set{stream};
 
     logger::note( "foo1" );
@@ -294,13 +294,13 @@ BOOST_AUTO_TEST_CASE( multiple_calls ) {
 }
 
 BOOST_AUTO_TEST_CASE( multiple_calls_nested ) {
-    auto stream = std::ostringstream{};
+    std::ostringstream stream{};
     auto logger = logger::logger_set{stream};
 
     logger::note( "foo1" );
 
     {
-        auto stream = std::ostringstream{};
+        std::ostringstream stream{};
         auto logger = logger::logger_set{stream};
 
         logger::note( "foo2" );
@@ -319,10 +319,10 @@ BOOST_AUTO_TEST_CASE( multiple_calls_nested ) {
 }
 
 BOOST_AUTO_TEST_CASE( extending_current_logger ) {
-    auto stream1 = std::ostringstream{};
+    std::ostringstream stream1{};
     auto logger1 = logger::logger_set{stream1};
 
-    auto stream2 = std::ostringstream{};
+    std::ostringstream stream2{};
     {
         auto logger2 = logger::current_logger_extended( {stream2} );
         logger::note( "foo1" );

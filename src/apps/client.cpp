@@ -110,8 +110,6 @@ int main( int argc, const char* argv[] ) {
 
         std::shared_ptr<std::ofstream> logPtr = openLogfile( std::string( "logs/" ) + job->id + std::string( "_" ) + job->warning + std::string( ".log" ) );
 
-        std::ofstream& log = *( logPtr.get() );
-
         sign->setLog( logPtr );
         logger::note( "TASK ID: ", job->id );
         logger::note( "TRY:     ", job->warning );
