@@ -308,13 +308,7 @@ void MySQLJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<Sign
     std::string read_id;
 
     if( !row || !l ) {
-        if( query( "INSERT INTO cacerts SET keyname= '" + this->escape_string( res->ca_name ) + "', subroot = 0" ).first ) {
-            throw "Error while inserting new ca cert";
-        }
-
-        my_ulonglong insert_id = mysql_insert_id( conn.get() );
-
-        read_id = std::to_string( insert_id );
+        throw "Error while inserting new ca cert not found";
     } else {
         read_id = std::string( row[0], row[0] + l[0] );
     }
