@@ -63,7 +63,6 @@ std::string parseCommand( RecordHeader& head, const std::string& input, std::sha
     bool error = false;
 
     std::string str( std::max( dlen, RECORD_HEADER_SIZE ), 0 );
-    str.append( dlen, '\0' );
 
     for( int i = 0; i < dlen; i++ ) {
         int32_t digit;
