@@ -24,7 +24,7 @@ std::string toHexAndChecksum( const std::string& src ) {
     return ss.str();
 }
 
-void sendCommand( RecordHeader& head, const std::string& data, std::shared_ptr<OpensslBIO> bio, std::shared_ptr<std::ostream> log ) {
+void sendCommand( RecordHeader& head, const std::string& data, std::shared_ptr<OpensslBIO> bio ) {
     head.payloadLength = data.size();
     std::string s;
     s += head.packToString();
@@ -32,9 +32,7 @@ void sendCommand( RecordHeader& head, const std::string& data, std::shared_ptr<O
 
     std::string res = toHexAndChecksum( s );
 
-    if( log ) {
-        logger::debug( "FINE: RECORD output: ", res );
-    }
+    logger::debug( "FINE: RECORD output: ", res );
 
     bio->write( res.data(), res.size() );
 }
@@ -53,10 +51,8 @@ int32_t fromHexDigit( char c ) {
     return res;
 }
 
-std::string parseCommand( RecordHeader& head, const std::string& input, std::shared_ptr<std::ostream> log ) {
-    if( log ) {
-        logger::debug( "FINE: RECORD input: ", input );
-    }
+std::string parseCommand( RecordHeader& head, const std::string& input) {
+    logger::debug( "FINE: RECORD input: ", input );
 
     int32_t dlen = ( input.size() - 2 ) / 2;
     char checksum = 0;

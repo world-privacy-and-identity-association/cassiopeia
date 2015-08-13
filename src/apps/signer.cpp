@@ -53,6 +53,7 @@ int main( int argc, const char* argv[] ) try {
 
     DefaultRecordHandler* dh = new DefaultRecordHandler( std::shared_ptr<Signer>( new SimpleOpensslSigner( ) ), slip1 );
 
+    logger::note( "Entering mainloop" );
     while( true ) {
         try {
             dh->handle();

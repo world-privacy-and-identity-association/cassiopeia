@@ -18,7 +18,7 @@ void RemoteSigner::send( std::shared_ptr<OpensslBIOWrapper> bio, RecordHeader& h
     head.command = ( uint16_t ) cmd;
     head.command_count++;
     head.totalLength = data.size();
-    sendCommand( head, data, bio, log );
+    sendCommand( head, data, bio );
 }
 
 std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertificate> cert ) {
@@ -82,7 +82,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
             }
 
             RecordHeader head;
-            std::string payload = parseCommand( head, std::string( buffer.data(), length ), log );
+            std::string payload = parseCommand( head, std::string( buffer.data(), length ) );
 
             switch( ( RecordHeader::SignerResult ) head.command ) {
             case RecordHeader::SignerResult::CERTIFICATE:
@@ -176,7 +176,7 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
         throw "Error, no response data";
     }
 
-    payload = parseCommand( head, std::string( buffer.data(), length ), log );
+    payload = parseCommand( head, std::string( buffer.data(), length ) );
 
     std::shared_ptr<CRL> crl( new CRL( ca->path + std::string( "/ca.crl" ) ) );
     std::string date;
@@ -211,7 +211,7 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
             throw "Error, no response data";
         }
 
-        payload = parseCommand( head, std::string( buffer.data(), length ), log );
+        payload = parseCommand( head, std::string( buffer.data(), length ) );
 
         if( ( RecordHeader::SignerResult ) head.command != RecordHeader::SignerResult::FULL_CRL ) {
             throw "Protocol violation";

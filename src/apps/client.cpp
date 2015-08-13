@@ -103,14 +103,15 @@ int main( int argc, const char* argv[] ) {
         std::shared_ptr<Job> job = jp->fetchJob();
 
         if( !job ) {
-            logger::debug( "Nothing to work on." );
+            logger::note( "Nothing to work on." );
             sleep( 5 );
             continue;
         }
 
         std::shared_ptr<std::ofstream> logPtr = openLogfile( std::string( "logs/" ) + job->id + std::string( "_" ) + job->warning + std::string( ".log" ) );
 
-        sign->setLog( logPtr );
+        logger::logger_set log_set({logger::log_target(*logPtr, logger::level::debug)}, logger::auto_register::on);
+
         logger::note( "TASK ID: ", job->id );
         logger::note( "TRY:     ", job->warning );
         logger::note( "TARGET:  ", job->target );

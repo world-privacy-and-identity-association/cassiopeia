@@ -104,6 +104,6 @@ public:
 
 };
 
-std::string parseCommand( RecordHeader& head, const std::string& input, std::shared_ptr<std::ostream> log );
+std::string parseCommand( RecordHeader& head, const std::string& input );
 
-void sendCommand( RecordHeader& head, const std::string& data, std::shared_ptr<OpensslBIO> bio, std::shared_ptr<std::ostream> log );
+void sendCommand( RecordHeader& head, const std::string& data, std::shared_ptr<OpensslBIO> bio );

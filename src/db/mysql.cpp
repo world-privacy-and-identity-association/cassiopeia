@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include <mysql/errmsg.h>
+#include <log/logger.hpp>
 
 //This static variable exists to handle initializing and finalizing the MySQL driver library
 std::shared_ptr<int> MySQLJobProvider::lib_ref(
@@ -114,8 +115,6 @@ std::shared_ptr<Job> MySQLJobProvider::fetchJob() {
         return nullptr;
     }
 
-    unsigned int num = mysql_num_fields( res.get() );
-
     MYSQL_ROW row = mysql_fetch_row( res.get() );
 
     if( !row ) {
@@ -137,11 +136,7 @@ std::shared_ptr<Job> MySQLJobProvider::fetchJob() {
     job->to = std::string( row[4], row[4] + l[4] );
     job->warning = std::string( row[5], row[5] + l[5] );
 
-    for( unsigned int i = 0; i < num; i++ ) {
-        printf( "[%.*s] ", ( int ) l[i], row[i] ? row[i] : "NULL" );
-    }
-
-    printf( "\n" );
+    logger::note( "Got a job: (id=%s, target=%s, task=%s, from=%s, to=%s, warnings=%s)", job->id, job->target, job->task, job->from, job->to, job->warning );
 
     return job;
 }

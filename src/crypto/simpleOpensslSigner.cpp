@@ -72,6 +72,7 @@ std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial(
 
 std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TBSCertificate> cert ) {
     std::stringstream signlog;
+    logger::logger_set log_set_sign({logger::log_target(signlog, logger::level::debug)}, logger::auto_register::on);
 
     logger::note( "FINE: Profile name is: ", cert->profile );
 

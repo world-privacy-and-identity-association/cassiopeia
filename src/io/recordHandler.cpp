@@ -1,6 +1,7 @@
 #include "io/recordHandler.h"
 
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <ctime>
 #include <unordered_map>
@@ -36,22 +37,30 @@ public:
     DefaultRecordHandler* parent;
     std::shared_ptr<Signer> signer;
 
-    std::shared_ptr<std::ofstream> log;
+    std::shared_ptr<std::ofstream> logFile;
+    //std::stringstream sessionlog;
     std::vector<std::string> serials;
+    logger::logger_set logger;
+
 
     RecordHandlerSession( DefaultRecordHandler* parent, std::shared_ptr<Signer> signer, std::shared_ptr<SSL_CTX> ctx, std::shared_ptr<BIO> output ) :
         sessid( 0 ),
         lastCommandCount( 0 ),
-        tbs( new TBSCertificate() ) {
+        tbs( new TBSCertificate() ),
+        logFile(openLogfile( std::string( "logs/log_" ) + std::to_string( [](){
+                        time_t c_time;
+                        if( time( &c_time ) == -1 ) {
+                            throw "Error while fetching time?";
+                        }
+                        return c_time;
+                        }() ) )),
+        logger( {
+                logger::log_target(std::cout, logger::level::note),
+                    //logger::log_target(sessionlog, logger::level::note),
+                    logger::log_target(*logFile, logger::level::note)
+               }, logger::auto_register::on) {
         this->parent = parent;
         this->signer = signer;
-        time_t c_time;
-
-        if( time( &c_time ) == -1 ) {
-            throw "Error while fetching time?";
-        }
-
-        log = openLogfile( std::string( "logs/log_" ) + std::to_string( c_time ) );
 
         ssl = std::shared_ptr<SSL>( SSL_new( ctx.get() ), SSL_free );
         std::shared_ptr<BIO> bio(
@@ -71,7 +80,7 @@ public:
         rh.flags = 0;
         rh.command_count = 0; // TODO i++
         rh.totalLength = payload.size();
-        sendCommand( rh, payload, io, log );
+        sendCommand( rh, payload, io );
     }
 
     void work() {
@@ -88,13 +97,10 @@ public:
 
         try {
             RecordHeader head;
-            std::string payload = parseCommand( head, content, log );
+            std::string payload = parseCommand( head, content );
             execute( head, payload );
         } catch( const char* msg ) {
-            if( log ) {
-                logger::error( "ERROR: ", msg );
-            }
-
+            logger::error( "ERROR: ", msg );
             parent->reset();
             return;
         }
@@ -195,9 +201,10 @@ public:
 
         case RecordHeader::SignerCommand::REVOKE:
             {
+                logger::note("Revoking: ", data);
                 std::string ca = data;
                 auto reqCA = CAs.at( ca );
-                logger::note( "CA found" );
+                logger::note( "CA found in recordHandler" );
                 std::shared_ptr<CRL> crl;
                 std::string date;
                 std::tie<std::shared_ptr<CRL>, std::string>( crl, date ) = signer->revoke( reqCA, serials );
@@ -208,6 +215,7 @@ public:
 
         case RecordHeader::SignerCommand::GET_FULL_CRL:
             {
+                logger::note("Requesting full CRL: ", data);
                 auto ca = CAs.at( data );
                 CRL c( ca->path + "/ca.crl" );
                 respondCommand( RecordHeader::SignerResult::FULL_CRL, c.toString() );
