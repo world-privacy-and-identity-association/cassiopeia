@@ -32,7 +32,7 @@ else
     CFLAGS += -O2
 endif
 
-CFLAGS+=${ADDFLAGS} -Wall -Werror -Wextra -pedantic -std=c++11 -Ilib/openssl/include -Isrc
+CFLAGS+=${ADDFLAGS} -Wall -Werror -Wextra -pedantic -std=c++1y -Ilib/openssl/include -Isrc
 CXXFLAGS=$(CFLAGS)
 LDFLAGS+=${ADDFLAGS} -L/usr/lib/i386-linux-gnu/ -lssl -lcrypto -ldl -Llib/openssl
 

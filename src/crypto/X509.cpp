@@ -59,7 +59,7 @@ std::shared_ptr<X509Req> X509Req::parseCSR( std::string content ) {
         throw "Error parsing CSR";
     }
 
-    return std::shared_ptr<X509Req>( new X509Req( req ) );
+    return std::shared_ptr<X509Req>( new X509Req( req )); // TODO ask
 }
 
 std::shared_ptr<X509Req> X509Req::parseSPKAC( std::string content ) {
@@ -257,7 +257,7 @@ std::shared_ptr<SignedCertificate> X509Cert::sign( std::shared_ptr<EVP_PKEY> caK
     BUF_MEM* buf = NULL;
     BIO_get_mem_ptr( mem.get(), &buf );
 
-    std::shared_ptr<SignedCertificate> res = std::shared_ptr<SignedCertificate>( new SignedCertificate() );
+    auto res = std::make_shared<SignedCertificate>();
     res->certificate = std::string( buf->data, buf->data + buf->length );
 
     std::shared_ptr<BIGNUM> ser( ASN1_INTEGER_to_BN( target->cert_info->serialNumber, NULL ), BN_free );

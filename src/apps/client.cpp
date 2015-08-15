@@ -76,11 +76,11 @@ int main( int argc, const char* argv[] ) {
         return -1;
     }
 
-    std::shared_ptr<JobProvider> jp( new MySQLJobProvider( sqlHost, sqlUser, sqlPass, sqlDB ) );
+    std::shared_ptr<JobProvider> jp = std::make_shared<MySQLJobProvider>( sqlHost, sqlUser, sqlPass, sqlDB );
     std::shared_ptr<BIO> b = openSerial( serialPath );
     std::shared_ptr<BIO> slip1( BIO_new( toBio<SlipBIO>() ), BIO_free );
-    static_cast<SlipBIO*>( slip1->ptr )->setTarget( std::shared_ptr<OpensslBIO>( new OpensslBIOWrapper( b ) ) );
-    std::shared_ptr<RemoteSigner> sign( new RemoteSigner( slip1, generateSSLContext( false ) ) );
+    static_cast<SlipBIO*>( slip1->ptr )->setTarget( std::make_shared<OpensslBIOWrapper>( b ) );
+    auto sign = std::make_shared<RemoteSigner>( slip1, generateSSLContext( false ) );
     // std::shared_ptr<Signer> sign( new SimpleOpensslSigner() );
 
     time_t lastCRLCheck = 0;

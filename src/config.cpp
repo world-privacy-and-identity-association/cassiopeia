@@ -15,7 +15,7 @@ std::string sqlHost, sqlUser, sqlPass, sqlDB;
 std::string serialPath;
 
 std::shared_ptr<std::unordered_map<std::string, std::string>> parseConf( std::string path ) {
-    std::shared_ptr<std::unordered_map<std::string, std::string>> map( new std::unordered_map<std::string, std::string>() );
+    auto map = std::make_shared<std::unordered_map<std::string, std::string>>();
     std::ifstream config;
     config.open( path );
 
@@ -105,7 +105,7 @@ int parseProfiles() {
                 }
 
                 if( CAs.find( caName ) == CAs.end() ) {
-                    std::shared_ptr<CAConfig> ca( new CAConfig( caName ) );
+                    auto ca = std::make_shared<CAConfig>( caName );
                     CAs.emplace( caName, ca );
                 }
 

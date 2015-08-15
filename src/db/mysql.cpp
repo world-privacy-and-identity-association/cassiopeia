@@ -136,7 +136,7 @@ std::shared_ptr<Job> MySQLJobProvider::fetchJob() {
     job->to = std::string( row[4], row[4] + l[4] );
     job->warning = std::string( row[5], row[5] + l[5] );
 
-    logger::note( "Got a job: (id=%s, target=%s, task=%s, from=%s, to=%s, warnings=%s)", job->id, job->target, job->task, job->from, job->to, job->warning );
+    logger::notef( "Got a job: (id=%s, target=%s, task=%s, from=%s, to=%s, warnings=%s)", job->id, job->target, job->task, job->from, job->to, job->warning );
 
     return job;
 }
@@ -240,7 +240,7 @@ std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<
             return nullptr;
         }
 
-        std::shared_ptr<SAN> nSAN = std::shared_ptr<SAN>( new SAN() );
+        auto nSAN = std::make_shared<SAN>();
         nSAN->content = std::string( row[0], row[0] + l[0] );
         nSAN->type = std::string( row[1], row[1] + l[1] );
         cert->SANs.push_back( nSAN );
@@ -262,7 +262,7 @@ std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<
             return nullptr;
         }
 
-        std::shared_ptr<AVA> nAVA = std::shared_ptr<AVA>( new AVA() );
+        auto nAVA = std::make_shared<AVA>();
         nAVA->name = std::string( row[0], row[0] + l[0] );
         nAVA->value = std::string( row[1], row[1] + l[1] );
         cert->AVAs.push_back( nAVA );

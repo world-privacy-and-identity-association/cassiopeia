@@ -13,4 +13,11 @@ std::pair<bool, std::time_t> parseDate( const std::string& date );
 std::pair<bool, std::time_t> parseMonthInterval( std::time_t t, const std::string& date );
 std::pair<bool, std::time_t> parseYearInterval( std::time_t t, const std::string& date );
 
-std::shared_ptr<std::ofstream> openLogfile( const std::string name );
+std::unique_ptr<std::ofstream> openLogfile( const std::string &name );
+
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique( Args&&... args ) {
+    return std::unique_ptr<T>( new T( std::forward<Args>(args)... ));
+}
+
+std::string timestamp();

@@ -9,11 +9,8 @@
 #include <stdexcept>
 
 void writeFile( const std::string& name, const std::string& content ) {
-    std::ofstream file;
-
-    file.open( name );
+    std::ofstream file( name );
     file << content;
-    file.close();
 
     //! \FIXME: Error checking
 }
@@ -21,7 +18,6 @@ void writeFile( const std::string& name, const std::string& content ) {
 std::string readFile( const std::string& name ) {
     std::ifstream t( name );
     std::string res = std::string( std::istreambuf_iterator<char>( t ), std::istreambuf_iterator<char>() );
-    t.close();
 
     return res;
 }
@@ -113,7 +109,7 @@ std::pair<bool, time_t> parseDate( const std::string& date ) {
     std::string checkS( check, siz );
 
     if( checkS != date ) {
-        return std::pair<bool, time_t>( false, 0 );
+        return { false, 0 };
     }
 
     return std::pair<bool, time_t>( true, res );
@@ -182,7 +178,7 @@ std::pair<bool, time_t> parseYearInterval( std::time_t t, const std::string& dat
     }
 }
 
-std::shared_ptr<std::ofstream> openLogfile( const std::string name ) {
+std::unique_ptr<std::ofstream> openLogfile( const std::string &name ) {
     struct stat buffer;
     std::string tname = name;
     int ctr = 2;
@@ -191,15 +187,19 @@ std::shared_ptr<std::ofstream> openLogfile( const std::string name ) {
         tname = name + "_" + std::to_string( ctr++ );
     }
 
-    auto res = std::shared_ptr<std::ofstream>( new std::ofstream( tname ),
-        []( std::ofstream * p ) {
-            p->close();
-            delete p;
-        } );
+    auto res = make_unique<std::ofstream>( tname );
 
     if( ! res->good() ) {
         throw std::string( "Failed to open file for logging: " ) + name;
     }
 
     return res;
+}
+
+std::string timestamp(){
+    time_t c_time;
+    if( time( &c_time ) == -1 ) {
+        throw std::runtime_error( "Error while fetching time?" );
+    }
+    return std::to_string( c_time );
 }

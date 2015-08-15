@@ -256,7 +256,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
 std::pair<std::shared_ptr<CRL>, std::string> SimpleOpensslSigner::revoke( std::shared_ptr<CAConfig> ca, std::vector<std::string> serials ) {
     std::string crlpath = ca->path + "/ca.crl";
 
-    std::shared_ptr<CRL> crl( new CRL( crlpath ) );
+    auto crl = std::make_shared<CRL>( crlpath );
     std::string date = "";
 
     for( std::string serial : serials ) {

@@ -15,7 +15,7 @@ RemoteSigner::~RemoteSigner() {
 }
 
 void RemoteSigner::send( std::shared_ptr<OpensslBIOWrapper> bio, RecordHeader& head, RecordHeader::SignerCommand cmd, std::string data ) {
-    head.command = ( uint16_t ) cmd;
+    head.command = static_cast<uint16_t>( cmd );
     head.command_count++;
     head.totalLength = data.size();
     sendCommand( head, data, bio );
@@ -29,7 +29,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     SSL_set_connect_state( ssl.get() );
     SSL_set_bio( ssl.get(), target.get(), target.get() );
     BIO_set_ssl( bio.get(), ssl.get(), BIO_NOCLOSE );
-    std::shared_ptr<OpensslBIOWrapper> conn( new OpensslBIOWrapper( bio ) );
+    auto conn = std::make_shared<OpensslBIOWrapper>( bio );
     RecordHeader head;
     head.flags = 0;
     head.sessid = 13;
@@ -40,7 +40,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
         send( conn, head, RecordHeader::SignerCommand::SET_SPKAC, cert->csr_content );
     } else {
         logger::error( "Unknown csr_type: ", cert->csr_type );
-        return std::shared_ptr<SignedCertificate>();
+        return nullptr;
     }
 
     send( conn, head, RecordHeader::SignerCommand::SET_SIGNATURE_TYPE, cert->md );
@@ -48,19 +48,19 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     send( conn, head, RecordHeader::SignerCommand::SET_WISH_FROM, cert->wishFrom );
     send( conn, head, RecordHeader::SignerCommand::SET_WISH_TO, cert->wishTo );
 
-    for( auto ava : cert->AVAs ) {
+    for( auto &ava : cert->AVAs ) {
         if( ava->name.find( "," ) != std::string::npos ) {
             // invalid ava
-            return std::shared_ptr<SignedCertificate>();
+            return nullptr;
         }
 
         send( conn, head, RecordHeader::SignerCommand::ADD_AVA, ava->name + "," + ava->value );
     }
 
-    for( auto san : cert->SANs ) {
+    for( auto &san : cert->SANs ) {
         if( san->type.find( "," ) != std::string::npos ) {
             // invalid ava
-            return std::shared_ptr<SignedCertificate>();
+            return nullptr;
         }
 
         send( conn, head, RecordHeader::SignerCommand::ADD_SAN, san->type + "," + san->content );
@@ -68,7 +68,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
 
     send( conn, head, RecordHeader::SignerCommand::SIGN, "" );
     send( conn, head, RecordHeader::SignerCommand::LOG_SAVED, "" );
-    std::shared_ptr<SignedCertificate> result = std::shared_ptr<SignedCertificate>( new SignedCertificate() );
+    auto result = std::make_shared<SignedCertificate>();
     std::vector<char> buffer( 2048 * 4 );
 
     for( int i = 0; i < 3; i++ ) {
@@ -77,14 +77,14 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
 
             if( length <= 0 ) {
                 logger::error( "Error, no response data" );
-                result = std::shared_ptr<SignedCertificate>();
+                result = nullptr;
                 break;
             }
 
             RecordHeader head;
             std::string payload = parseCommand( head, std::string( buffer.data(), length ) );
 
-            switch( ( RecordHeader::SignerResult ) head.command ) {
+            switch( static_cast<RecordHeader::SignerResult>( head.command )) {
             case RecordHeader::SignerResult::CERTIFICATE:
                 result->certificate = payload;
                 break;
@@ -156,13 +156,13 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
     SSL_set_connect_state( ssl.get() );
     SSL_set_bio( ssl.get(), target.get(), target.get() );
     BIO_set_ssl( bio.get(), ssl.get(), BIO_NOCLOSE );
-    std::shared_ptr<OpensslBIOWrapper> conn( new OpensslBIOWrapper( bio ) );
+    auto conn = std::make_shared<OpensslBIOWrapper>( bio );
 
     RecordHeader head;
     head.flags = 0;
     head.sessid = 13;
 
-    for( std::string serial : serials ) {
+    for( auto &serial : serials ) {
         send( conn, head, RecordHeader::SignerCommand::ADD_SERIAL, serial );
     }
 
@@ -178,21 +178,21 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
 
     payload = parseCommand( head, std::string( buffer.data(), length ) );
 
-    std::shared_ptr<CRL> crl( new CRL( ca->path + std::string( "/ca.crl" ) ) );
+    auto crl = std::make_shared<CRL>( ca->path + std::string( "/ca.crl" ) );
     std::string date;
 
-    if( ( RecordHeader::SignerResult ) head.command != RecordHeader::SignerResult::REVOKED ) {
+    if( static_cast<RecordHeader::SignerResult>( head.command ) != RecordHeader::SignerResult::REVOKED ) {
         throw "Protocol violation";
     }
 
-    const unsigned char* buffer2 = ( const unsigned char* ) payload.data();
+    const unsigned char* buffer2 = reinterpret_cast<const unsigned char*>( payload.data() );
     const unsigned char* pos = buffer2;
     ASN1_TIME* time = d2i_ASN1_TIME( NULL, &pos, payload.size() );
     ASN1_TIME_free( time );
     date = payload.substr( 0, pos - buffer2 );
     std::string rest = payload.substr( pos - buffer2 );
 
-    for( std::string serial : serials ) {
+    for( std::string &serial : serials ) {
         crl->revoke( serial, date );
     }
 
@@ -213,12 +213,12 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
 
         payload = parseCommand( head, std::string( buffer.data(), length ) );
 
-        if( ( RecordHeader::SignerResult ) head.command != RecordHeader::SignerResult::FULL_CRL ) {
+        if( static_cast<RecordHeader::SignerResult>( head.command ) != RecordHeader::SignerResult::FULL_CRL ) {
             throw "Protocol violation";
         }
 
         writeFile( ca->path + std::string( "/ca.crl.bak" ), payload );
-        crl = std::shared_ptr<CRL>( new CRL( ca->path + std::string( "/ca.crl.bak" ) ) );
+        crl = std::make_shared<CRL>( ca->path + std::string( "/ca.crl.bak" ) );
 
         if( crl->verify( ca ) ) {
             writeFile( ca->path + std::string( "/ca.crl" ), crl->toString() );
@@ -234,7 +234,7 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
         logger::warn( "SSL shutdown failed" );
     }
 
-    return std::pair<std::shared_ptr<CRL>, std::string>( crl, date );
+    return { crl, date };
 }
 
 void RemoteSigner::setLog( std::shared_ptr<std::ostream> target ) {

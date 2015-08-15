@@ -6,7 +6,7 @@
 
 #include "log/logger.hpp"
 
-#define BUFFER_SIZE 8192
+static constexpr std::size_t buffer_size = 8192;
 
 #define SLIP_ESCAPE_CHAR ( (char) 0xDB)
 #define SLIP_PACKET ( (char) 0xC0)
@@ -39,21 +39,21 @@ std::string toHex( const char* buf, int len ) {
     return data;
 }
 
-SlipBIO::SlipBIO() : buffer( std::vector<char>( BUFFER_SIZE ) ), decodeTarget( 0 ), decodePos( 0 ), rawPos( 0 ), failed( false ) {
+SlipBIO::SlipBIO() : buffer( std::vector<char>( buffer_size ) ), decodeTarget( 0 ), decodePos( 0 ), rawPos( 0 ), failed( false ) {
 }
 
 void SlipBIO::setTarget( std::shared_ptr<OpensslBIO> target ) {
     this->target = target;
 }
 
-SlipBIO::SlipBIO( std::shared_ptr<OpensslBIO> target ) : target( target ), buffer( std::vector<char>( BUFFER_SIZE ) ), decodeTarget( 0 ), decodePos( 0 ), rawPos( 0 ), failed( false ) {
+SlipBIO::SlipBIO( std::shared_ptr<OpensslBIO> target ) : target( target ), buffer( std::vector<char>( buffer_size ) ), decodeTarget( 0 ), decodePos( 0 ), rawPos( 0 ), failed( false ) {
 }
 
 SlipBIO::~SlipBIO() {}
 
 int SlipBIO::write( const char* buf, int num ) {
 #ifdef SLIP_IO_DEBUG
-    logger::debug( "Out: " << toHex( buf, num ) );
+    logger::notef( "Out: %s", toHex( buf, num ) );
 #endif
 
     int badOnes = 0;
@@ -122,7 +122,7 @@ int SlipBIO::read( char* buf, int size ) {
             failed = true;
         }
 
-        int len = target->read( buffer.data() + rawPos, buffer.capacity() - rawPos );
+        int len = target->read( buffer.data() + rawPos, buffer.size() - rawPos );
 
         if( len > 0 ) {
             rawPos += len;
@@ -147,7 +147,7 @@ int SlipBIO::read( char* buf, int size ) {
     }
 
 #ifdef SLIP_IO_DEBUG
-    logger::debug( "in: " << toHex( buf, len ) );
+    logger::notef( "in: %s", toHex( buf, len ) );
 #endif
 
     return len;

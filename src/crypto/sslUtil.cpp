@@ -212,6 +212,6 @@ void extractTimes( std::shared_ptr<X509> target,  std::shared_ptr<SignedCertific
 }
 
 bool CAConfig::crlNeedsResign() {
-    std::shared_ptr<CRL> crl( new CRL( path + "/ca.crl" ) );
+    auto crl = std::make_shared<CRL>( path + "/ca.crl" );
     return crl->needsResign();
 }

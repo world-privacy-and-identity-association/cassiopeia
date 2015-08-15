@@ -25,8 +25,8 @@ extern std::unordered_map<std::string, std::shared_ptr<CAConfig>> CAs;
 
 class RecordHandlerSession {
 public:
-    uint32_t sessid;
-    uint32_t lastCommandCount;
+    uint32_t sessid = 0;
+    uint32_t lastCommandCount = 0;
 
     std::shared_ptr<TBSCertificate> tbs;
     std::shared_ptr<SignedCertificate> result;
@@ -37,28 +37,16 @@ public:
     DefaultRecordHandler* parent;
     std::shared_ptr<Signer> signer;
 
-    std::shared_ptr<std::ofstream> logFile;
+    std::unique_ptr<std::ofstream> logFile;
     //std::stringstream sessionlog;
     std::vector<std::string> serials;
     logger::logger_set logger;
 
 
     RecordHandlerSession( DefaultRecordHandler* parent, std::shared_ptr<Signer> signer, std::shared_ptr<SSL_CTX> ctx, std::shared_ptr<BIO> output ) :
-        sessid( 0 ),
-        lastCommandCount( 0 ),
-        tbs( new TBSCertificate() ),
-        logFile(openLogfile( std::string( "logs/log_" ) + std::to_string( [](){
-                        time_t c_time;
-                        if( time( &c_time ) == -1 ) {
-                            throw "Error while fetching time?";
-                        }
-                        return c_time;
-                        }() ) )),
-        logger( {
-                logger::log_target(std::cout, logger::level::note),
-                    //logger::log_target(sessionlog, logger::level::note),
-                    logger::log_target(*logFile, logger::level::note)
-               }, logger::auto_register::on) {
+        tbs( std::make_shared<TBSCertificate>() ),
+        logFile(openLogfile( "logs/log_" + timestamp() ) ),
+        logger{ std::cout, *logFile } {
         this->parent = parent;
         this->signer = signer;
 
@@ -71,12 +59,12 @@ public:
         SSL_set_accept_state( ssl.get() );
         SSL_set_bio( ssl.get(), output.get(), output.get() );
         BIO_set_ssl( bio.get(), ssl.get(), BIO_NOCLOSE );
-        io = std::shared_ptr<OpensslBIOWrapper>( new OpensslBIOWrapper( bio ) );
+        io = std::make_shared<OpensslBIOWrapper>( bio );
     }
 
     void respondCommand( RecordHeader::SignerResult res, std::string payload ) {
         RecordHeader rh;
-        rh.command = ( uint16_t ) res;
+        rh.command = static_cast<uint16_t>( res );
         rh.flags = 0;
         rh.command_count = 0; // TODO i++
         rh.totalLength = payload.size();
@@ -84,8 +72,8 @@ public:
     }
 
     void work() {
-        std::vector<char> buffer( 2048, 0 );
-        int res = io->read( buffer.data(), buffer.capacity() );
+        std::vector<char> buffer( 2048 );
+        int res = io->read( buffer.data(), buffer.size() );
 
         if( res <= 0 ) {
             logger::error( "Stream error, resetting SSL" );
@@ -111,7 +99,7 @@ public:
             throw "Error, chunking not supported yet";
         }
 
-        switch( ( RecordHeader::SignerCommand ) head.command ) {
+        switch( static_cast<RecordHeader::SignerCommand>( head.command )) {
         case RecordHeader::SignerCommand::SET_CSR:
             tbs->csr_content = data;
             tbs->csr_type = "CSR";
@@ -148,7 +136,7 @@ public:
                 if( pos == std::string::npos ) {
                     // error
                 } else {
-                    std::shared_ptr<SAN> san( new SAN() );
+                    auto san = std::make_shared<SAN>();
                     san->type = data.substr( 0, pos );
                     san->content = data.substr( pos + 1 );
                     tbs->SANs.push_back( san );
@@ -163,7 +151,7 @@ public:
                 if( pos == std::string::npos ) {
                     // error
                 } else {
-                    std::shared_ptr<AVA> ava( new AVA() );
+                    auto ava = std::make_shared<AVA>();
                     ava->name = data.substr( 0, pos );
                     ava->value = data.substr( pos + 1 );
                     tbs->AVAs.push_back( ava );
@@ -207,7 +195,7 @@ public:
                 logger::note( "CA found in recordHandler" );
                 std::shared_ptr<CRL> crl;
                 std::string date;
-                std::tie<std::shared_ptr<CRL>, std::string>( crl, date ) = signer->revoke( reqCA, serials );
+                std::tie( crl, date ) = signer->revoke( reqCA, serials );
 
                 respondCommand( RecordHeader::SignerResult::REVOKED, date + crl->getSignature() );
             }
@@ -245,7 +233,7 @@ void DefaultRecordHandler::reset() {
 void DefaultRecordHandler::handle() {
     if( !currentSession ) {
         logger::note( "New session allocated." );
-        currentSession = std::shared_ptr<RecordHandlerSession>( new RecordHandlerSession( this, signer, ctx, bio ) );
+        currentSession = std::make_shared<RecordHandlerSession>( this, signer, ctx, bio );
     }
 
     currentSession->work();
