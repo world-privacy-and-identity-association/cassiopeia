@@ -175,9 +175,12 @@ public:
                 respondCommand( RecordHeader::SignerResult::CERTIFICATE, result->certificate );
             }
 
+            logger::note( "Shutting down SSL" );
             if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
                 logger::warn( "ERROR: SSL shutdown failed." );
             }
+            io->ctrl( BIO_CTRL_FLUSH, 0, NULL );
+            logger::note( "Shutted down SSL" );
 
             parent->reset(); // Connection ended
 
@@ -207,10 +210,13 @@ public:
                 auto ca = CAs.at( data );
                 CRL c( ca->path + "/ca.crl" );
                 respondCommand( RecordHeader::SignerResult::FULL_CRL, c.toString() );
-
+                
+                logger::note( "Shutting down SSL" );
                 if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
                     logger::error( "ERROR: SSL shutdown failed." );
                 }
+                io->ctrl( BIO_CTRL_FLUSH, 0, NULL );
+                logger::note( "Shutted down SSL" );
 
                 parent->reset(); // Connection ended
             }
@@ -232,6 +238,7 @@ void DefaultRecordHandler::reset() {
 
 void DefaultRecordHandler::handle() {
     if( !currentSession ) {
+        (void) BIO_reset( bio.get() );
         logger::note( "New session allocated." );
         currentSession = std::make_shared<RecordHandlerSession>( this, signer, ctx, bio );
     }

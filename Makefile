@@ -121,10 +121,10 @@ coverage:
 cassiopeia: bin/cassiopeia bin/cassiopeia-signer
 
 bin/cassiopeia: libs ${FS_OBJ} ${OBJ_DIR}/apps/client.lo
-	${MKDIR} $(shell dirname $@) &&  ${LD} ${LDFLAGS} -lmysqlclient -o $@ ${FS_OBJ} ${OBJ_DIR}/apps/client.lo
+	${MKDIR} $(shell dirname $@) &&  ${LD} ${LDFLAGS} -lmysqlclient -lpqxx -lpq -o $@ ${FS_OBJ} ${OBJ_DIR}/apps/client.lo
 
 bin/cassiopeia-signer: libs ${FS_OBJ} ${OBJ_DIR}/apps/signer.lo
-	${MKDIR} $(shell dirname $@) &&  ${LD} ${LDFLAGS} -o $@ $(filter-out ${OBJ_DIR}/db/mysql.lo,${FS_OBJ}) ${OBJ_DIR}/apps/signer.lo
+	${MKDIR} $(shell dirname $@) &&  ${LD} ${LDFLAGS} -o $@ $(filter-out  ${OBJ_DIR}/db/psql.lo, $(filter-out ${OBJ_DIR}/db/mysql.lo,${FS_OBJ})) ${OBJ_DIR}/apps/signer.lo
 
 ${DEP_DIR}/%.d: ${SRC_DIR}/%.cpp ${LIB_OPENSSL}
 	${MKDIR} $(shell dirname $@) && $(CXX_DEP) $(CXXFLAGS) -M -MF $@ $<

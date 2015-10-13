@@ -7,7 +7,7 @@
 #include <unordered_map>
 
 #include "db/database.h"
-#include "db/mysql.h"
+#include "db/psql.h"
 #include "crypto/simpleOpensslSigner.h"
 #include "crypto/remoteSigner.h"
 #include "crypto/sslUtil.h"
@@ -53,9 +53,13 @@ void checkCRLs( std::shared_ptr<Signer> sign ) {
 
 int main( int argc, const char* argv[] ) {
     bool once = false;
+    bool resetOnly = false;
 
     if( argc == 2 && std::string( "--once" ) == argv[1] ) {
         once = true;
+    }
+    if( argc == 2 && std::string( "--reset" ) == argv[1] ) {
+        resetOnly = true;
     }
 
     std::string path;
@@ -75,13 +79,19 @@ int main( int argc, const char* argv[] ) {
         logger::fatal( "Error: no serial device is given!" );
         return -1;
     }
-
-    std::shared_ptr<JobProvider> jp = std::make_shared<MySQLJobProvider>( sqlHost, sqlUser, sqlPass, sqlDB );
+    std::shared_ptr<JobProvider> jp = std::make_shared<PostgresJobProvider>( sqlHost, sqlUser, sqlPass, sqlDB );
     std::shared_ptr<BIO> b = openSerial( serialPath );
     std::shared_ptr<BIO> slip1( BIO_new( toBio<SlipBIO>() ), BIO_free );
-    static_cast<SlipBIO*>( slip1->ptr )->setTarget( std::make_shared<OpensslBIOWrapper>( b ) );
+    static_cast<SlipBIO*>( slip1->ptr )->setTarget( std::make_shared<OpensslBIOWrapper>( b ), false );
     auto sign = std::make_shared<RemoteSigner>( slip1, generateSSLContext( false ) );
     // std::shared_ptr<Signer> sign( new SimpleOpensslSigner() );
+
+    if( resetOnly ) {
+        std::cout << "Doing BIO reset" << std::endl;
+        int result = BIO_reset( slip1.get() );
+        std::cout << "Did BIO reset, result " << result << ", exiting." << std::endl;
+        return result;
+    }
 
     time_t lastCRLCheck = 0;
 

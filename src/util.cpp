@@ -187,7 +187,7 @@ std::unique_ptr<std::ofstream> openLogfile( const std::string &name ) {
         tname = name + "_" + std::to_string( ctr++ );
     }
 
-    auto res = make_unique<std::ofstream>( tname );
+    auto res = std::make_unique<std::ofstream>( tname );
 
     if( ! res->good() ) {
         throw std::string( "Failed to open file for logging: " ) + name;

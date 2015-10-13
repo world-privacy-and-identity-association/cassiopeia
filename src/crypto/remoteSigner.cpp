@@ -141,9 +141,11 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
         result->serial = std::string( serStr.get() );
     }
 
+    logger::note( "Closing SSL connection" );
     if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) { // need to close the connection twice
         logger::warn( "SSL shutdown failed" );
     }
+    logger::note( "SSL connection closed" );
 
     return result;
 }
@@ -230,9 +232,11 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
 
     logger::debug( "CRL:\n", crl->toString() );
 
+    logger::note( "Closing SSL connection" );
     if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) { // need to close the connection twice
         logger::warn( "SSL shutdown failed" );
     }
+    logger::note( "SSL connection closed" );
 
     return { crl, date };
 }

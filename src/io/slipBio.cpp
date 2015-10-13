@@ -12,7 +12,9 @@ static constexpr std::size_t buffer_size = 8192;
 #define SLIP_CONNECTION ( (char) 0xC0)
 #define SLIP_RESET ( (char) 0xCB )
 
-#define SLIP_IO_DEBUG
+//#define SLIP_IO_DEBUG
+//#define RAW_IO_DEBUG
+//#define UNMASK_DEBUG
 
 char hexDigit( char c ) {
     if( c < 0 ) {
@@ -57,8 +59,13 @@ SlipBIO::~SlipBIO() {}
 
 int SlipBIO::write( const char* buf, int num ) {
 #ifdef SLIP_IO_DEBUG
-    logger::notef( "Out: %s", toHex( buf, num ) );
+    logger::notef( "slip-out: %s", toHex( buf, num ) );
 #endif
+    if( waitForReset ) {
+        logger::note( "denying read because of reset-need!" );
+        return -1;
+    }
+
 
     int badOnes = 0;
 
@@ -96,11 +103,12 @@ int SlipBIO::write( const char* buf, int num ) {
 
         errno = 0;
         int dlen = target->write( targetPtr + sent, std::min( 1024, j - sent ) );
+#ifdef RAW_IO_DEBUG
         std::ostringstream debug;
-        debug << "Wrote " << dlen << " bytes ";
+        debug << "Wrote " << dlen << " bytes: ";
         debug << toHex( targetPtr + sent, dlen );
         logger::note( debug.str() );
-        target->ctrl( BIO_CTRL_FLUSH, 0, NULL );
+#endif
 
         if( dlen < 0 ) {
             throw "Error, target write failed";
@@ -121,7 +129,9 @@ int SlipBIO::write( const char* buf, int num ) {
 }
 
 int SlipBIO::read( char* buf, int size ) {
+#ifdef UNMASK_DEBUG
     logger::note( "starting read" );
+#endif
     // while we have no data to decode or unmasking does not yield a full package
     while( decodeTarget == 0 ) {
         if( waitForReset ) {
@@ -151,13 +161,18 @@ int SlipBIO::read( char* buf, int size ) {
             return -1;
         }
 
+#ifdef UNMASK_DEBUG
         logger::note( "beginning read" );
+#endif
+#ifdef RAW_IO_DEBUG
         std::ostringstream converter;
         converter << "rawPos is now: " << rawPos << ", buffer.size():" << buffer.size();
         logger::note( converter.str() );
+#endif
         int len = target->read( buffer.data() + rawPos, buffer.size() - rawPos );
+#ifdef RAW_IO_DEBUG
         logger::note( toHex(buffer.data() + rawPos, len ) );
-
+#endif
         if( len > 0 ) {
             rawPos += len;
         } else {
@@ -169,7 +184,6 @@ int SlipBIO::read( char* buf, int size ) {
 
     }
     if( waitForReset ) return -1;
-    logger::note( "emitting data!" );
 
     int len = std::min( decodeTarget, ( unsigned int ) size );
     // a package finished, return it
@@ -177,10 +191,12 @@ int SlipBIO::read( char* buf, int size ) {
     // move the buffer contents back
     std::copy( buffer.data() + len, buffer.data() + decodeTarget, buffer.data() );
     decodeTarget -= len;
+#ifdef UNMASK_DEBUG
     std::ostringstream convert;
     convert << "decodeTarget: " << decodeTarget << ", rawPos: " << rawPos << ", decodePos: " << decodePos;
     convert << ", requested were: " << size;
     logger::note( convert.str() );
+#endif
     
     if(decodeTarget == 0 && rawPos <= decodePos + 1){
         // compact the remaining at most 1 byte of raw data
@@ -190,7 +206,7 @@ int SlipBIO::read( char* buf, int size ) {
     }
 
 #ifdef SLIP_IO_DEBUG
-    logger::notef( "in: %s", toHex( buf, len ) );
+    logger::notef( "slip-in: %s", toHex( buf, len ) );
 #endif
 
     return len;
@@ -202,7 +218,7 @@ long SlipBIO::ctrl( int cmod, long arg1, void* arg2 ) {
     ( void ) arg2;
 
     if( cmod == BIO_CTRL_RESET ) {
-        decodePos = 0;
+        decodeTarget = 0;
         if( server ) {
             waitForReset = false;
             waitForConnection = true;
@@ -211,7 +227,6 @@ long SlipBIO::ctrl( int cmod, long arg1, void* arg2 ) {
             static char ctr = 8;
             char resetSequence[] = {SLIP_CONNECTION, 1,2,3,4,5,6,7, ctr};
             target->write( resetSequence, 9 );
-            logger::note( "wrote 9-byte reset seq" );
             header = {1, 2, 3, 4, 5, 6, 7, ctr};
             resetCounter = -1;
             waitForConnection = true;
@@ -219,7 +234,9 @@ long SlipBIO::ctrl( int cmod, long arg1, void* arg2 ) {
         }
         return 0;
     }else if(cmod == BIO_CTRL_FLUSH ){
+#ifdef UNMASK_DEBUG
         logger::note( "flush requested ");
+#endif
     }
 
     return target->ctrl( cmod, arg1, arg2 );
@@ -232,21 +249,29 @@ const char* SlipBIO::getName() {
 // 1 success, data avail, 0 need moar data (see that decodeTarget is still 0),
 // -1: fail... connection needs resetting
 int SlipBIO::unmask() {
+#ifdef UNMASK_DEBUG
     {
         std::ostringstream conv;
         conv << "unmasking starting, decodeTarget: " << decodeTarget << " decodePos: " << decodePos << " rawPos: " << rawPos << "bytes stored";
         logger::note( conv.str() );
     }
     logger::note( "unmasking" );
+#endif
     if( waitForConnection ){
+#ifdef UNMASK_DEBUG
         logger::note( "scanning for connection" );
+#endif
         decodeTarget = 0;
         if( server ) {
+#ifdef UNMASK_DEBUG
             logger::note( "on server site, waiting for CONNECTION-byte");
+#endif
             while(decodePos < rawPos) {
                 if(buffer[decodePos] == SLIP_CONNECTION) {
                     resetCounter = 0;
+#ifdef UNMASK_DEBUG
                     logger::note( "got connection byte" );
+#endif
                 } else if(resetCounter >= 0) {
                     header[resetCounter] = buffer[decodePos];
                     resetCounter++;
@@ -256,7 +281,9 @@ int SlipBIO::unmask() {
                     waitForConnection = false;
                     char data[] = { SLIP_CONNECTION };
                     target->write( data, 1);
+#ifdef UNMASK_DEBUG
                     logger::notef( "SLIP, initing connection with ping-seq %s:", toHex(header.data(), header.size()) );
+#endif
                     target->write( header.data(), header.size() );
                     break;
                 }
@@ -270,12 +297,15 @@ int SlipBIO::unmask() {
         } else {
             while(decodePos < rawPos) {
                 if(buffer[decodePos] == SLIP_CONNECTION) {
+#ifdef UNMASK_DEBUG
                     logger::note( "got connbyte" );
+#endif
                     resetCounter = 0;
                 } else if(resetCounter >= 0) {
+#ifdef UNMASK_DEBUG
                     logger::note( "got head-byte" );
+#endif
                     if(buffer[decodePos] == header[resetCounter]) {
-                        logger::note( "thats correct!!" );
                         resetCounter++;
                     } else {
                         resetCounter = -1;
@@ -284,7 +314,9 @@ int SlipBIO::unmask() {
                 decodePos++;
                 if( resetCounter >= ((int) header.size()) ){
                     waitForConnection = false;
+#ifdef UNMASK_DEBUG
                     logger::note("connection found! :-)!");
+#endif
                     break;
                 }
             }
@@ -350,9 +382,11 @@ int SlipBIO::unmask() {
         }
     }
 
+#ifdef UNMASK_DEBUG
     std::ostringstream conv;
     conv << "unmasking paused, 0 remaining, " << j << "bytes stored";
     logger::note( conv.str() );
+#endif
     decodePos = j;
     rawPos = j;
     decodeTarget = j;
