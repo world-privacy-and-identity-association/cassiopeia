@@ -7,7 +7,7 @@
 #include <log/logger.hpp>
 
 PostgresJobProvider::PostgresJobProvider( const std::string& server, const std::string& user, const std::string& password, const std::string& database ):
-    c("dbname="+database+" host="+server+" user="+user+" password="+password){
+    c("dbname="+database+" host="+server+" user="+user+" password=" + password + " client_encoding=UTF-8 application_name=cassiopeia-client"){
     // TODO better connection string generation??
 }
 

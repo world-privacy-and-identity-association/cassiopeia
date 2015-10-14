@@ -110,8 +110,12 @@ int main( int argc, const char* argv[] ) {
             lastCRLCheck = current;
         }
 
-        std::shared_ptr<Job> job = jp->fetchJob();
-
+        std::shared_ptr<Job> job;
+	try {
+	job = jp->fetchJob();
+	} catch ( std::exception &e ){
+		logger::errorf ( "Exception while fetchJob: %s", e.what() );
+	}
         if( !job ) {
             logger::note( "Nothing to work on." );
             sleep( 5 );
