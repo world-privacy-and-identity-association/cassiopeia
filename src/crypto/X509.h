@@ -32,7 +32,7 @@ public:
     void setIssuerNameFrom( std::shared_ptr<X509> ca );
     void setPubkeyFrom( std::shared_ptr<X509Req> r );
     void setSerialNumber( BIGNUM* num );
-    void setExtensions( std::shared_ptr<X509> caCert, std::vector<std::shared_ptr<SAN>>& sans, Profile& prof );
+    void setExtensions( std::shared_ptr<X509> caCert, std::vector<std::shared_ptr<SAN>>& sans, Profile& prof, std::string crlURL, std::string crtURL );
     void setTimes( uint32_t before, uint32_t after );
     std::shared_ptr<SignedCertificate> sign( std::shared_ptr<EVP_PKEY> caKey, std::string signAlg );
 };

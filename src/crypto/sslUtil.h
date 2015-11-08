@@ -13,6 +13,8 @@
 struct CAConfig {
     std::string path;
     std::string name;
+    std::string crlURL;
+    std::string crtURL;
 
     std::shared_ptr<X509> ca;
     std::shared_ptr<EVP_PKEY> caKey;

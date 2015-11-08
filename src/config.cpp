@@ -13,6 +13,8 @@ std::unordered_map<std::string, Profile> profiles;
 std::unordered_map<std::string, std::shared_ptr<CAConfig>> CAs;
 std::string sqlHost, sqlUser, sqlPass, sqlDB;
 std::string serialPath;
+std::string crlPrefix;
+std::string crtPrefix;
 
 std::shared_ptr<std::unordered_map<std::string, std::string>> parseConf( std::string path ) {
     auto map = std::make_shared<std::unordered_map<std::string, std::string>>();
@@ -138,6 +140,8 @@ int parseConfig( std::string path ) {
     sqlPass = masterConf->at( "sql.password" );
     sqlDB = masterConf->at( "sql.database" );
     serialPath = masterConf->at( "serialPath" );
+    crlPrefix = masterConf->at( "crlPrefix" );
+    crtPrefix = masterConf->at( "crtPrefix" );
 
     if( keyDir == "" ) {
         logger::error( "Missing config property key.directory" );

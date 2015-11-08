@@ -188,11 +188,24 @@ std::shared_ptr<BIO> openSerial( const std::string& name ) {
         } );
 }
 
+extern std::string crlPrefix;
+extern std::string crtPrefix;
+
 CAConfig::CAConfig( const std::string& name ) : path( "ca/" + name ), name( name ) {
     ca = loadX509FromFile( path + "/ca.crt" );
     caKey = loadPkeyFromFile( path + "/ca.key" );
     ASN1_TIME* tm = X509_get_notBefore( ca );
     notBefore = std::shared_ptr<ASN1_TIME>( tm, ASN1_TIME_free );
+    std::size_t pos = name.find("_");
+    if (pos == std::string::npos) {
+        throw new std::invalid_argument("ca name: " + name + " is malformed.");
+    }
+    std::size_t pos2 = name.find("_", pos + 1);
+    if (pos2 == std::string::npos) {
+        throw new std::invalid_argument("ca name: " + name + " is malformed.");
+    }
+    crlURL = crlPrefix + "/g2/" + name.substr(pos+1, pos2-pos - 1) + "/" + name.substr(0,pos) + "-" + name.substr(pos2+1) + ".crl";
+    crtURL = crtPrefix + "/g2/" + name.substr(pos+1, pos2-pos - 1) + "/" + name.substr(0,pos) + "-" + name.substr(pos2+1) + ".crt";
 }
 
 std::string timeToString( std::shared_ptr<ASN1_TIME> time ) {

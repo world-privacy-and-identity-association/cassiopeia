@@ -223,7 +223,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     }
 
     logger::note( "INFO: Setting extensions:" );
-    c.setExtensions( ca->ca, cert->SANs, prof );
+    c.setExtensions( ca->ca, cert->SANs, prof, ca->crlURL, ca->crtURL );
     logger::note( "FINE: Setting extensions successful." );
 
     logger::note( "INFO: Generating next Serial Number ..." );
