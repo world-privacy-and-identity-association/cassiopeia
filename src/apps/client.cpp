@@ -96,131 +96,140 @@ int main( int argc, const char* argv[] ) {
     time_t lastCRLCheck = 0;
 
     while( true ) {
-        time_t current;
-        time( &current );
-
-        if( lastCRLCheck + 30 * 60 < current ) {
-            // todo set good log TODO FIXME
-            sign->setLog( std::shared_ptr<std::ostream>(
-                &std::cout,
-                []( std::ostream* o ) {
-                    ( void ) o;
-                } ) );
-            checkCRLs( sign );
-            lastCRLCheck = current;
-        }
-
-        std::shared_ptr<Job> job;
 	try {
-	job = jp->fetchJob();
-	} catch ( std::exception &e ){
-		logger::errorf ( "Exception while fetchJob: %s", e.what() );
-	}
-        if( !job ) {
-            logger::note( "Nothing to work on." );
-            sleep( 5 );
-            continue;
-        }
+            time_t current;
+            time( &current );
 
-        std::shared_ptr<std::ofstream> logPtr = openLogfile( std::string( "logs/" ) + job->id + std::string( "_" ) + job->warning + std::string( ".log" ) );
+            if( lastCRLCheck + 30 * 60 < current ) {
+                // todo set good log TODO FIXME
+                sign->setLog( std::shared_ptr<std::ostream>(
+                    &std::cout,
+                    []( std::ostream* o ) {
+                        ( void ) o;
+                    } ) );
+                checkCRLs( sign );
+                lastCRLCheck = current;
+            }
 
-        logger::logger_set log_set({logger::log_target(*logPtr, logger::level::debug)}, logger::auto_register::on);
-
-        logger::note( "TASK ID: ", job->id );
-        logger::note( "TRY:     ", job->warning );
-        logger::note( "TARGET:  ", job->target );
-        logger::note( "TASK:    ", job->task );
-
-        if( job->task == "sign" ) {
+            std::shared_ptr<Job> job;
             try {
-                std::shared_ptr<TBSCertificate> cert = jp->fetchTBSCert( job );
-                cert->wishFrom = job->from;
-                cert->wishTo = job->to;
-                logger::note( "INFO: Message Digest: ", cert->md );
-                logger::note( "INFO: Profile ID: ", cert->profile );
-
-                for( auto& SAN : cert->SANs ) {
-                    logger::notef( "INFO: SAN %s: %s", SAN->type, SAN->content );
-                }
-
-                for( auto& AVA : cert->AVAs ) {
-                    logger::notef( "INFO: AVA %s: %s", AVA->name, AVA->value );
-                }
-
-                if( !cert ) {
-                    logger::error( "Unable to load CSR" );
-                    jp->failJob( job );
-                    continue;
-                }
-
-                logger::notef( "FINE: Found the CSR at '%s'", cert->csr );
-                cert->csr_content = readFile( keyDir + "/../" + cert->csr );
-                logger::note( "FINE: CSR content:\n", cert->csr_content );
-
-                std::shared_ptr<SignedCertificate> res = sign->sign( cert );
-
-                if( !res ) {
-                    logger::error( "ERROR: The signer failed. No certificate was returned." );
-                    jp->failJob( job );
-                    continue;
-                }
-
-                logger::note( "FINE: CERTIFICATE LOG:\n", res->log );
-                logger::note( "FINE: CERTIFICATE:\n", res->certificate );
-                std::string fn = writeBackFile( job->target.c_str(), res->certificate, keyDir );
-
-                if( fn.empty() ) {
-                    logger::error( "ERROR: Writeback of the certificate failed." );
-                    jp->failJob( job );
-                    continue;
-                }
-
-                res->crt_name = fn;
-                jp->writeBack( job, res ); //! \FIXME: Check return value
-                logger::note( "FINE: signing done." );
-
-                if( DAEMON ) {
-                    jp->finishJob( job );
-                }
-
+                job = jp->fetchJob();
+            } catch ( std::exception &e ){
+                logger::errorf ( "Exception while fetchJob: %s", e.what() );
+	    }
+            if( !job ) {
+                logger::note( "Nothing to work on." );
+                sleep( 5 );
                 continue;
-            } catch( const char* c ) {
-                logger::error( "ERROR: ", c );
-            } catch( std::string& c ) {
-                logger::error( "ERROR: ", c );
             }
 
-            try {
+            std::shared_ptr<std::ofstream> logPtr = openLogfile( std::string( "logs/" ) + job->id + std::string( "_" ) + job->warning + std::string( ".log" ) );
+
+            logger::logger_set log_set({logger::log_target(*logPtr, logger::level::debug)}, logger::auto_register::on);
+
+            logger::note( "TASK ID: ", job->id );
+            logger::note( "TRY:     ", job->warning );
+            logger::note( "TARGET:  ", job->target );
+            logger::note( "TASK:    ", job->task );
+
+            if( job->task == "sign" ) {
+                try {
+                    std::shared_ptr<TBSCertificate> cert = jp->fetchTBSCert( job );
+                    cert->wishFrom = job->from;
+                    cert->wishTo = job->to;
+                    logger::note( "INFO: Message Digest: ", cert->md );
+                    logger::note( "INFO: Profile ID: ", cert->profile );
+
+                    for( auto& SAN : cert->SANs ) {
+                        logger::notef( "INFO: SAN %s: %s", SAN->type, SAN->content );
+                    }
+
+                    for( auto& AVA : cert->AVAs ) {
+                        logger::notef( "INFO: AVA %s: %s", AVA->name, AVA->value );
+                    }
+
+                    if( !cert ) {
+                        logger::error( "Unable to load CSR" );
+                        jp->failJob( job );
+                        continue;
+                    }
+
+                    logger::notef( "FINE: Found the CSR at '%s'", cert->csr );
+                    cert->csr_content = readFile( keyDir + "/../" + cert->csr );
+                    logger::note( "FINE: CSR content:\n", cert->csr_content );
+
+                    std::shared_ptr<SignedCertificate> res = sign->sign( cert );
+
+                    if( !res ) {
+                        logger::error( "ERROR: The signer failed. No certificate was returned." );
+                        jp->failJob( job );
+                        continue;
+                    }
+
+                    logger::note( "FINE: CERTIFICATE LOG:\n", res->log );
+                    logger::note( "FINE: CERTIFICATE:\n", res->certificate );
+                    std::string fn = writeBackFile( job->target.c_str(), res->certificate, keyDir );
+
+                    if( fn.empty() ) {
+                        logger::error( "ERROR: Writeback of the certificate failed." );
+                        jp->failJob( job );
+                        continue;
+                    }
+
+                    res->crt_name = fn;
+                    jp->writeBack( job, res ); //! \FIXME: Check return value
+                    logger::note( "FINE: signing done." );
+
+                    if( DAEMON ) {
+                        jp->finishJob( job );
+                    }
+
+                    continue;
+                } catch( const char* c ) {
+                    logger::error( "ERROR: ", c );
+                } catch( std::string& c ) {
+                    logger::error( "ERROR: ", c );
+                }
+
+                try {
+                    jp->failJob( job );
+                } catch( const char* c ) {
+                    logger::error( "ERROR: ", c );
+                } catch( std::string& c ) {
+                    logger::error( "ERROR: ", c );
+                }
+            } else if( job->task == "revoke" ) {
+                try {
+                    auto data = jp->getRevocationInfo( job );
+                    std::vector<std::string> serials;
+                    serials.push_back( data.first );
+                    std::pair<std::shared_ptr<CRL>, std::string> rev = sign->revoke( CAs.at( data.second ), serials );
+                    std::string date = rev.second;
+                    const unsigned char* pos = ( const unsigned char* ) date.data();
+                    std::shared_ptr<ASN1_TIME> time( d2i_ASN1_TIME( NULL, &pos, date.size() ), ASN1_TIME_free );
+
+                    jp->writeBackRevocation( job, timeToString( time ) );
+                    jp->finishJob( job );
+                } catch( const char* c ) {
+                    logger::error( "Exception: ", c );
+                } catch( const std::string& c ) {
+                    logger::error( "Exception: ", c );
+                }
+            } else {
+                logger::errorf( "Unknown job type (\"%s\")", job->task );
                 jp->failJob( job );
-            } catch( const char* c ) {
-                logger::error( "ERROR: ", c );
-            } catch( std::string& c ) {
-                logger::error( "ERROR: ", c );
             }
-        } else if( job->task == "revoke" ) {
-            try {
-                auto data = jp->getRevocationInfo( job );
-                std::vector<std::string> serials;
-                serials.push_back( data.first );
-                std::pair<std::shared_ptr<CRL>, std::string> rev = sign->revoke( CAs.at( data.second ), serials );
-                std::string date = rev.second;
-                const unsigned char* pos = ( const unsigned char* ) date.data();
-                std::shared_ptr<ASN1_TIME> time( d2i_ASN1_TIME( NULL, &pos, date.size() ), ASN1_TIME_free );
 
-                jp->writeBackRevocation( job, timeToString( time ) );
-                jp->finishJob( job );
-            } catch( const char* c ) {
-                logger::error( "Exception: ", c );
-            } catch( const std::string& c ) {
-                logger::error( "Exception: ", c );
+            if( !DAEMON || once ) {
+                return 0;
             }
-        } else {
-            logger::errorf( "Unknown job type (\"%s\")", job->task );
-            jp->failJob( job );
+	} catch( const char* c ) {
+            logger::error( "Exception: ", c );
+        } catch( const std::string& c ) {
+            logger::error( "Exception: ", c );
+        } catch ( std::exception &e ){
+            logger::errorf ( "Exception while fetchJob: %s", e.what() );
         }
 
-        if( !DAEMON || once ) {
-            return 0;
-        }
     }
 }
