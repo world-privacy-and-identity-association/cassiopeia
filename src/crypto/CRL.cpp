@@ -1,6 +1,7 @@
 #include "CRL.h"
 
 #include <openssl/ssl.h>
+#include <log/logger.hpp>
 
 CRL::CRL( std::string path ) {
     std::shared_ptr<BIO> bio( BIO_new_file( path.c_str(), "r" ), free );
@@ -14,6 +15,7 @@ CRL::CRL( std::string path ) {
 std::string CRL::revoke( std::string serial, std::string time ) {
     BIGNUM* serBN = 0;
 
+    logger::note("parsing serial");
     if( ! BN_hex2bn( &serBN, serial.c_str() ) ) {
         throw "hex2bn malloc fail";
     }
@@ -25,6 +27,7 @@ std::string CRL::revoke( std::string serial, std::string time ) {
         throw "BN Malloc fail";
     }
 
+    logger::note("building current time");
     std::shared_ptr<ASN1_TIME> tmptm( ASN1_TIME_new(), ASN1_TIME_free );
 
     if( !tmptm ) {
@@ -33,6 +36,7 @@ std::string CRL::revoke( std::string serial, std::string time ) {
 
     X509_gmtime_adj( tmptm.get(), 0 );
 
+    logger::note("creating entry");
     X509_REVOKED* rev = X509_REVOKED_new();
     X509_REVOKED_set_serialNumber( rev, ser.get() );
 
@@ -64,20 +68,25 @@ void CRL::sign( std::shared_ptr<CAConfig> ca ) {
 
     X509_gmtime_adj( tmptm.get(), 0 );
 
+    logger::note("setting issuer");
     if( !X509_CRL_set_issuer_name( crl.get(), X509_get_subject_name( ca->ca.get() ) ) ) {
         throw "Setting issuer failed";
     }
 
+    logger::note("setting update");
     X509_CRL_set_lastUpdate( crl.get(), tmptm.get() );
 
     if( !X509_time_adj_ex( tmptm.get(), 1, 10, NULL ) ) {
         throw "Updating time failed";
     }
 
+    logger::note("setting next update");
     X509_CRL_set_nextUpdate( crl.get(), tmptm.get() );
 
+    logger::note("sorting");
     // Sorting and signing
     X509_CRL_sort( crl.get() );
+    logger::note("signing");
     X509_CRL_sign( crl.get(), ca->caKey.get(), EVP_sha256() );
 }
 
@@ -115,6 +124,7 @@ std::string CRL::getSignature() {
 }
 
 void CRL::setSignature( std::string signature ) {
+    X509_CRL_sort( crl.get() );
     const unsigned char* data = ( unsigned char* )( signature.data() );
     const unsigned char* buffer = data;
     d2i_X509_ALGOR( &crl->sig_alg, &buffer, signature.size() );

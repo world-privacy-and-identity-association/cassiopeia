@@ -141,9 +141,8 @@ void PostgresJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<S
 }
 
 std::pair<std::string, std::string> PostgresJobProvider::getRevocationInfo( std::shared_ptr<Job> job ) {
-    return {"",""};
     pqxx::work txn(c);
-    std::string q = "SELECT certs.serial, cacerts.keyname FROM certs INNER JOIN cacerts ON certs.\"caId\" = cacerts.id WHERE certs.id = " + txn.quote( job->target );
+    std::string q = "SELECT certs.serial, cacerts.keyname FROM certs INNER JOIN cacerts ON certs.\"caid\" = cacerts.id WHERE certs.id = " + txn.quote( job->target );
 
     pqxx::result r = txn.exec( q );
     if( r.size() != 1) {
@@ -155,10 +154,14 @@ std::pair<std::string, std::string> PostgresJobProvider::getRevocationInfo( std:
 }
 
 void PostgresJobProvider::writeBackRevocation( std::shared_ptr<Job> job, std::string date ) {
+    logger::errorf( "Revoking at " + date);
     pqxx::work txn(c);
-    pqxx::result r = txn.exec( "UPDATE certs SET revoked = " + txn.quote( date ) + " WHERE id = " + txn.quote( job->target ) );
+    logger::errorf( "executing" );
+    pqxx::result r = txn.exec( "UPDATE certs SET revoked = " + txn.quote( pgTime( date ) ) + " WHERE id = " + txn.quote( job->target ) );
     if( r.affected_rows() != 1 ){
         throw "Only one row should be updated.";
     }
+    logger::errorf( "committing" );
     txn.commit();
+    logger::errorf( "committed" );
 }

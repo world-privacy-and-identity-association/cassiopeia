@@ -200,9 +200,11 @@ int main( int argc, const char* argv[] ) {
                 }
             } else if( job->task == "revoke" ) {
                 try {
+                    logger::note( "revoking" );
                     auto data = jp->getRevocationInfo( job );
                     std::vector<std::string> serials;
                     serials.push_back( data.first );
+                    logger::note( "revoking" );
                     std::pair<std::shared_ptr<CRL>, std::string> rev = sign->revoke( CAs.at( data.second ), serials );
                     std::string date = rev.second;
                     const unsigned char* pos = ( const unsigned char* ) date.data();
@@ -228,7 +230,7 @@ int main( int argc, const char* argv[] ) {
         } catch( const std::string& c ) {
             logger::error( "Exception: ", c );
         } catch ( std::exception &e ){
-            logger::errorf ( "Exception while fetchJob: %s", e.what() );
+            logger::errorf ( "std::exception in mainloop: %s", e.what() );
         }
 
     }
