@@ -25,6 +25,12 @@ std::string toHexAndChecksum( const std::string& src ) {
 }
 
 void sendCommand( RecordHeader& head, const std::string& data, std::shared_ptr<OpensslBIO> bio ) {
+    std::stringstream ss;
+    ss << data.size();
+    logger::debugf( "Record payload length: %s", ss.str() ); 
+    if(data.size() > 0xFFFF){
+        logger::warn( "Data too big, need chunking" );
+    }
     head.payloadLength = data.size();
     std::string s;
     s += head.packToString();
@@ -79,7 +85,13 @@ std::string parseCommand( RecordHeader& head, const std::string& input) {
     uint32_t expectedTotalLength = ( RECORD_HEADER_SIZE + len + 1 /*checksum*/ ) * 2 + 2;
     std::string data = str.substr( RECORD_HEADER_SIZE, str.size() - RECORD_HEADER_SIZE );
 
-    if( checksum != -1 || expectedTotalLength != input.size() || error || dlen < RECORD_HEADER_SIZE ) {
+    if( expectedTotalLength != input.size() ) {
+        std::stringstream ss;
+        ss << "Expected: " << expectedTotalLength << ", Got: " << input.size();
+        logger::error( ss.str() );
+        throw "Error, invalid length";
+    }
+    if( checksum != -1 || error || dlen < RECORD_HEADER_SIZE ) {
         throw "Error, invalid checksum";
     }
 

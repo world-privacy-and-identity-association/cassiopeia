@@ -72,16 +72,7 @@ public:
     }
 
     void work() {
-        std::vector<char> buffer( 2048 );
-        int res = io->read( buffer.data(), buffer.size() );
-
-        if( res <= 0 ) {
-            logger::error( "Stream error, resetting SSL" );
-            parent->reset();
-            return;
-        }
-
-        std::string content( buffer.data(), res );
+        std::string content = io->readLine();
 
         try {
             RecordHeader head;
@@ -242,6 +233,9 @@ void DefaultRecordHandler::handle() {
         logger::note( "New session allocated." );
         currentSession = std::make_shared<RecordHandlerSession>( this, signer, ctx, bio );
     }
-
-    currentSession->work();
+    try {
+        currentSession->work();
+    } catch( EOFException e ){
+        reset();
+    }
 }

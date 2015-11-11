@@ -6,7 +6,7 @@
 
 #include "log/logger.hpp"
 
-static constexpr std::size_t buffer_size = 8192;
+static constexpr std::size_t buffer_size =  2 * 0xFFFF + 20;//8192;
 
 #define SLIP_ESCAPE_CHAR ( (char) 0xDB)
 #define SLIP_CONNECTION ( (char) 0xC0)
@@ -44,7 +44,7 @@ std::string toHex( const char* buf, int len ) {
     return data;
 }
 
-SlipBIO::SlipBIO() : buffer( std::vector<char>( buffer_size ) ), decodeTarget( 0 ), decodePos( 0 ), rawPos( 0 ) {
+SlipBIO::SlipBIO() : buffer( buffer_size ), decodeTarget( 0 ), decodePos( 0 ), rawPos( 0 ) {
 }
 
 void SlipBIO::setTarget( std::shared_ptr<OpensslBIO> target, bool server ) {

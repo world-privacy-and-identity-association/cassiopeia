@@ -69,20 +69,11 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     send( conn, head, RecordHeader::SignerCommand::SIGN, "" );
     send( conn, head, RecordHeader::SignerCommand::LOG_SAVED, "" );
     auto result = std::make_shared<SignedCertificate>();
-    std::vector<char> buffer( 2048 * 4 );
 
     for( int i = 0; i < 3; i++ ) {
         try {
-            int length = conn->read( buffer.data(), buffer.size() );
-
-            if( length <= 0 ) {
-                logger::error( "Error, no response data" );
-                result = nullptr;
-                break;
-            }
-
             RecordHeader head;
-            std::string payload = parseCommand( head, std::string( buffer.data(), length ) );
+            std::string payload = parseCommand( head, conn->readLine() );
 
             switch( static_cast<RecordHeader::SignerResult>( head.command )) {
             case RecordHeader::SignerResult::CERTIFICATE:
@@ -171,14 +162,7 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
     std::string payload = ca->name;
     send( conn, head, RecordHeader::SignerCommand::REVOKE, payload );
 
-    std::vector<char> buffer( 2048 * 4 );
-    int length = conn->read( buffer.data(), buffer.size() );
-
-    if( length <= 0 ) {
-        throw "Error, no response data";
-    }
-
-    payload = parseCommand( head, std::string( buffer.data(), length ) );
+    payload = parseCommand( head, conn->readLine() );
 
     auto crl = std::make_shared<CRL>( ca->path + std::string( "/ca.crl" ) );
     std::string date;
@@ -207,13 +191,8 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
     } else {
         logger::warn( "CRL is broken, trying to recover" );
         send( conn, head, RecordHeader::SignerCommand::GET_FULL_CRL, ca->name );
-        length = conn->read( buffer.data(), buffer.size() );
 
-        if( length <= 0 ) {
-            throw "Error, no response data";
-        }
-
-        payload = parseCommand( head, std::string( buffer.data(), length ) );
+        payload = parseCommand( head, conn->readLine() );
 
         if( static_cast<RecordHeader::SignerResult>( head.command ) != RecordHeader::SignerResult::FULL_CRL ) {
             throw "Protocol violation";

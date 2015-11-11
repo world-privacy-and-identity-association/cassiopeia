@@ -2,10 +2,14 @@
 
 #include <memory>
 #include "bios.h"
+#include <vector>
+#include <exception>
 
 class OpensslBIOWrapper : public OpensslBIO {
 private:
     std::shared_ptr<BIO> b;
+    std::vector<char> buffer;
+    int pos = 0;
 public:
     OpensslBIOWrapper( std::shared_ptr<BIO> b );
     virtual ~OpensslBIOWrapper();
@@ -18,4 +22,9 @@ public:
     int gets( char* str, int size );
 
     static const char* getName();
+
+    std::string readLine();
+};
+
+class EOFException : public std::exception{
 };
