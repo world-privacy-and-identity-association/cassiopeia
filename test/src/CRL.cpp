@@ -11,7 +11,7 @@ extern std::unordered_map<std::string, std::shared_ptr<CAConfig>> CAs;
 BOOST_AUTO_TEST_SUITE( TestCRL )
 BOOST_AUTO_TEST_CASE( SeperateSignature ) {
     parseProfiles();
-    std::shared_ptr<CAConfig> ca = CAs.at( "unassured" );
+    std::shared_ptr<CAConfig> ca = CAs.at( "unassured_2015_2" );
 
     CRL c( "" );
     c.sign( ca );

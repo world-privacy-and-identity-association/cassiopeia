@@ -28,6 +28,6 @@ ku=
 days=10
 EOF
 
-mkdir -p ca/unassured
-cp testdata/server.key ca/unassured/ca.key
-cp testdata/server.crt ca/unassured/ca.crt
+mkdir -p ca/unassured_2015_2
+cp testdata/server.key ca/unassured_2015_2/ca.key
+cp testdata/server.crt ca/unassured_2015_2/ca.crt
