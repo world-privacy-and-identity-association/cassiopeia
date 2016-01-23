@@ -34,13 +34,20 @@ struct Profile {
     std::vector<std::shared_ptr<CAConfig>> ca;
     std::time_t maxValidity;
     std::shared_ptr<CAConfig> getCA() {
+        std::shared_ptr<CAConfig> min = nullptr;
         for( auto it = ca.rbegin(); it != ca.rend(); it++ ) {
-            if( X509_cmp_current_time( ( *it )->notBefore.get() ) < 0 ) {
-                return *it;
+            if( X509_cmp_current_time( ( *it )->notBefore.get() ) < 0) {
+                if(min != nullptr){
+                    if(strcmp(min->name.c_str(), (*it)->name.c_str()) < 0){
+                        min = *it;
+                    }
+                }else{
+                    min=*it;
+                }
             }
         }
 
-        return ca[0];
+        return min == nullptr ? ca[0] : min;
     }
 };
 
