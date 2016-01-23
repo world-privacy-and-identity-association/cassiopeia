@@ -35,7 +35,7 @@ std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial(
     if( res == "" ) {
         bn = BN_new();
 
-        if( !bn ) {
+        if( !bn || !BN_hex2bn( &bn, "1" )) {
             throw "Initing serial failed";
         }
     } else {
