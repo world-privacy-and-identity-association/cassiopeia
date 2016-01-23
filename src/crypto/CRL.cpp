@@ -4,7 +4,7 @@
 #include <log/logger.hpp>
 
 CRL::CRL( std::string path ) {
-    std::shared_ptr<BIO> bio( BIO_new_file( path.c_str(), "r" ), free );
+    std::shared_ptr<BIO> bio( BIO_new_file( path.c_str(), "r" ), BIO_free );
     crl = std::shared_ptr<X509_CRL>( PEM_read_bio_X509_CRL( bio.get(), 0, NULL, 0 ), X509_CRL_free );
 
     if( !crl ) {
