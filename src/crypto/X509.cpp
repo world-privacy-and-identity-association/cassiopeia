@@ -106,7 +106,7 @@ X509Cert::X509Cert() {
     X509_NAME* subjectP = X509_NAME_new();
 
     if( !subjectP ) {
-        throw "malloc failure";
+        throw "malloc failure in construct.";
     }
 
     subject = std::shared_ptr<X509_NAME>( subjectP, X509_NAME_free );
@@ -114,7 +114,7 @@ X509Cert::X509Cert() {
 
 void X509Cert::addRDN( int nid, std::string data ) {
     if( ! X509_NAME_add_entry_by_NID( subject.get(), nid, MBSTRING_UTF8, ( unsigned char* )const_cast<char*>( data.data() ), data.size(), -1, 0 ) ) {
-        throw "malloc failure";
+        throw "malloc failure in RDN";
     }
 }
 
