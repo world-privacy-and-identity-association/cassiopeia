@@ -47,7 +47,7 @@ struct Profile {
             }
         }
 
-        return min == nullptr ? ca[0] : min;
+        return min ? min : ca[0];
     }
 };
 
