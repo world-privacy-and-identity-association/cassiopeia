@@ -102,7 +102,9 @@ public:
         read( it, offset );
         read( it, payloadLength );
     }
-
+    bool isFollowupOf( const RecordHeader& head ) {
+        return head.command == command && head.flags == flags && head.sessid == sessid && head.command_count == command_count && head.totalLength == totalLength && head.offset + 1 == offset;
+    }
 };
 
 std::string parseCommand( RecordHeader& head, const std::string& input );

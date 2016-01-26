@@ -112,6 +112,7 @@ std::string parseCommandChunked( RecordHeader& head, std::shared_ptr<OpensslBIOW
     std::string all(head.totalLength, ' ');
     auto target = all.begin();
     size_t pos = 0;
+    RecordHeader head2;
     while(true) {
         pos += head.payloadLength;
         target = std::copy ( payload.begin(), payload.end(), target);
@@ -119,7 +120,11 @@ std::string parseCommandChunked( RecordHeader& head, std::shared_ptr<OpensslBIOW
             break;
         }
         logger::note("chunk digested, reading next one");
-        payload = parseCommand( head, io->readLine() );
+        payload = parseCommand( head2, io->readLine() );
+        if(!head2.isFollowupOf(head)){
+            throw std::runtime_error("Error, header of follow up chunk was malformed");
+        }
+        head = head2;
     }
     return all;
 }
