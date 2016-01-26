@@ -122,7 +122,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
 
     for( std::shared_ptr<AVA> a : cert->AVAs ) {
         logger::notef( "INFO: Trying to add RDN: %s: %s", a->name, a->value );
-        if( a-> value == "") {
+        if( a->value.empty() ) {
             logger::notef( "INFO: Removing empty RDN: %s", a->name);
             continue;
         }
