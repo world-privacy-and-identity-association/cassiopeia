@@ -32,7 +32,7 @@ std::shared_ptr<int> MySQLJobProvider::lib_ref(
 
 MySQLJobProvider::MySQLJobProvider( const std::string& server, const std::string& user, const std::string& password, const std::string& database ) {
     if( !lib_ref || *lib_ref ) {
-        throw "MySQL library not initialized!";
+        throw std::runtime_error("MySQL library not initialized!");
     }
 
     connect( server, user, password, database );
@@ -86,7 +86,7 @@ std::pair< int, std::shared_ptr<MYSQL_RES> > MySQLJobProvider::query( const std:
     int err = mysql_real_query( this->conn.get(), query.c_str(), query.size() );
 
     if( err ) {
-        throw std::string( "MySQL error: " ) + mysql_error( this->conn.get() );
+        throw std::runtime_error(std::string( "MySQL error: " ) + mysql_error( this->conn.get() ));
     }
 
     auto c = conn;
@@ -143,7 +143,7 @@ std::shared_ptr<Job> MySQLJobProvider::fetchJob() {
 
 std::string MySQLJobProvider::escape_string( const std::string& target ) {
     if( !conn ) {
-        throw "Not connected!";
+        throw std::runtime_error("Not connected!");
     }
 
     std::string result;
@@ -159,25 +159,25 @@ std::string MySQLJobProvider::escape_string( const std::string& target ) {
 
 void MySQLJobProvider::finishJob( std::shared_ptr<Job> job ) {
     if( !conn ) {
-        throw "Not connected!";
+        throw std::runtime_error("Not connected!");
     }
 
     std::string q = "UPDATE jobs SET state='done' WHERE id='" + this->escape_string( job->id ) + "' LIMIT 1";
 
     if( query( q ).first ) {
-        throw "No database entry found.";
+        throw std::runtime_error("No database entry found.");
     }
 }
 
 void MySQLJobProvider::failJob( std::shared_ptr<Job> job ) {
     if( !conn ) {
-        throw "Not connected!";
+        throw std::runtime_error("Not connected!");
     }
 
     std::string q = "UPDATE jobs SET warning = warning + 1 WHERE id='" + this->escape_string( job->id ) + "' LIMIT 1";
 
     if( query( q ).first ) {
-        throw "No database entry found.";
+        throw std::runtime_error("No database entry found.");
     }
 }
 
@@ -273,7 +273,7 @@ std::shared_ptr<TBSCertificate> MySQLJobProvider::fetchTBSCert( std::shared_ptr<
 
 void MySQLJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<SignedCertificate> res ) {
     if( !conn ) {
-        throw "Error while writing back";
+        throw std::runtime_error("Error while writing back");
     }
 
     std::string id = "SELECT id FROM cacerts WHERE keyname='" + this->escape_string( res->ca_name ) + "'";
@@ -283,7 +283,7 @@ void MySQLJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<Sign
     std::tie( err, resu ) = query( id );
 
     if( err ) {
-        throw "Error while looking ca cert id";
+        throw std::runtime_error("Error while looking ca cert id");
     }
 
     MYSQL_ROW row = mysql_fetch_row( resu.get() );
@@ -292,7 +292,7 @@ void MySQLJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<Sign
     std::string read_id;
 
     if( !row || !l ) {
-        throw "Error while inserting new ca cert not found";
+        throw std::runtime_error("Error while inserting new ca cert not found");
     } else {
         read_id = std::string( row[0], row[0] + l[0] );
     }
@@ -301,7 +301,7 @@ void MySQLJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<Sign
     // TODO write more thingies back
 
     if( query( q ).first ) {
-        throw "Error while writing back";
+        throw std::runtime_error("Error while writing back");
     }
 }
 
@@ -312,14 +312,14 @@ std::pair<std::string, std::string> MySQLJobProvider::getRevocationInfo( std::sh
     std::tie( err, resu ) = query( q );
 
     if( err ) {
-        throw "Error while looking ca cert id";
+        throw std::runtime_error("Error while looking ca cert id");
     }
 
     MYSQL_ROW row = mysql_fetch_row( resu.get() );
     unsigned long* l = mysql_fetch_lengths( resu.get() );
 
     if( !row || !l ) {
-        throw "Error while inserting new ca cert";
+        throw std::runtime_error("Error while inserting new ca cert");
     }
 
     return std::pair<std::string, std::string>( std::string( row[0], row[0] + l[0] ), std::string( row[1], row[1] + l[1] ) );
@@ -327,6 +327,6 @@ std::pair<std::string, std::string> MySQLJobProvider::getRevocationInfo( std::sh
 
 void MySQLJobProvider::writeBackRevocation( std::shared_ptr<Job> job, std::string date ) {
     if( query( "UPDATE certs SET revoked = '" + this->escape_string( date ) + "' WHERE id = '" + this->escape_string( job->target ) + "'" ).first ) {
-        throw "Error while writing back revocation";
+        throw std::runtime_error("Error while writing back revocation");
     }
 }

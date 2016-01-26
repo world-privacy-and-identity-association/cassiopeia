@@ -97,7 +97,7 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
         } );
 
     if( !SSL_CTX_set_cipher_list( ctx.get(), "HIGH:+CAMELLIA256:!eNull:!aNULL:!ADH:!MD5:-RSA+AES+SHA1:!RC4:!DES:!3DES:!SEED:!EXP:!AES128:!CAMELLIA128" ) ) {
-        throw "Cannot set cipher list. Your source is broken.";
+        throw std::runtime_error("Cannot set cipher list. Your source is broken.");
     }
 
     SSL_CTX_set_verify( ctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, verify_callback );
@@ -105,7 +105,7 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
     SSL_CTX_use_PrivateKey_file( ctx.get(), server ? "keys/signer_server.key" : "keys/signer_client.key", SSL_FILETYPE_PEM );
 
     if( 1 != SSL_CTX_load_verify_locations( ctx.get(), "keys/ca.crt", 0 ) ) {
-        throw "Cannot load CA store for certificate validation.";
+        throw std::runtime_error("Cannot load CA store for certificate validation.");
     }
 
     if( server ) {
@@ -131,7 +131,7 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
                 cb.cb.cb_2 = gencb;
 
                 if( !DH_generate_parameters_ex( dh_param.get(), 2048, 5, &cb ) ) {
-                    throw "DH generation failed";
+                    throw std::runtime_error("DH generation failed");
                 }
 
                 std::cout << std::endl;
@@ -144,7 +144,7 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
         }
 
         if( !SSL_CTX_set_tmp_dh( ctx.get(), dh_param.get() ) ) {
-            throw "Cannot set tmp dh.";
+            throw std::runtime_error("Cannot set tmp dh.");
         }
     }
 
@@ -155,7 +155,7 @@ void setupSerial( std::shared_ptr<FILE> f ) {
     struct termios attr;
 
     if( tcgetattr( fileno( f.get() ), &attr ) ) {
-        throw "failed to get attrs";
+        throw std::runtime_error("failed to get attrs");
     }
 
     attr.c_iflag &= ~( IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON );
@@ -168,7 +168,7 @@ void setupSerial( std::shared_ptr<FILE> f ) {
     cfsetospeed( &attr, B115200 );
 
     if( tcsetattr( fileno( f.get() ), TCSANOW, &attr ) ) {
-        throw "failed to get attrs";
+        throw std::runtime_error("failed to get attrs");
     }
 }
 
@@ -214,7 +214,7 @@ std::string timeToString( std::shared_ptr<ASN1_TIME> time ) {
 
     logger::notef("openssl formatted me a date: %s", strdate);
     if( strdate[strdate.size() - 1] != 'Z' ) {
-        throw "Got invalid date?";
+        throw std::runtime_error("Got invalid date?");
     }
 
     return strdate.substr( 0, strdate.size() - 1 );

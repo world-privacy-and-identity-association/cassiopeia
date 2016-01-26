@@ -26,5 +26,5 @@ public:
     std::string readLine();
 };
 
-class EOFException : public std::exception{
+class eof_exception : public std::exception{
 };

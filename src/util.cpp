@@ -190,7 +190,7 @@ std::unique_ptr<std::ofstream> openLogfile( const std::string &name ) {
     auto res = std::make_unique<std::ofstream>( tname );
 
     if( ! res->good() ) {
-        throw std::string( "Failed to open file for logging: " ) + name;
+        throw std::runtime_error( std::string("Failed to open file for logging: " ) + name );
     }
 
     return res;

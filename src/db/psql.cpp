@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include <log/logger.hpp>
+#include <exception>
 
 PostgresJobProvider::PostgresJobProvider( const std::string& server, const std::string& user, const std::string& password, const std::string& database ):
     c("dbname="+database+" host="+server+" user="+user+" password=" + password + " client_encoding=UTF-8 application_name=cassiopeia-client"){
@@ -43,7 +44,7 @@ void PostgresJobProvider::finishJob( std::shared_ptr<Job> job ) {
     pqxx::result r = txn.exec(q);
 
     if( r.affected_rows() != 1 ) {
-        throw "No database entry found.";
+        throw std::runtime_error("No database entry found.");
     }
     txn.commit();
 }
@@ -55,7 +56,7 @@ void PostgresJobProvider::failJob( std::shared_ptr<Job> job ) {
     pqxx::result r = txn.exec(q);
 
     if( r.affected_rows() != 1 ) {
-        throw "No database entry found.";
+        throw std::runtime_error("No database entry found.");
     }
     txn.commit();
 }
@@ -67,7 +68,7 @@ std::shared_ptr<TBSCertificate> PostgresJobProvider::fetchTBSCert( std::shared_p
     pqxx::result r = txn.exec(q);
 
     if( r.size() != 1 ) {
-        throw "Error, no or multiple certs found";
+        throw std::runtime_error("Error, no or multiple certs found");
      }
     auto ro = r[0];
 
@@ -124,7 +125,7 @@ void PostgresJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<S
     std::string read_id;
 
     if( r.size() != 1) {
-        throw "Error while inserting new ca cert not found";
+        throw std::runtime_error("Error while inserting new ca cert not found");
     } else {
         read_id = r[0]["id"].as<std::string>();
     }
@@ -135,7 +136,7 @@ void PostgresJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<S
 
     r = txn.exec( q );
     if( r.affected_rows() != 1 ){
-        throw "Only one row should be updated.";
+        throw std::runtime_error("Only one row should be updated.");
     }
     txn.commit();
 }
@@ -146,7 +147,7 @@ std::pair<std::string, std::string> PostgresJobProvider::getRevocationInfo( std:
 
     pqxx::result r = txn.exec( q );
     if( r.size() != 1) {
-        throw "Only one row expected but multiple found.";
+        throw std::runtime_error("Only one row expected but multiple found.");
     }
 
     
@@ -159,7 +160,7 @@ void PostgresJobProvider::writeBackRevocation( std::shared_ptr<Job> job, std::st
     logger::errorf( "executing" );
     pqxx::result r = txn.exec( "UPDATE certs SET revoked = " + txn.quote( pgTime( date ) ) + " WHERE id = " + txn.quote( job->target ) );
     if( r.affected_rows() != 1 ){
-        throw "Only one row should be updated.";
+        throw std::runtime_error("Only one row should be updated.");
     }
     logger::errorf( "committing" );
     txn.commit();

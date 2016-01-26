@@ -4,7 +4,7 @@
 
 #include <memory>
 #include <string>
-
+#include <exception>
 #include "bios.h"
 #include "io/opensslBIO.h"
 
@@ -90,7 +90,7 @@ public:
 
     void unpackFromString( const std::string& str ) {
         if( str.size() != RECORD_HEADER_SIZE ) {
-            throw "Invalid string length";
+            throw std::runtime_error("Invalid string length");
         }
 
         auto it =  str.cbegin();

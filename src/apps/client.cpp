@@ -45,8 +45,8 @@ void checkCRLs( std::shared_ptr<Signer> sign ) {
         try {
             std::vector<std::string> serials;
             std::pair<std::shared_ptr<CRL>, std::string> rev = sign->revoke( x.second, serials );
-        } catch( const char* c ) {
-            logger::error( "Exception: ", c );
+        } catch( const std::exception &e ) {
+            logger::error( "Exception: ", e.what() );
         }
     }
 }
@@ -185,18 +185,14 @@ int main( int argc, const char* argv[] ) {
                     }
 
                     continue;
-                } catch( const char* c ) {
-                    logger::error( "ERROR: ", c );
-                } catch( std::string& c ) {
-                    logger::error( "ERROR: ", c );
+                } catch( std::exception& c ) {
+                    logger::error( "ERROR: ", c.what() );
                 }
 
                 try {
                     jp->failJob( job );
-                } catch( const char* c ) {
-                    logger::error( "ERROR: ", c );
-                } catch( std::string& c ) {
-                    logger::error( "ERROR: ", c );
+                } catch( std::exception& c ) {
+                    logger::error( "ERROR: ", c.what() );
                 }
             } else if( job->task == "revoke" ) {
                 try {
@@ -212,10 +208,8 @@ int main( int argc, const char* argv[] ) {
 
                     jp->writeBackRevocation( job, timeToString( time ) );
                     jp->finishJob( job );
-                } catch( const char* c ) {
-                    logger::error( "Exception: ", c );
-                } catch( const std::string& c ) {
-                    logger::error( "Exception: ", c );
+                } catch( const std::exception& c ) {
+                    logger::error( "Exception: ", c.what() );
                 }
             } else {
                 logger::errorf( "Unknown job type (\"%s\")", job->task );
@@ -225,10 +219,6 @@ int main( int argc, const char* argv[] ) {
             if( !DAEMON || once ) {
                 return 0;
             }
-	} catch( const char* c ) {
-            logger::error( "Exception: ", c );
-        } catch( const std::string& c ) {
-            logger::error( "Exception: ", c );
         } catch ( std::exception &e ){
             logger::errorf ( "std::exception in mainloop: %s", e.what() );
         }

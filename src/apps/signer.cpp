@@ -59,10 +59,8 @@ int main( int argc, const char* argv[] ) try {
             dh->handle();
             //} catch( const std::exception &ch ) {
             //std::cout << "Real exception: " << typeid(ch).name() << ", " << ch.what() << std::endl;
-        } catch( const std::string& ch ) {
-            logger::error( "Exception: ", ch );
-        } catch( char const* ch ) {
-            logger::error( "Exception: ", ch );
+        } catch( const std::exception& e ) {
+            logger::error( "Exception: ", e.what() );
         }
     }
 
@@ -70,8 +68,5 @@ int main( int argc, const char* argv[] ) try {
 
 } catch( std::exception& e ) {
     logger::fatalf( "Fatal Error: %s!\n", e.what() );
-    return -1;
-} catch( ... ) {
-    logger::fatal( "Fatal Error: Unknown Exception!\n" );
     return -1;
 }

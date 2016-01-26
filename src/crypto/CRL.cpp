@@ -2,6 +2,7 @@
 
 #include <openssl/ssl.h>
 #include <log/logger.hpp>
+#include <exception>
 
 CRL::CRL( std::string path ) {
     std::shared_ptr<BIO> bio( BIO_new_file( path.c_str(), "r" ), BIO_free );
@@ -17,21 +18,21 @@ std::string CRL::revoke( std::string serial, std::string time ) {
 
     logger::note("parsing serial");
     if( ! BN_hex2bn( &serBN, serial.c_str() ) ) {
-        throw "hex2bn malloc fail";
+        throw std::runtime_error("hex2bn malloc fail");
     }
 
     std::shared_ptr<BIGNUM> serBNP( serBN, BN_free );
     std::shared_ptr<ASN1_INTEGER> ser( BN_to_ASN1_INTEGER( serBN, NULL ), ASN1_INTEGER_free );
 
     if( !ser ) {
-        throw "BN Malloc fail";
+        throw std::runtime_error("BN Malloc fail");
     }
 
     logger::note("building current time");
     std::shared_ptr<ASN1_TIME> tmptm( ASN1_TIME_new(), ASN1_TIME_free );
 
     if( !tmptm ) {
-        throw "ASN1-Time Malloc fail";
+        throw std::runtime_error("ASN1-Time Malloc fail");
     }
 
     X509_gmtime_adj( tmptm.get(), 0 );
@@ -63,21 +64,21 @@ void CRL::sign( std::shared_ptr<CAConfig> ca ) {
     std::shared_ptr<ASN1_TIME> tmptm( ASN1_TIME_new(), ASN1_TIME_free );
 
     if( !tmptm ) {
-        throw "ASN1-Time Malloc fail";
+        throw std::runtime_error("ASN1-Time Malloc fail");
     }
 
     X509_gmtime_adj( tmptm.get(), 0 );
 
     logger::note("setting issuer");
     if( !X509_CRL_set_issuer_name( crl.get(), X509_get_subject_name( ca->ca.get() ) ) ) {
-        throw "Setting issuer failed";
+        throw std::runtime_error("Setting issuer failed");
     }
 
     logger::note("setting update");
     X509_CRL_set_lastUpdate( crl.get(), tmptm.get() );
 
     if( !X509_time_adj_ex( tmptm.get(), 1, 10, NULL ) ) {
-        throw "Updating time failed";
+        throw std::runtime_error("Updating time failed");
     }
 
     logger::note("setting next update");

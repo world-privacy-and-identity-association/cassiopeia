@@ -96,10 +96,10 @@ std::string parseCommand( RecordHeader& head, const std::string& input) {
         std::stringstream ss;
         ss << "Expected: " << expectedTotalLength << ", Got: " << input.size();
         logger::error( ss.str() );
-        throw "Error, invalid length";
+        throw std::length_error("Error, invalid length");
     }
     if( checksum != -1 || error || dlen < RECORD_HEADER_SIZE ) {
-        throw "Error, invalid checksum";
+        throw std::runtime_error("Error, invalid checksum");
     }
 
     data.pop_back();

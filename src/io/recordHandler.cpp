@@ -75,8 +75,8 @@ public:
             RecordHeader head;
             std::string all = parseCommandChunked( head, io );
             execute( static_cast<RecordHeader::SignerCommand>( head.command ), all );
-        } catch( const char* msg ) {
-            logger::error( "ERROR: ", msg );
+        } catch( const std::exception& msg ) {
+            logger::error( "ERROR: ", msg.what() );
             parent->reset();
             return;
         }
@@ -207,7 +207,7 @@ public:
             break;
 
         default:
-            throw "Unimplemented";
+            throw std::runtime_error("Unimplemented");
         }
     }
 };
@@ -228,7 +228,7 @@ void DefaultRecordHandler::handle() {
     }
     try {
         currentSession->work();
-    } catch( EOFException e ){
+    } catch( eof_exception e ){
         reset();
     }
 }

@@ -1,7 +1,7 @@
 #include "slipBio.h"
 
 #include <unistd.h>
-
+#include <exception>
 #include <iostream>
 
 #include "log/logger.hpp"
@@ -111,7 +111,7 @@ int SlipBIO::write( const char* buf, int num ) {
 #endif
 
         if( dlen < 0 ) {
-            throw "Error, target write failed";
+            throw std::runtime_error("Error, target write failed");
         } else if( dlen == 0 ) {
             // sleep
             logger::note( "waiting for write ability" );

@@ -92,8 +92,8 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
                 logger::error( "Invalid Message" );
                 break;
             }
-        } catch( const char* msg ) {
-            logger::error( msg );
+        } catch( const std::exception& msg ) {
+            logger::error( msg.what() );
             return std::shared_ptr<SignedCertificate>();
         }
     }
@@ -107,7 +107,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
             int dlen = BIO_write( bios.get(), buf, len );
 
             if( dlen <= 0 ) {
-                throw "Memory error.";
+                throw std::runtime_error("Memory error.");
             }
 
             len -= dlen;
@@ -117,7 +117,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
         std::shared_ptr<X509> pem( PEM_read_bio_X509( bios.get(), NULL, 0, NULL ) );
 
         if( !pem ) {
-            throw "Pem was not readable";
+            throw std::runtime_error("Pem was not readable");
         }
 
         std::shared_ptr<BIGNUM> ser( ASN1_INTEGER_to_BN( pem->cert_info->serialNumber, NULL ), BN_free );
@@ -169,7 +169,7 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
     std::string date;
 
     if( static_cast<RecordHeader::SignerResult>( head.command ) != RecordHeader::SignerResult::REVOKED ) {
-        throw "Protocol violation";
+        throw std::runtime_error("Protocol violation");
     }
 
     const unsigned char* buffer2 = reinterpret_cast<const unsigned char*>( payload.data() );
@@ -196,7 +196,7 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
         payload = parseCommandChunked( head, conn );
 
         if( static_cast<RecordHeader::SignerResult>( head.command ) != RecordHeader::SignerResult::FULL_CRL ) {
-            throw "Protocol violation";
+            throw std::runtime_error("Protocol violation");
         }
 
         std::string name_bak = ca->path + std::string( "/ca.crl.bak" );

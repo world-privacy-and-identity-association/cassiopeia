@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <unordered_map>
+#include <exception>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -36,11 +37,11 @@ std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial(
         bn = BN_new();
 
         if( !bn || !BN_hex2bn( &bn, "1" )) {
-            throw "Initing serial failed";
+            throw std::runtime_error("Initing serial failed");
         }
     } else {
         if( !BN_hex2bn( &bn, res.c_str() ) ) {
-            throw "Parsing serial failed.";
+            throw std::runtime_error("Parsing serial failed.");
         }
     }
 
@@ -56,7 +57,7 @@ std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial(
     data.get()[len + 3] = profile & 0xFF; // profile id
 
     if( !RAND_bytes( data.get() + len + 4, 16 ) || !BN_add_word( serial.get(), 1 ) ) {
-        throw "Big number math failed while fetching random data for serial number.";
+        throw std::runtime_error("Big number math failed while fetching random data for serial number.");
     }
 
     std::shared_ptr<char> serStr = std::shared_ptr<char>(
@@ -83,7 +84,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
 
     if( !ca ) {
         logger::error( "ERROR: Signing CA specified in profile could not be loaded." );
-        throw "CA-key not found";
+        throw std::runtime_error("CA-key not found");
     }
 
     logger::note( "FINE: Key for Signing CA is correctly loaded." );
@@ -102,15 +103,15 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
         req = X509Req::parseCSR( cert->csr_content );
     } else {
         logger::errorf( "ERROR: Unknown type (\"%s\") of certification in request.", cert->csr_type );
-        throw "Error, unknown REQ rype " + ( cert->csr_type ); //! \fixme: Pointer instead of string, please use proper exception classes
+        throw std::runtime_error("Error, unknown REQ rype " + cert->csr_type ); //! \fixme: Pointer instead of string, please use proper exception classe)s
     }
 
     int i = req->verify();
 
     if( i < 0 ) {
-        throw "Request contains a Signature with problems ... ";
+        throw std::runtime_error("Request contains a Signature with problems ... ");
     } else if( i == 0 ) {
-        throw "Request contains a Signature that does not match ...";
+        throw std::runtime_error("Request contains a Signature that does not match ...");
     } else {
         logger::note( "FINE: Request contains valid self-signature." );
     }
@@ -142,7 +143,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
             c.addRDN( NID_organizationalUnitName, a->value );
         } else {
             logger::error( "ERROR: Trying to add illegal RDN/AVA type: ", a->name );
-            throw "Unhandled/Illegal AVA type";
+            throw std::runtime_error("Unhandled/Illegal AVA type");
         }
     }
 
@@ -244,7 +245,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
 
         if( fn.empty() ) {
             logger::error( "ERROR: failed to get filename for storage of signed certificate." );
-            throw "Storage location could not be determined";
+            throw std::runtime_error("Storage location could not be determined");
         }
 
         logger::note( "FINE: Certificate signed successfully." );
