@@ -204,9 +204,8 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
         crl = std::make_shared<CRL>( name_bak );
 
         if( crl->verify( ca ) ) {
-            writeFile( tgtName, crl->toString() );
-            if( remove( name_bak.c_str() ) != 0 ){
-                logger::warn( "Removing old CRL failed" );
+            if( rename( name_bak.c_str(), tgtName.c_str() ) != 0 ){
+                logger::warn( "Moving new CRL over old CRL failed" );
             }
             logger::note( "CRL is now valid again" );
         } else {
