@@ -67,17 +67,14 @@ public:
         rh.command = static_cast<uint16_t>( res );
         rh.flags = 0;
         rh.command_count = 0; // TODO i++
-        rh.totalLength = payload.size();
         sendCommand( rh, payload, io );
     }
 
     void work() {
-        std::string content = io->readLine();
-
         try {
             RecordHeader head;
-            std::string payload = parseCommand( head, content );
-            execute( head, payload );
+            std::string all = parseCommandChunked( head, io );
+            execute( static_cast<RecordHeader::SignerCommand>( head.command ), all );
         } catch( const char* msg ) {
             logger::error( "ERROR: ", msg );
             parent->reset();
@@ -85,12 +82,8 @@ public:
         }
     }
 
-    void execute( RecordHeader& head, std::string data ) {
-        if( head.totalLength != head.payloadLength || head.offset != 0 ) {
-            throw "Error, chunking not supported yet";
-        }
-
-        switch( static_cast<RecordHeader::SignerCommand>( head.command )) {
+    void execute( RecordHeader::SignerCommand command, std::string data ) {
+        switch( command ) {
         case RecordHeader::SignerCommand::SET_CSR:
             tbs->csr_content = data;
             tbs->csr_type = "CSR";

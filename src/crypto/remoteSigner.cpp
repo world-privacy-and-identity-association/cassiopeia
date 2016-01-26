@@ -73,7 +73,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     for( int i = 0; i < 3; i++ ) {
         try {
             RecordHeader head;
-            std::string payload = parseCommand( head, conn->readLine() );
+            std::string payload = parseCommandChunked( head, conn );
 
             switch( static_cast<RecordHeader::SignerResult>( head.command )) {
             case RecordHeader::SignerResult::CERTIFICATE:
@@ -162,7 +162,7 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
     std::string payload = ca->name;
     send( conn, head, RecordHeader::SignerCommand::REVOKE, payload );
 
-    payload = parseCommand( head, conn->readLine() );
+    payload = parseCommandChunked( head, conn );
 
     std::string tgtName = ca->path + std::string( "/ca.crl" );
     auto crl = std::make_shared<CRL>( tgtName );
@@ -193,7 +193,7 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
         logger::warn( "CRL is broken, trying to recover" );
         send( conn, head, RecordHeader::SignerCommand::GET_FULL_CRL, ca->name );
 
-        payload = parseCommand( head, conn->readLine() );
+        payload = parseCommandChunked( head, conn );
 
         if( static_cast<RecordHeader::SignerResult>( head.command ) != RecordHeader::SignerResult::FULL_CRL ) {
             throw "Protocol violation";

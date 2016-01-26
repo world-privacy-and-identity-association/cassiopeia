@@ -28,19 +28,26 @@ void sendCommand( RecordHeader& head, const std::string& data, std::shared_ptr<O
     std::stringstream ss;
     ss << data.size();
     logger::debugf( "Record payload length: %s", ss.str() ); 
-    if(data.size() > 0xFFFF){
-        logger::warn( "Data too big, need chunking" );
+    size_t pos = 0;
+    head.offset = 0;
+    head.totalLength = data.size();
+    while(pos < data.size()){
+        size_t toTransfer = std::min(static_cast<size_t>(0xF000), data.size() - pos);
+        head.payloadLength = toTransfer;
+
+        std::string s;
+        s += head.packToString();
+        s += data.substr(pos, toTransfer);
+
+        std::string res = toHexAndChecksum( s );
+
+        logger::debug( "FINE: RECORD output: ", res );
+
+        bio->write( res.data(), res.size() );
+
+        pos += toTransfer;
+        head.offset += 1;
     }
-    head.payloadLength = data.size();
-    std::string s;
-    s += head.packToString();
-    s += data;
-
-    std::string res = toHexAndChecksum( s );
-
-    logger::debug( "FINE: RECORD output: ", res );
-
-    bio->write( res.data(), res.size() );
 }
 
 int32_t fromHexDigit( char c ) {
@@ -99,31 +106,20 @@ std::string parseCommand( RecordHeader& head, const std::string& input) {
 
     return data;
 }
-
-/*
-int main( int argc, char* argv[] ) {
-    OpensslBIOWrapper *bio = new OpensslBIOWrapper(BIO_new_fd(0, 0));
-    std::string data = "halloPayload";
-    RecordHeader head;
-    head.command = 0x7;
-    head.flags = 1;
-    head.sessid = 13;
-    head.command_count = 0xA0B;
-    head.totalLength = 9;
-    sendCommand( head, data, std::shared_ptr<OpensslBIO>(bio) );
-    head.command = 0x8;
-
-    try {
-        std::string c = parseCommand( head, ":0700010D0000000B0A0900000000000C0068616C6C6F5061796C6F6164E6\n" );
-
-        std::cout << "res: " << std::endl;
-        std::cout << head.payloadLength << std::endl;
-        std::cout << c << std::endl;
-    } catch( char const* c ) {
-        std::cout << "err: " << c << std::endl;
+std::string parseCommandChunked( RecordHeader& head, std::shared_ptr<OpensslBIOWrapper> io){
+    logger::note("reading");
+    std::string payload = parseCommand( head, io->readLine() );
+    std::string all(head.totalLength, ' ');
+    auto target = all.begin();
+    size_t pos = 0;
+    while(true) {
+        pos += head.payloadLength;
+        target = std::copy ( payload.begin(), payload.end(), target);
+        if(pos >= head.totalLength) {
+            break;
+        }
+        logger::note("chunk digested, reading next one");
+        payload = parseCommand( head, io->readLine() );
     }
-
-
-    return 0;
+    return all;
 }
-*/

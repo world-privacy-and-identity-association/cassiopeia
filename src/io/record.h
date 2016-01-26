@@ -6,6 +6,7 @@
 #include <string>
 
 #include "bios.h"
+#include "io/opensslBIO.h"
 
 #define RECORD_HEADER_SIZE 17
 
@@ -105,5 +106,6 @@ public:
 };
 
 std::string parseCommand( RecordHeader& head, const std::string& input );
+std::string parseCommandChunked( RecordHeader& head, std::shared_ptr<OpensslBIOWrapper> conn);
 
 void sendCommand( RecordHeader& head, const std::string& data, std::shared_ptr<OpensslBIO> bio );
