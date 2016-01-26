@@ -164,7 +164,8 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
 
     payload = parseCommand( head, conn->readLine() );
 
-    auto crl = std::make_shared<CRL>( ca->path + std::string( "/ca.crl" ) );
+    std::string tgtName = ca->path + std::string( "/ca.crl" );
+    auto crl = std::make_shared<CRL>( tgtName );
     std::string date;
 
     if( static_cast<RecordHeader::SignerResult>( head.command ) != RecordHeader::SignerResult::REVOKED ) {
@@ -187,7 +188,7 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
 
     if( ok ) {
         logger::note( "CRL verificated successfully" );
-        writeFile( ca->path + std::string( "/ca.crl" ), crl->toString() );
+        writeFile( tgtName, crl->toString() );
     } else {
         logger::warn( "CRL is broken, trying to recover" );
         send( conn, head, RecordHeader::SignerCommand::GET_FULL_CRL, ca->name );
@@ -198,18 +199,20 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
             throw "Protocol violation";
         }
 
-        writeFile( ca->path + std::string( "/ca.crl.bak" ), payload );
-        crl = std::make_shared<CRL>( ca->path + std::string( "/ca.crl.bak" ) );
+        std::string name_bak = ca->path + std::string( "/ca.crl.bak" );
+        writeFile( name_bak, payload );
+        crl = std::make_shared<CRL>( name_bak );
 
         if( crl->verify( ca ) ) {
-            writeFile( ca->path + std::string( "/ca.crl" ), crl->toString() );
+            writeFile( tgtName, crl->toString() );
+            if( remove( name_bak.c_str() ) != 0 ){
+                logger::warn( "Removing old CRL failed" );
+            }
             logger::note( "CRL is now valid again" );
         } else {
             logger::warn( "CRL is still broken... Please, help me" );
         }
     }
-
-    logger::debug( "CRL:\n", crl->toString() );
 
     logger::note( "Closing SSL connection" );
     if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) { // need to close the connection twice
