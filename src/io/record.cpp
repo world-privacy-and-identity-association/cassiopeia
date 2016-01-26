@@ -31,7 +31,7 @@ void sendCommand( RecordHeader& head, const std::string& data, std::shared_ptr<O
     size_t pos = 0;
     head.offset = 0;
     head.totalLength = data.size();
-    while(pos < data.size()){
+    do {
         size_t toTransfer = std::min(static_cast<size_t>(0xF000), data.size() - pos);
         head.payloadLength = toTransfer;
 
@@ -47,7 +47,7 @@ void sendCommand( RecordHeader& head, const std::string& data, std::shared_ptr<O
 
         pos += toTransfer;
         head.offset += 1;
-    }
+    } while(pos < data.size());
 }
 
 int32_t fromHexDigit( char c ) {
