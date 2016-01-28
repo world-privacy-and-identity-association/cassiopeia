@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <fstream>
 #include <streambuf>
@@ -67,6 +68,17 @@ int main( int argc, const char* argv[] ) try {
     return -1;
 
 } catch( std::exception& e ) {
-    logger::fatalf( "Fatal Error: %s!\n", e.what() );
+    try {
+        logger::fatalf( "Fatal Error: %s!\n", e.what() );
+    }catch( std::exception &e){
+        printf( "Fatal Error (+logger failed): %s!\n", e.what() );
+    }
+    return -1;
+} catch( ... ) {
+    try{
+        logger::fatal( "Fatal Error: Unknown Exception!\n" );
+    }catch( std::exception &e){
+        printf( "Fatal Error (+ logger failed): %s!\n", e.what() );
+    }
     return -1;
 }
