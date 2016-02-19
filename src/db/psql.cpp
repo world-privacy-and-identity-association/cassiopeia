@@ -155,14 +155,14 @@ std::pair<std::string, std::string> PostgresJobProvider::getRevocationInfo( std:
 }
 
 void PostgresJobProvider::writeBackRevocation( std::shared_ptr<Job> job, std::string date ) {
-    logger::errorf( "Revoking at " + date);
+    logger::notef( "Revoking at %s", date);
     pqxx::work txn(c);
-    logger::errorf( "executing" );
+    logger::note( "executing" );
     pqxx::result r = txn.exec( "UPDATE certs SET revoked = " + txn.quote( pgTime( date ) ) + " WHERE id = " + txn.quote( job->target ) );
     if( r.affected_rows() != 1 ){
         throw std::runtime_error("Only one row should be updated.");
     }
-    logger::errorf( "committing" );
+    logger::note( "committing" );
     txn.commit();
-    logger::errorf( "committed" );
+    logger::note( "committed" );
 }
