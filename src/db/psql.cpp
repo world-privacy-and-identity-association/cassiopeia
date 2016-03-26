@@ -131,6 +131,9 @@ void PostgresJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<S
     }
     std::string serial = res->serial;
     std::transform(serial.begin(), serial.end(), serial.begin(), ::tolower);
+    if(serial[0] == '0'){
+        serial = serial.substr(1);
+    }
     std::string q = "UPDATE certs SET crt_name=" + txn.quote( res->crt_name ) + ", serial=" + txn.quote( serial ) + ", \"caid\" = " + txn.quote( read_id ) + ", created=" + txn.quote( pgTime(res->before) ) + ", expire=" + txn.quote( pgTime(res->after) ) + "  WHERE id=" + txn.quote( job->target );
     // TODO write more thingies back
 
