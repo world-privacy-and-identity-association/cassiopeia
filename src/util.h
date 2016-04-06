@@ -15,7 +15,8 @@ std::pair<bool, std::time_t> parseYearInterval( std::time_t t, const std::string
 
 std::unique_ptr<std::ofstream> openLogfile( const std::string &name );
 
-#if __GNUC__ < 5
+#if __GNUC__ > 5 || (__GNUC__ == 4 && __GNUC_MINOR__ > 8)
+#else
 namespace std{
 template<typename T, typename... Args>
 std::unique_ptr<T> make_unique( Args&&... args ) {
