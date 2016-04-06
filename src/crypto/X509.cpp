@@ -177,7 +177,7 @@ merr:
 void X509Cert::setExtensions( std::shared_ptr<X509> caCert, std::vector<std::shared_ptr<SAN>>& sans, Profile& prof, std::string crlURL, std::string crtURL ) {
     add_ext( caCert, target, NID_basic_constraints, "critical,CA:FALSE" );
     add_ext( caCert, target, NID_subject_key_identifier, "hash" );
-    add_ext( caCert, target, NID_authority_key_identifier, "keyid,issuer:always" );
+    add_ext( caCert, target, NID_authority_key_identifier, "keyid:always" );
     std::string ku = std::string( "critical," ) + prof.ku;
     add_ext( caCert, target, NID_key_usage, ku.c_str() );
     add_ext( caCert, target, NID_ext_key_usage, prof.eku.c_str() );
