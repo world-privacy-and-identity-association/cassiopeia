@@ -29,7 +29,7 @@ std::string writeBackFile( const std::string& serial, const std::string& cert, c
 
     if( 0 != mkdir( filename.c_str(), 0755 ) ) {
         if( EEXIST != errno ) {
-            return "";
+            throw std::runtime_error("Storage location could not be determined");
         }
 
         //! \FIXME: Check this is a directory

@@ -166,8 +166,9 @@ int main( int argc, const char* argv[] ) {
                         continue;
                     }
 
-                    logger::note( "FINE: CERTIFICATE LOG:\n", res->log );
-                    logger::note( "FINE: CERTIFICATE:\n", res->certificate );
+                    logger::note( "FINE: CERTIFICATE LOG:\n", res->log,
+				  "FINE: CERTIFICATE:\n", res->certificate );
+
                     std::string fn = writeBackFile( job->target.c_str(), res->certificate, keyDir );
 
                     if( fn.empty() ) {
