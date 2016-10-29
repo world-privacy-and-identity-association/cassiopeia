@@ -1,0 +1,6 @@
+/files
+/cacert-cassiopeia
+/cacert-cassiopeia-doc
+/cacert-cassiopeia-signer
+/*.substvars
+/*.debhelper

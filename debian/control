@@ -1,20 +1,29 @@
-Source: cassiopeia
-Section: unknown
+Source: cacert-cassiopeia
+Section: utils
 Priority: extra
 Maintainer: CAcert Software Team <cacert-devel@cacert.org>
-Build-Depends: debhelper (>= 8.0.0), libtool
+Build-Depends: debhelper (>= 8.0.0), libtool, libmysqlclient-dev (>= 5.5), libboost-test-dev
 Standards-Version: 3.9.4
 Homepage: https://cacert.org/
 #Vcs-Git: git://git.debian.org/collab-maint/cassiopeia.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/cassiopeia.git;a=summary
 
-Package: cassiopeia
+Package: cacert-cassiopeia
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: CAcert Certificate Signing Software
- This package provides the necessary tools to run a certificate signing instance on https://cacert.org
+ This package provides the necessary tools to run a
+ certificate signing instance on https://cacert.org
 
-Package: cassiopeia-doc
+Package: cacert-cassiopeia-signer
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: CAcert Certificate Signing Software
+ This package provides the signer-side part of the
+ CAcert signing software.
+
+Package: cacert-cassiopeia-doc
 Architecture: all
 Description: Documentation for the CAcert Certificate Signing Software
- This package provides the necessary tools to run a certificate signing instance on https://cacert.org
+ This package provides the necessary tools to run a
+ certificate signing instance on https://cacert.org

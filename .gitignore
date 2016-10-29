@@ -24,3 +24,20 @@
 bin
 dep
 obj
+
+# Emacs
+*~
+\#*#
+
+# Devel key files
+*.crt
+*.key
+*.csr
+config.txt
+serial
+*.gcov
+gcov.log
+
+coverage
+coverage.info
+coverage_stripped.info
