@@ -91,7 +91,7 @@ static std::shared_ptr<DH> dh_param;
 
 std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
     std::shared_ptr<SSL_CTX> ctx = std::shared_ptr<SSL_CTX>(
-        SSL_CTX_new( TLSv1_2_method() ),
+        SSL_CTX_new( TLS_method() ),
         []( SSL_CTX* p ) {
             SSL_CTX_free( p );
         } );
@@ -125,14 +125,13 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
             } else {
                 dh_param = std::shared_ptr<DH>( DH_new(), DH_free );
                 logger::note( "Generating DH params" );
-                BN_GENCB cb;
-                cb.ver = 2;
-                cb.arg = 0;
-                cb.cb.cb_2 = gencb;
+                BN_GENCB *cb = BN_GENCB_new();
+		BN_GENCB_set(cb, gencb, NULL);
 
-                if( !DH_generate_parameters_ex( dh_param.get(), 2048, 5, &cb ) ) {
+                if( !DH_generate_parameters_ex( dh_param.get(), 2048, 5, cb ) ) {
                     throw std::runtime_error("DH generation failed");
                 }
+		BN_GENCB_free(cb);
 
                 std::cout << std::endl;
                 paramfile = std::shared_ptr<FILE>( fopen( "dh_param.pem", "w" ), fclose );
@@ -194,7 +193,7 @@ extern std::string crtPrefix;
 CAConfig::CAConfig( const std::string& name ) : path( "ca/" + name ), name( name ) {
     ca = loadX509FromFile( path + "/ca.crt" );
     caKey = loadPkeyFromFile( path + "/ca.key" );
-    ASN1_TIME* tm = X509_get_notBefore( ca );
+    ASN1_TIME* tm = X509_get_notBefore( ca.get() );
     notBefore = std::shared_ptr<ASN1_TIME>( tm, ASN1_TIME_free );
     std::size_t pos = name.find("_");
     if (pos == std::string::npos) {
@@ -210,7 +209,7 @@ CAConfig::CAConfig( const std::string& name ) : path( "ca/" + name ), name( name
 
 std::string timeToString( std::shared_ptr<ASN1_TIME> time ) {
     std::shared_ptr<ASN1_GENERALIZEDTIME> gtime( ASN1_TIME_to_generalizedtime( time.get(), 0 ) );
-    std::string strdate( ( char* ) ASN1_STRING_data( gtime.get() ), ASN1_STRING_length( gtime.get() ) );
+    std::string strdate( ( char* ) ASN1_STRING_get0_data( gtime.get() ), ASN1_STRING_length( gtime.get() ) );
 
     logger::notef("openssl formatted me a date: %s", strdate);
     if( strdate[strdate.size() - 1] != 'Z' ) {

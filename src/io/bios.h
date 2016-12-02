@@ -2,6 +2,27 @@
 
 #include <openssl/bio.h>
 
+struct bio_st {
+  const BIO_METHOD *method;
+  /* bio, mode, argp, argi, argl, ret */
+  long (*callback) (struct bio_st *, int, const char *, int, long, long);
+  char *cb_arg;               /* first argument for the callback */
+  int init;
+  int shutdown;
+  int flags;                  /* extra storage */
+  int retry_reason;
+  int num;
+  void *ptr;
+  struct bio_st *next_bio;    /* used by filter BIOs */
+  struct bio_st *prev_bio;    /* used by filter BIOs */
+  int references;
+  uint64_t num_read;
+  uint64_t num_write;
+  CRYPTO_EX_DATA ex_data;
+  CRYPTO_RWLOCK *lock;
+};
+
+
 #define BIO_TYPE_CUSTOM 0xff
 
 class OpensslBIO {
@@ -47,18 +68,14 @@ BIO_METHOD* toBio() {
 
 template <typename T>
 BIO_METHOD* toBio( int ( *newfunc )( BIO* ) ) {
-    static BIO_METHOD new_method = {
-        T::typeID,
-        T::getName(),
-        BIOWrapper::write,
-        BIOWrapper::read,
-        BIOWrapper::puts,
-        BIOWrapper::gets,
-        BIOWrapper::ctrl,
-        newfunc,
-        BIOWrapper::free,
-        NULL,
-    };
+    BIO_METHOD *meth = BIO_meth_new(T::typeID, T::getName());
+    BIO_meth_set_write(meth, BIOWrapper::write);
+    BIO_meth_set_read(meth, BIOWrapper::read);
+    BIO_meth_set_puts(meth, BIOWrapper::puts);
+    BIO_meth_set_gets(meth, BIOWrapper::gets);
+    BIO_meth_set_ctrl(meth, BIOWrapper::ctrl);
+    BIO_meth_set_destroy(meth, BIOWrapper::free);
+    BIO_meth_set_create(meth, newfunc);
 
-    return &new_method;
+    return meth;
 }

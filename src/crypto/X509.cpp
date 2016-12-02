@@ -133,7 +133,9 @@ void X509Cert::setPubkeyFrom( std::shared_ptr<X509Req> req ) {
 }
 
 void X509Cert::setSerialNumber( BIGNUM* num ) {
-    BN_to_ASN1_INTEGER( num , target->cert_info->serialNumber );
+    ASN1_INTEGER *i = BN_to_ASN1_INTEGER( num, NULL);
+    X509_set_serialNumber(target.get(), i);
+    ASN1_INTEGER_free(i);
 }
 
 void X509Cert::setTimes( uint32_t before, uint32_t after ) {
@@ -154,7 +156,7 @@ static X509_EXTENSION* do_ext_i2d( int ext_nid, int crit, ASN1_VALUE* ext_struc 
         goto merr;
     }
 
-    if( !( ext_oct = M_ASN1_OCTET_STRING_new() ) ) {
+    if( !( ext_oct = ASN1_OCTET_STRING_new() ) ) {
         goto merr;
     }
 
@@ -167,7 +169,7 @@ static X509_EXTENSION* do_ext_i2d( int ext_nid, int crit, ASN1_VALUE* ext_struc 
         goto merr;
     }
 
-    M_ASN1_OCTET_STRING_free( ext_oct );
+    ASN1_OCTET_STRING_free( ext_oct );
     return ext;
 
 merr:
@@ -206,7 +208,7 @@ void X509Cert::setExtensions( std::shared_ptr<X509> caCert, std::vector<std::sha
         gen->type = name->type == "DNS" ? GEN_DNS : name->type == "email" ? GEN_EMAIL : 0; // GEN_EMAIL;
 
         if( !gen->type
-                || !( gen->d.ia5 = M_ASN1_IA5STRING_new() )
+                || !( gen->d.ia5 = ASN1_IA5STRING_new() )
                 || !ASN1_STRING_set( gen->d.ia5, name->content.data(), name->content.size() ) ) {
             GENERAL_NAME_free( gen );
             throw std::runtime_error("initing iasting5 failed");
@@ -260,7 +262,7 @@ std::shared_ptr<SignedCertificate> X509Cert::sign( std::shared_ptr<EVP_PKEY> caK
     auto res = std::make_shared<SignedCertificate>();
     res->certificate = std::string( buf->data, buf->data + buf->length );
 
-    std::shared_ptr<BIGNUM> ser( ASN1_INTEGER_to_BN( target->cert_info->serialNumber, NULL ), BN_free );
+    std::shared_ptr<BIGNUM> ser( ASN1_INTEGER_to_BN( X509_get_serialNumber(target.get()), NULL ), BN_free );
 
     if( !ser ) {
         throw std::runtime_error("Failed to retrieve certificate serial of signed certificate.");

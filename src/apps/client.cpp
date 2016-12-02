@@ -16,6 +16,7 @@
 #include "io/bios.h"
 #include "io/slipBio.h"
 #include "config.h"
+#include <internal/bio.h>
 
 #ifdef NO_DAEMON
 #define DAEMON false
@@ -81,7 +82,8 @@ int main( int argc, const char* argv[] ) {
     }
     std::shared_ptr<JobProvider> jp = std::make_shared<PostgresJobProvider>( sqlHost, sqlUser, sqlPass, sqlDB );
     std::shared_ptr<BIO> b = openSerial( serialPath );
-    std::shared_ptr<BIO> slip1( BIO_new( toBio<SlipBIO>() ), BIO_free );
+    std::shared_ptr<BIO_METHOD> m( toBio<SlipBIO>(), BIO_meth_free);
+    std::shared_ptr<BIO> slip1( BIO_new( m.get() ), BIO_free );
     static_cast<SlipBIO*>( slip1->ptr )->setTarget( std::make_shared<OpensslBIOWrapper>( b ), false );
     auto sign = std::make_shared<RemoteSigner>( slip1, generateSSLContext( false ) );
     // std::shared_ptr<Signer> sign( new SimpleOpensslSigner() );

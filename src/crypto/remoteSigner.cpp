@@ -114,13 +114,13 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
             buf += dlen;
         }
 
-        std::shared_ptr<X509> pem( PEM_read_bio_X509( bios.get(), NULL, 0, NULL ) );
+        std::shared_ptr<X509> pem( PEM_read_bio_X509( bios.get(), NULL, 0, NULL ), X509_free );
 
         if( !pem ) {
             throw std::runtime_error("Pem was not readable");
         }
 
-        std::shared_ptr<BIGNUM> ser( ASN1_INTEGER_to_BN( pem->cert_info->serialNumber, NULL ), BN_free );
+        std::shared_ptr<BIGNUM> ser( ASN1_INTEGER_to_BN( X509_get_serialNumber(pem.get()), NULL), BN_free );
         std::shared_ptr<char> serStr(
             BN_bn2hex( ser.get() ),
             []( char* p ) {
