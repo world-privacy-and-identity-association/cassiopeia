@@ -209,7 +209,7 @@ CAConfig::CAConfig( const std::string& name ) : path( "ca/" + name ), name( name
 }
 
 std::string timeToString( std::shared_ptr<ASN1_TIME> time ) {
-    std::shared_ptr<ASN1_GENERALIZEDTIME> gtime( ASN1_TIME_to_generalizedtime( time.get(), 0 ) );
+  std::shared_ptr<ASN1_GENERALIZEDTIME> gtime( ASN1_TIME_to_generalizedtime( time.get(), 0 ), ASN1_GENERALIZEDTIME_free );
     std::string strdate( ( char* ) ASN1_STRING_get0_data( gtime.get() ), ASN1_STRING_length( gtime.get() ) );
 
     logger::notef("openssl formatted me a date: %s", strdate);
@@ -221,8 +221,8 @@ std::string timeToString( std::shared_ptr<ASN1_TIME> time ) {
 }
 
 void extractTimes( std::shared_ptr<X509> target,  std::shared_ptr<SignedCertificate> cert ) {
-    cert->before = timeToString( std::shared_ptr<ASN1_TIME>( X509_get_notBefore( target.get() ), ASN1_TIME_free ) );
-    cert->after = timeToString( std::shared_ptr<ASN1_TIME>( X509_get_notAfter( target.get() ), ASN1_TIME_free ) );
+    cert->before = timeToString( std::shared_ptr<ASN1_TIME>( X509_get_notBefore( target.get() ), [target](auto p){(void)p;} ) );
+    cert->after = timeToString( std::shared_ptr<ASN1_TIME>( X509_get_notAfter( target.get() ), [target](auto p){(void)p;} ) );
 }
 
 bool CAConfig::crlNeedsResign() {
