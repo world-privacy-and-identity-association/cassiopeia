@@ -96,6 +96,10 @@ std::pair<bool, time_t> parseDate( const std::string& date ) {
     t.tm_year = std::stoi( date.substr( 0, 4 ) ) - 1900;
     t.tm_mon = std::stoi( date.substr( 5, 2 ) ) - 1;
     t.tm_mday = std::stoi( date.substr( 8, 2 ) );
+    t.tm_wday = 0;   /* Day of the week (0-6, Sunday = 0) */
+    t.tm_yday = 0;   /* Day in the year (0-365, 1 Jan = 0) */
+    t.tm_isdst = 0;  /* Daylight saving time */
+
     setenv( "TZ", "UTC", 1 );
     tzset();
     std::time_t res = mktime( &t );

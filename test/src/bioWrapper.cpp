@@ -40,7 +40,8 @@ const char* OpensslBIO1::getName() {
 BOOST_AUTO_TEST_SUITE( TestBioWrapper )
 
 BOOST_AUTO_TEST_CASE( BasicCalls ) {
-    std::shared_ptr<BIO> n( BIO_new( toBio<OpensslBIO1>() ), BIO_free );
+    std::shared_ptr<BIO_METHOD> m(toBio<OpensslBIO1>(), BIO_meth_free);
+    std::shared_ptr<BIO> n( BIO_new( m.get() ), BIO_free );
     OpensslBIO* o = new OpensslBIOWrapper( n );
     OpensslBIO1* data = ( OpensslBIO1* ) n->ptr;
 

@@ -194,7 +194,8 @@ CAConfig::CAConfig( const std::string& name ) : path( "ca/" + name ), name( name
     ca = loadX509FromFile( path + "/ca.crt" );
     caKey = loadPkeyFromFile( path + "/ca.key" );
     ASN1_TIME* tm = X509_get_notBefore( ca.get() );
-    notBefore = std::shared_ptr<ASN1_TIME>( tm, ASN1_TIME_free );
+    auto ca0 = ca;
+    notBefore = std::shared_ptr<ASN1_TIME>( tm, [ca0](auto p){(void)p;} );
     std::size_t pos = name.find("_");
     if (pos == std::string::npos) {
         throw new std::invalid_argument("ca name: " + name + " is malformed.");
