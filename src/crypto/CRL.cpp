@@ -139,12 +139,8 @@ void CRL::setSignature( std::string signature ) {
     ASN1_BIT_STRING *sig = d2i_ASN1_BIT_STRING( NULL, &buffer, signature.size() + data - buffer );
     ASN1_TIME *a1 = d2i_ASN1_TIME( NULL, &buffer, signature.size() + data - buffer );
     ASN1_TIME *a2 = d2i_ASN1_TIME( NULL, &buffer, signature.size() + data - buffer );
-    auto tmp = *palg;
-    *palg = *alg;
-    *alg = tmp;
-    auto tmp2 = *psig;
-    *psig = *sig;
-    *sig = tmp2;
+    std::swap(*palg, *alg);
+    std::swap(*psig, *sig);
     X509_CRL_set1_lastUpdate( crl.get(), a1);
     X509_CRL_set1_nextUpdate( crl.get(), a2);
 
