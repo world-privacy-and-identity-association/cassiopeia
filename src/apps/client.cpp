@@ -120,7 +120,6 @@ int main( int argc, const char* argv[] ) {
                 logger::errorf ( "Exception while fetchJob: %s", e.what() );
 	    }
             if( !job ) {
-                logger::note( "Nothing to work on." );
                 sleep( 5 );
                 continue;
             }
