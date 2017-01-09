@@ -89,12 +89,13 @@ std::pair<bool, time_t> parseDate( const std::string& date ) {
         return std::pair<bool, time_t>( false, 0 );
     }
 
-    std::tm t = {
-      .tm_sec = 0, .tm_min = 0, .tm_hour = 0,
-      .tm_mday = std::stoi( date.substr( 8, 2 ) ),
-      .tm_mon = std::stoi( date.substr( 5, 2 ) ) - 1,
-      .tm_year = std::stoi( date.substr( 0, 4 ) ) - 1900
-    };
+    std::tm t = {};
+    t.tm_sec = 0;
+    t.tm_min = 0;
+    t.tm_hour = 0;
+    t.tm_mday = std::stoi( date.substr( 8, 2 ) );
+    t.tm_mon = std::stoi( date.substr( 5, 2 ) ) - 1;
+    t.tm_year = std::stoi( date.substr( 0, 4 ) ) - 1900;
 
     setenv( "TZ", "UTC", 1 );
     tzset();
