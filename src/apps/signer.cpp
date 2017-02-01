@@ -5,7 +5,6 @@
 #include <stdexcept>
 
 #include "db/database.h"
-#include "db/mysql.h"
 #include "crypto/simpleOpensslSigner.h"
 #include "crypto/remoteSigner.h"
 #include "crypto/sslUtil.h"

@@ -21,7 +21,7 @@ endif
 
 CFLAGS+=${ADDFLAGS} -Wall -Werror -Wextra -pedantic -std=c++11 -I../src -I../lib/openssl/include
 CXXFLAGS=$(CFLAGS)
-LDFLAGS+=${ADDFLAGS} -lmysqlclient -lssl -lcrypto -ldl -lboost_unit_test_framework -L../lib/openssl -L/usr/lib/i386-linux-gnu -lpqxx -lpq
+LDFLAGS+=${ADDFLAGS} -lssl -lcrypto -ldl -lboost_unit_test_framework -L../lib/openssl -L/usr/lib/i386-linux-gnu -lpqxx -lpq
 
 ifneq (,$(filter coverage,$(DEB_BUILD_OPTIONS)))
     LDFLAGS += -lgcov

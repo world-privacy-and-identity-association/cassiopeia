@@ -4,8 +4,6 @@
 #include <memory>
 #include <tuple>
 
-#include <mysql/mysql.h>
-
 #include "database.h"
 #include <pqxx/pqxx>
 
