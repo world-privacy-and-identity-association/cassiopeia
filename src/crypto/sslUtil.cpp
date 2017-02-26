@@ -192,10 +192,18 @@ extern std::string crtPrefix;
 
 CAConfig::CAConfig( const std::string& name ) : path( "ca/" + name ), name( name ) {
     ca = loadX509FromFile( path + "/ca.crt" );
+    if (!ca) {
+        throw new std::invalid_argument("ca name: " + name + " contains unreadable certificate.");
+    }
+
     caKey = loadPkeyFromFile( path + "/ca.key" );
-    ASN1_TIME* tm = X509_get_notBefore( ca.get() );
-    auto ca0 = ca;
-    notBefore = std::shared_ptr<ASN1_TIME>( tm, [ca0](auto p){(void)p;} );
+    if (!caKey) {
+        throw new std::invalid_argument("ca name: " + name + " contains unreadable key.");
+    }
+
+    ASN1_TIME* tm = X509_get_notBefore( ca.get() ); // tm MUST NOT be free'd; duplicate for owning copy.
+    notBefore = std::shared_ptr<ASN1_TIME>( ASN1_STRING_dup(tm), ASN1_TIME_free );
+
     std::size_t pos = name.find("_");
     if (pos == std::string::npos) {
         throw new std::invalid_argument("ca name: " + name + " is malformed.");
@@ -204,6 +212,7 @@ CAConfig::CAConfig( const std::string& name ) : path( "ca/" + name ), name( name
     if (pos2 == std::string::npos) {
         throw new std::invalid_argument("ca name: " + name + " is malformed.");
     }
+
     crlURL = crlPrefix + "/g2/" + name.substr(pos+1, pos2-pos - 1) + "/" + name.substr(0,pos) + "-" + name.substr(pos2+1) + ".crl";
     crtURL = crtPrefix + "/g2/" + name.substr(pos+1, pos2-pos - 1) + "/" + name.substr(0,pos) + "-" + name.substr(pos2+1) + ".crt";
 }
