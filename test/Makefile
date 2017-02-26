@@ -16,7 +16,7 @@ CXX_DEP=g++
 LD=libtool --mode=link g++
 
 ifneq (,$(filter debug,$(DEB_BUILD_OPTIONS)))
-CFLAGS+=-DNO_DAEMON -g
+CFLAGS+=-DNO_DAEMON -g -Og
 endif
 
 CFLAGS+=${ADDFLAGS} -Wall -Werror -Wextra -pedantic -std=c++11 -I../src -I../lib/openssl/include

@@ -24,7 +24,7 @@ CXX_DEP=g++
 LD=libtool --mode=link g++
 
 ifneq (,$(filter debug,$(DEB_BUILD_OPTIONS)))
-CFLAGS+=-DNO_DAEMON -g
+CFLAGS+=-DNO_DAEMON -g -Og
 endif
 ifneq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
     CFLAGS += -O0
