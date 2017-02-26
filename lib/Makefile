@@ -12,7 +12,7 @@ collisiondetect/libdetectcoll.la: ${LIB_COLL_FILES}
 #	echo $^
 
 openssl/libcrypto.a: ${LIB_SSL_FILES}
-	cd ${LIB_SSL} && ( [ -f Makefile ] || ./config -DPURIFY )
+	cd ${LIB_SSL} && ( [ -f Makefile ] || ./config -DPURIFY no-md2 no-md4 no-rc4 no-ssl3 no-weak-ssl-ciphers no-unit-test )
 	${MAKE} -C ${LIB_SSL} depend
 	${MAKE} -C ${LIB_SSL}
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
