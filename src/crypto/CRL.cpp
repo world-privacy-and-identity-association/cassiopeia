@@ -58,6 +58,10 @@ std::string CRL::revoke( std::string serial, std::string time ) {
 }
 
 void CRL::sign( std::shared_ptr<CAConfig> ca ) {
+    if(!ca->caKey){
+        throw new std::invalid_argument("Cannot sign CRL with CA " + ca->name + " because it has no private key.");
+    }
+
     // Updating necessary CRL props
     std::shared_ptr<ASN1_TIME> tmptm( ASN1_TIME_new(), ASN1_TIME_free );
 

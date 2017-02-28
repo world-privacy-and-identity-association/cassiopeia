@@ -197,9 +197,6 @@ CAConfig::CAConfig( const std::string& name ) : path( "ca/" + name ), name( name
     }
 
     caKey = loadPkeyFromFile( path + "/ca.key" );
-    if (!caKey) {
-        throw new std::invalid_argument("ca name: " + name + " contains unreadable key.");
-    }
 
     ASN1_TIME* tm = X509_get_notBefore( ca.get() ); // tm MUST NOT be free'd; duplicate for owning copy.
     notBefore = std::shared_ptr<ASN1_TIME>( ASN1_STRING_dup(tm), ASN1_TIME_free );

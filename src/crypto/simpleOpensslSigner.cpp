@@ -86,6 +86,9 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
         logger::error( "ERROR: Signing CA specified in profile could not be loaded." );
         throw std::runtime_error("CA-key not found");
     }
+    if(!ca->caKey){
+        throw std::runtime_error("Cannot sign certificate with CA " + ca->name + " because it has no private key.");
+    }
 
     logger::note( "FINE: Key for Signing CA is correctly loaded." );
 
