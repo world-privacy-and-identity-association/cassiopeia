@@ -237,9 +237,11 @@ std::shared_ptr<SignedCertificate> X509Cert::sign( std::shared_ptr<EVP_PKEY> caK
     } else if( signAlg == "sha256" ) {
         md = EVP_sha256();
     } else if( signAlg == "sha1" ) {
-        md = EVP_sha1();
+        throw std::runtime_error("Refusing to sign with weak signature algorithm (SHA-1).");
+    } else if( signAlg == "md5" ) {
+        throw std::runtime_error("Refusing to sign with weak signature algorithm (MD5).");
     } else {
-        throw std::runtime_error("Unknown md-type");
+        throw std::runtime_error("Unknown signature algorithm");
     }
 
     if( !X509_sign( target.get(), caKey.get(), md ) ) {
