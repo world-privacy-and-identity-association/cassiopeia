@@ -1,13 +1,13 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: cassiopeia
-Source: <https://github.com/CAcertOrg/cacert-cassiopeia>
+Source: <https://code.wpia.club/?p=cassiopeia.git;a=summary>
 
 Files: *
-Copyright: 2014 CAcert Software Team <cacert-devel@cacert.org>
+Copyright: 2014-2017 WPIA Software Team <software@wpia.club>
 License: GPL-2.0+
 
 Files: debian/*
-Copyright: 2014 CAcert Software Team <cacert-devel@cacert.org>
+Copyright: 2014-2017 WPIA Software Team <software@wpia.club>
 License: GPL-2.0+
 
 License: GPL-2.0+

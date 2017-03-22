@@ -66,7 +66,7 @@ int main( int argc, const char* argv[] ) {
     std::string path;
 
 #ifdef NDEBUG
-    path = "/etc/cacert/cassiopeia/cassiopeia.conf";
+    path = "/etc/wpia/cassiopeia/cassiopeia.conf";
 #else
     path = "config.txt";
 #endif

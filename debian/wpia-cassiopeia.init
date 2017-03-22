@@ -11,19 +11,19 @@
 #                    <...>
 ### END INIT INFO
 
-# Author: CAcert Software Team <cacert-devel@cacert.org>
+# Author: WPIA Software Team <software@wpia.club>
 
 # Do NOT "set -e"
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="cacert's signer software"
-NAME=cacert-cassiopeia
+DESC="wpia's signer software"
+NAME=wpia-cassiopeia
 DAEMON=/usr/bin/cassiopeia
 DAEMON_ARGS=
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
-DIR=/var/lib/cacert-gigi
+DIR=/var/lib/wpia-gigi
 
 # Exit if the package is not installed
 [ -x "$DAEMON" ] || exit 0
@@ -48,7 +48,7 @@ fi
 #
 do_start()
 {
-	if [ ! -f /etc/cacert/cassiopeia/cassiopeia.conf ]; then
+	if [ ! -f /etc/wpia/cassiopeia/cassiopeia.conf ]; then
 		echo Missing cassiopeia-configfile
                 exit 2
         fi
@@ -59,7 +59,7 @@ do_start()
         start-stop-daemon -b --start --quiet --pidfile $PIDFILE -d $DIR --exec $DAEMON --test > /dev/null \
 		|| return 1
 	start-stop-daemon -b --start --quiet --pidfile $PIDFILE --make-pidfile -d $DIR -c nobody --exec $DAEMON --no-close -- \
-		>> /var/log/cacert-cassiopeia.log 2>&1 \
+		>> /var/log/wpia-cassiopeia.log 2>&1 \
 		|| return 2
 	# The above code will not work for interpreted scripts, use the next
 	# six lines below instead (Ref: #643337, start-stop-daemon(8) )

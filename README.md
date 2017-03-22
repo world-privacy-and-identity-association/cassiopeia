@@ -1,4 +1,4 @@
 Cassiopeia
 =================
 
-Signing Module for CAcert
+Signing Module for WPIA
