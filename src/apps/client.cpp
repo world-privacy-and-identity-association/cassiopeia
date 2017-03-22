@@ -59,6 +59,7 @@ int main( int argc, const char* argv[] ) {
     if( argc == 2 && std::string( "--once" ) == argv[1] ) {
         once = true;
     }
+
     if( argc == 2 && std::string( "--reset" ) == argv[1] ) {
         resetOnly = true;
     }
@@ -80,9 +81,10 @@ int main( int argc, const char* argv[] ) {
         logger::fatal( "Error: no serial device is given!" );
         return -1;
     }
+
     std::shared_ptr<JobProvider> jp = std::make_shared<PostgresJobProvider>( sqlHost, sqlUser, sqlPass, sqlDB );
     std::shared_ptr<BIO> b = openSerial( serialPath );
-    std::shared_ptr<BIO_METHOD> m( toBio<SlipBIO>(), BIO_meth_free);
+    std::shared_ptr<BIO_METHOD> m( toBio<SlipBIO>(), BIO_meth_free );
     std::shared_ptr<BIO> slip1( BIO_new( m.get() ), BIO_free );
     static_cast<SlipBIO*>( slip1->ptr )->setTarget( std::make_shared<OpensslBIOWrapper>( b ), false );
     auto sign = std::make_shared<RemoteSigner>( slip1, generateSSLContext( false ) );
@@ -98,7 +100,7 @@ int main( int argc, const char* argv[] ) {
     time_t lastCRLCheck = 0;
 
     while( true ) {
-	try {
+        try {
             time_t current;
             time( &current );
 
@@ -114,11 +116,13 @@ int main( int argc, const char* argv[] ) {
             }
 
             std::shared_ptr<Job> job;
+
             try {
                 job = jp->fetchJob();
             } catch ( std::exception &e ){
-                logger::errorf ( "Exception while fetchJob: %s", e.what() );
-	    }
+                logger::errorf( "Exception while fetchJob: %s", e.what() );
+            }
+
             if( !job ) {
                 sleep( 5 );
                 continue;
@@ -126,7 +130,7 @@ int main( int argc, const char* argv[] ) {
 
             std::shared_ptr<std::ofstream> logPtr = openLogfile( std::string( "logs/" ) + job->id + std::string( "_" ) + job->warning + std::string( ".log" ) );
 
-            logger::logger_set log_set({logger::log_target(*logPtr, logger::level::debug)}, logger::auto_register::on);
+            logger::logger_set log_set( {logger::log_target( *logPtr, logger::level::debug )}, logger::auto_register::on );
 
             logger::note( "TASK ID: ", job->id );
             logger::note( "TRY:     ", job->warning );
@@ -168,7 +172,7 @@ int main( int argc, const char* argv[] ) {
                     }
 
                     logger::note( "FINE: CERTIFICATE LOG:\n", res->log,
-				  "FINE: CERTIFICATE:\n", res->certificate );
+                                  "FINE: CERTIFICATE:\n", res->certificate );
 
                     std::string fn = writeBackFile( job->target.c_str(), res->certificate, keyDir );
 
@@ -222,7 +226,7 @@ int main( int argc, const char* argv[] ) {
                 return 0;
             }
         } catch ( std::exception &e ){
-            logger::errorf ( "std::exception in mainloop: %s", e.what() );
+            logger::errorf( "std::exception in mainloop: %s", e.what() );
         }
 
     }

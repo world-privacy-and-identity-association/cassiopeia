@@ -97,7 +97,7 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
         } );
 
     if( !SSL_CTX_set_cipher_list( ctx.get(), "HIGH:+CAMELLIA256:!eNull:!aNULL:!ADH:!MD5:-RSA+AES+SHA1:!RC4:!DES:!3DES:!SEED:!EXP:!AES128:!CAMELLIA128" ) ) {
-        throw std::runtime_error("Cannot set cipher list. Your source is broken.");
+        throw std::runtime_error( "Cannot set cipher list. Your source is broken." );
     }
 
     SSL_CTX_set_verify( ctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, verify_callback );
@@ -105,7 +105,7 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
     SSL_CTX_use_PrivateKey_file( ctx.get(), server ? "keys/signer_server.key" : "keys/signer_client.key", SSL_FILETYPE_PEM );
 
     if( 1 != SSL_CTX_load_verify_locations( ctx.get(), "keys/ca.crt", 0 ) ) {
-        throw std::runtime_error("Cannot load CA store for certificate validation.");
+        throw std::runtime_error( "Cannot load CA store for certificate validation." );
     }
 
     if( server ) {
@@ -126,12 +126,13 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
                 dh_param = std::shared_ptr<DH>( DH_new(), DH_free );
                 logger::note( "Generating DH params" );
                 BN_GENCB *cb = BN_GENCB_new();
-		BN_GENCB_set(cb, gencb, NULL);
+                BN_GENCB_set( cb, gencb, NULL );
 
                 if( !DH_generate_parameters_ex( dh_param.get(), 2048, 5, cb ) ) {
-                    throw std::runtime_error("DH generation failed");
+                    throw std::runtime_error( "DH generation failed" );
                 }
-		BN_GENCB_free(cb);
+
+                BN_GENCB_free( cb );
 
                 std::cout << std::endl;
                 paramfile = std::shared_ptr<FILE>( fopen( "dh_param.pem", "w" ), fclose );
@@ -143,7 +144,7 @@ std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
         }
 
         if( !SSL_CTX_set_tmp_dh( ctx.get(), dh_param.get() ) ) {
-            throw std::runtime_error("Cannot set tmp dh.");
+            throw std::runtime_error( "Cannot set tmp dh." );
         }
     }
 
@@ -154,7 +155,7 @@ void setupSerial( std::shared_ptr<FILE> f ) {
     struct termios attr;
 
     if( tcgetattr( fileno( f.get() ), &attr ) ) {
-        throw std::runtime_error("failed to get attrs");
+        throw std::runtime_error( "failed to get attrs" );
     }
 
     attr.c_iflag &= ~( IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON );
@@ -167,7 +168,7 @@ void setupSerial( std::shared_ptr<FILE> f ) {
     cfsetospeed( &attr, B115200 );
 
     if( tcsetattr( fileno( f.get() ), TCSANOW, &attr ) ) {
-        throw std::runtime_error("failed to get attrs");
+        throw std::runtime_error( "failed to get attrs" );
     }
 }
 
@@ -192,35 +193,40 @@ extern std::string crtPrefix;
 
 CAConfig::CAConfig( const std::string& name ) : path( "ca/" + name ), name( name ) {
     ca = loadX509FromFile( path + "/ca.crt" );
-    if (!ca) {
-        throw new std::invalid_argument("ca name: " + name + " contains unreadable certificate.");
+
+    if( !ca ) {
+        throw new std::invalid_argument( "ca name: " + name + " contains unreadable certificate." );
     }
 
     caKey = loadPkeyFromFile( path + "/ca.key" );
 
     ASN1_TIME* tm = X509_get_notBefore( ca.get() ); // tm MUST NOT be free'd; duplicate for owning copy.
-    notBefore = std::shared_ptr<ASN1_TIME>( ASN1_STRING_dup(tm), ASN1_TIME_free );
+    notBefore = std::shared_ptr<ASN1_TIME>( ASN1_STRING_dup( tm ), ASN1_TIME_free );
 
-    std::size_t pos = name.find("_");
-    if (pos == std::string::npos) {
-        throw new std::invalid_argument("ca name: " + name + " is malformed.");
-    }
-    std::size_t pos2 = name.find("_", pos + 1);
-    if (pos2 == std::string::npos) {
-        throw new std::invalid_argument("ca name: " + name + " is malformed.");
+    std::size_t pos = name.find( "_" );
+
+    if( pos == std::string::npos ) {
+        throw new std::invalid_argument( "ca name: " + name + " is malformed." );
     }
 
-    crlURL = crlPrefix + "/g2/" + name.substr(pos+1, pos2-pos - 1) + "/" + name.substr(0,pos) + "-" + name.substr(pos2+1) + ".crl";
-    crtURL = crtPrefix + "/g2/" + name.substr(pos+1, pos2-pos - 1) + "/" + name.substr(0,pos) + "-" + name.substr(pos2+1) + ".crt";
+    std::size_t pos2 = name.find( "_", pos + 1 );
+
+    if( pos2 == std::string::npos ) {
+        throw new std::invalid_argument( "ca name: " + name + " is malformed." );
+    }
+
+    crlURL = crlPrefix + "/g2/" + name.substr( pos + 1, pos2 - pos - 1 ) + "/" + name.substr( 0, pos ) + "-" + name.substr( pos2 + 1 ) + ".crl";
+    crtURL = crtPrefix + "/g2/" + name.substr( pos + 1, pos2 - pos - 1 ) + "/" + name.substr( 0, pos ) + "-" + name.substr( pos2 + 1 ) + ".crt";
 }
 
 std::string timeToString( std::shared_ptr<ASN1_TIME> time ) {
-  std::shared_ptr<ASN1_GENERALIZEDTIME> gtime( ASN1_TIME_to_generalizedtime( time.get(), 0 ), ASN1_GENERALIZEDTIME_free );
+    std::shared_ptr<ASN1_GENERALIZEDTIME> gtime( ASN1_TIME_to_generalizedtime( time.get(), 0 ), ASN1_GENERALIZEDTIME_free );
     std::string strdate( ( char* ) ASN1_STRING_get0_data( gtime.get() ), ASN1_STRING_length( gtime.get() ) );
 
-    logger::notef("openssl formatted me a date: %s", strdate);
+    logger::notef( "openssl formatted me a date: %s", strdate );
+
     if( strdate[strdate.size() - 1] != 'Z' ) {
-        throw std::runtime_error("Got invalid date?");
+        throw std::runtime_error( "Got invalid date?" );
     }
 
     return strdate.substr( 0, strdate.size() - 1 );

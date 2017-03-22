@@ -15,7 +15,7 @@ BOOST_AUTO_TEST_CASE( CSR ) {
     ERR_load_crypto_strings();
     ERR_free_strings();
     SSL_load_error_strings();
-    ERR_print_errors_fp(stdout);
+    ERR_print_errors_fp( stdout );
     BOOST_REQUIRE( ERR_peek_error() == 0 );
 
     // Testing a valid CSR

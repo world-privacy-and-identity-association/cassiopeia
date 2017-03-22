@@ -36,12 +36,12 @@ std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial(
     if( res == "" ) {
         bn = BN_new();
 
-        if( !bn || !BN_hex2bn( &bn, "1" )) {
-            throw std::runtime_error("Initing serial failed");
+        if( !bn || !BN_hex2bn( &bn, "1" ) ) {
+            throw std::runtime_error( "Initing serial failed" );
         }
     } else {
         if( !BN_hex2bn( &bn, res.c_str() ) ) {
-            throw std::runtime_error("Parsing serial failed.");
+            throw std::runtime_error( "Parsing serial failed." );
         }
     }
 
@@ -57,7 +57,7 @@ std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial(
     data.get()[len + 3] = profile & 0xFF; // profile id
 
     if( !RAND_bytes( data.get() + len + 4, 16 ) || !BN_add_word( serial.get(), 1 ) ) {
-        throw std::runtime_error("Big number math failed while fetching random data for serial number.");
+        throw std::runtime_error( "Big number math failed while fetching random data for serial number." );
     }
 
     std::shared_ptr<char> serStr = std::shared_ptr<char>(
@@ -68,12 +68,12 @@ std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial(
 
     writeFile( ca->path + "/serial", serStr.get() );
 
-    return std::pair<std::shared_ptr<BIGNUM>, std::string>( std::shared_ptr<BIGNUM>( BN_bin2bn( data.get(), len + 4 + 16 , 0 ), BN_free ), std::string( serStr.get() ) );
+    return std::pair<std::shared_ptr<BIGNUM>, std::string>( std::shared_ptr<BIGNUM>( BN_bin2bn( data.get(), len + 4 + 16, 0 ), BN_free ), std::string( serStr.get() ) );
 }
 
 std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TBSCertificate> cert ) {
     std::stringstream signlog;
-    logger::logger_set log_set_sign({logger::log_target(signlog, logger::level::debug)}, logger::auto_register::on);
+    logger::logger_set log_set_sign( {logger::log_target( signlog, logger::level::debug )}, logger::auto_register::on );
 
     logger::note( "FINE: Profile name is: ", cert->profile );
 
@@ -84,10 +84,11 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
 
     if( !ca ) {
         logger::error( "ERROR: Signing CA specified in profile could not be loaded." );
-        throw std::runtime_error("CA-key not found");
+        throw std::runtime_error( "CA-key not found" );
     }
-    if(!ca->caKey){
-        throw std::runtime_error("Cannot sign certificate with CA " + ca->name + " because it has no private key.");
+
+    if( !ca->caKey ) {
+        throw std::runtime_error( "Cannot sign certificate with CA " + ca->name + " because it has no private key." );
     }
 
     logger::note( "FINE: Key for Signing CA is correctly loaded." );
@@ -106,15 +107,15 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
         req = X509Req::parseCSR( cert->csr_content );
     } else {
         logger::errorf( "ERROR: Unknown type (\"%s\") of certification in request.", cert->csr_type );
-        throw std::runtime_error("Error, unknown REQ rype " + cert->csr_type ); //! \fixme: Pointer instead of string, please use proper exception classe)s
+        throw std::runtime_error( "Error, unknown REQ rype " + cert->csr_type ); //! \fixme: Pointer instead of string, please use proper exception classe)s
     }
 
     int i = req->verify();
 
     if( i < 0 ) {
-        throw std::runtime_error("Request contains a Signature with problems ... ");
+        throw std::runtime_error( "Request contains a Signature with problems ... " );
     } else if( i == 0 ) {
-        throw std::runtime_error("Request contains a Signature that does not match ...");
+        throw std::runtime_error( "Request contains a Signature that does not match ..." );
     } else {
         logger::note( "FINE: Request contains valid self-signature." );
     }
@@ -126,10 +127,12 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
 
     for( std::shared_ptr<AVA> a : cert->AVAs ) {
         logger::notef( "INFO: Trying to add RDN: %s: %s", a->name, a->value );
+
         if( a->value.empty() ) {
-            logger::notef( "INFO: Removing empty RDN: %s", a->name);
+            logger::notef( "INFO: Removing empty RDN: %s", a->name );
             continue;
         }
+
         if( a->name == "CN" ) {
             c.addRDN( NID_commonName, a->value );
         } else if( a->name == "EMAIL" ) {
@@ -146,7 +149,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
             c.addRDN( NID_organizationalUnitName, a->value );
         } else {
             logger::error( "ERROR: Trying to add illegal RDN/AVA type: ", a->name );
-            throw std::runtime_error("Unhandled/Illegal AVA type");
+            throw std::runtime_error( "Unhandled/Illegal AVA type" );
         }
     }
 
@@ -248,7 +251,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
 
         if( fn.empty() ) {
             logger::error( "ERROR: failed to get filename for storage of signed certificate." );
-            throw std::runtime_error("Storage location could not be determined");
+            throw std::runtime_error( "Storage location could not be determined" );
         }
 
         logger::note( "FINE: Certificate signed successfully." );
@@ -268,6 +271,7 @@ std::pair<std::shared_ptr<CRL>, std::string> SimpleOpensslSigner::revoke( std::s
     std::string date = "";
 
     logger::note( "adding serials" );
+
     for( std::string serial : serials ) {
         date = crl->revoke( serial, "" );
     }

@@ -54,6 +54,7 @@ int main( int argc, const char* argv[] ) try {
     DefaultRecordHandler* dh = new DefaultRecordHandler( std::shared_ptr<Signer>( new SimpleOpensslSigner( ) ), slip1 );
 
     logger::note( "Entering mainloop" );
+
     while( true ) {
         try {
             dh->handle();
@@ -72,12 +73,14 @@ int main( int argc, const char* argv[] ) try {
     }catch( std::exception &e){
         printf( "Fatal Error (+logger failed): %s!\n", e.what() );
     }
+
     return -1;
 } catch( ... ) {
-    try{
+    try {
         logger::fatal( "Fatal Error: Unknown Exception!\n" );
     }catch( std::exception &e){
         printf( "Fatal Error (+ logger failed): %s!\n", e.what() );
     }
+
     return -1;
 }

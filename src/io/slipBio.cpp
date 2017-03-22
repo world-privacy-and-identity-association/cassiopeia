@@ -61,6 +61,7 @@ int SlipBIO::write( const char* buf, int num ) {
 #ifdef SLIP_IO_DEBUG
     logger::notef( "slip-out: %s", toHex( buf, num ) );
 #endif
+
     if( waitForReset ) {
         logger::note( "denying read because of reset-need!" );
         return -1;
@@ -111,7 +112,7 @@ int SlipBIO::write( const char* buf, int num ) {
 #endif
 
         if( dlen < 0 ) {
-            throw std::runtime_error("Error, target write failed");
+            throw std::runtime_error( "Error, target write failed" );
         } else if( dlen == 0 ) {
             // sleep
             logger::note( "waiting for write ability" );
@@ -132,25 +133,30 @@ int SlipBIO::read( char* buf, int size ) {
 #ifdef UNMASK_DEBUG
     logger::note( "starting read" );
 #endif
+
     // while we have no data to decode or unmasking does not yield a full package
     while( decodeTarget == 0 ) {
         if( waitForReset ) {
             logger::note( "denying read because of reset-need!" );
             return -1;
         }
-        if(decodePos < rawPos) {
+
+        if( decodePos < rawPos ) {
             int res = unmask();
+
             if( res == 1 ) {
                 continue; // probably Packet :-)
-            } else if(res == -1) {
+            } else if( res == -1 ) {
                 logger::note( "sending reset because of malfomed packet" );
-               return -1;
+                return -1;
             }
         }
-        if( decodeTarget != 0 ){
+
+        if( decodeTarget != 0 ) {
             // we have data now, emit it!
             break;
         }
+
         // we have no data, read more
         if( buffer.size() - rawPos < 64 ) {
             // not enough space... package is too big
@@ -171,19 +177,23 @@ int SlipBIO::read( char* buf, int size ) {
 #endif
         int len = target->read( buffer.data() + rawPos, buffer.size() - rawPos );
 #ifdef RAW_IO_DEBUG
-        logger::note( toHex(buffer.data() + rawPos, len ) );
+        logger::note( toHex( buffer.data() + rawPos, len ) );
 #endif
+
         if( len > 0 ) {
             rawPos += len;
         } else {
-            logger::note("Reporting EOS from slip");
+            logger::note( "Reporting EOS from slip" );
             return -1;
             //decodeTarget = 0;
             //failed = true;
         }
 
     }
-    if( waitForReset ) return -1;
+
+    if( waitForReset ) {
+        return -1;
+    }
 
     int len = std::min( decodeTarget, ( unsigned int ) size );
     // a package finished, return it
@@ -197,8 +207,8 @@ int SlipBIO::read( char* buf, int size ) {
     convert << ", requested were: " << size;
     logger::note( convert.str() );
 #endif
-    
-    if(decodeTarget == 0 && rawPos <= decodePos + 1){
+
+    if( decodeTarget == 0 && rawPos <= decodePos + 1 ) {
         // compact the remaining at most 1 byte of raw data
         buffer[0] = buffer[decodePos];
         rawPos -= decodePos;
@@ -219,23 +229,25 @@ long SlipBIO::ctrl( int cmod, long arg1, void* arg2 ) {
 
     if( cmod == BIO_CTRL_RESET ) {
         decodeTarget = 0;
+
         if( server ) {
             waitForReset = false;
             waitForConnection = true;
             resetCounter = -1;
         } else {
             static char ctr = 8;
-            char resetSequence[] = {SLIP_CONNECTION, 1,2,3,4,5,6,7, ctr};
+            char resetSequence[] = {SLIP_CONNECTION, 1, 2, 3, 4, 5, 6, 7, ctr};
             target->write( resetSequence, 9 );
             header = {1, 2, 3, 4, 5, 6, 7, ctr};
             resetCounter = -1;
             waitForConnection = true;
             logger::note( "Resetting SLIP layer" );
         }
+
         return 0;
-    }else if(cmod == BIO_CTRL_FLUSH ){
+    } else if( cmod == BIO_CTRL_FLUSH ) {
 #ifdef UNMASK_DEBUG
-        logger::note( "flush requested ");
+        logger::note( "flush requested " );
 #endif
     }
 
@@ -257,82 +269,94 @@ int SlipBIO::unmask() {
     }
     logger::note( "unmasking" );
 #endif
-    if( waitForConnection ){
+
+    if( waitForConnection ) {
 #ifdef UNMASK_DEBUG
         logger::note( "scanning for connection" );
 #endif
         decodeTarget = 0;
+
         if( server ) {
 #ifdef UNMASK_DEBUG
-            logger::note( "on server site, waiting for CONNECTION-byte");
+            logger::note( "on server site, waiting for CONNECTION-byte" );
 #endif
-            while(decodePos < rawPos) {
-                if(buffer[decodePos] == SLIP_CONNECTION) {
+
+            while( decodePos < rawPos ) {
+                if( buffer[decodePos] == SLIP_CONNECTION ) {
                     resetCounter = 0;
 #ifdef UNMASK_DEBUG
                     logger::note( "got connection byte" );
 #endif
-                } else if(resetCounter >= 0) {
+                } else if( resetCounter >= 0 ) {
                     header[resetCounter] = buffer[decodePos];
                     resetCounter++;
                 }
+
                 decodePos++;
-                if( resetCounter >= ((int) header.size()) ){
+
+                if( resetCounter >= ( ( int ) header.size() ) ) {
                     waitForConnection = false;
                     char data[] = { SLIP_CONNECTION };
-                    target->write( data, 1);
+                    target->write( data, 1 );
 #ifdef UNMASK_DEBUG
-                    logger::notef( "SLIP, initing connection with ping-seq %s:", toHex(header.data(), header.size()) );
+                    logger::notef( "SLIP, initing connection with ping-seq %s:", toHex( header.data(), header.size() ) );
 #endif
                     target->write( header.data(), header.size() );
                     break;
                 }
             }
-            if( decodePos >= rawPos ){
+
+            if( decodePos >= rawPos ) {
                 decodePos = 0;
                 rawPos = 0;
                 return 0; // no package
             }
-            
+
         } else {
-            while(decodePos < rawPos) {
-                if(buffer[decodePos] == SLIP_CONNECTION) {
+            while( decodePos < rawPos ) {
+                if( buffer[decodePos] == SLIP_CONNECTION ) {
 #ifdef UNMASK_DEBUG
                     logger::note( "got connbyte" );
 #endif
                     resetCounter = 0;
-                } else if(resetCounter >= 0) {
+                } else if( resetCounter >= 0 ) {
 #ifdef UNMASK_DEBUG
                     logger::note( "got head-byte" );
 #endif
-                    if(buffer[decodePos] == header[resetCounter]) {
+
+                    if( buffer[decodePos] == header[resetCounter] ) {
                         resetCounter++;
                     } else {
                         resetCounter = -1;
                     }
                 }
+
                 decodePos++;
-                if( resetCounter >= ((int) header.size()) ){
+
+                if( resetCounter >= ( ( int ) header.size() ) ) {
                     waitForConnection = false;
 #ifdef UNMASK_DEBUG
-                    logger::note("connection found! :-)!");
+                    logger::note( "connection found! :-)!" );
 #endif
                     break;
                 }
             }
-            if( decodePos >= rawPos ){
+
+            if( decodePos >= rawPos ) {
                 rawPos = 0;
                 decodePos = 0;
                 return 0; // no package
             }
         }
     }
+
     unsigned int j = decodeTarget;
 
     for( unsigned int i = decodePos; i < rawPos; i++ ) {
-        if(waitForConnection && buffer[i] != SLIP_CONNECTION ) {
+        if( waitForConnection && buffer[i] != SLIP_CONNECTION ) {
             continue;
         }
+
         if( buffer[i] == SLIP_ESCAPE_CHAR ) {
             i++;
 
@@ -374,6 +398,7 @@ int SlipBIO::unmask() {
                 logger::note( "error connection failed" );
                 return -1;
             }
+
             logger::note( "got package border; slip re-validated SHOULD NEVER HAPPEN!!" );
             decodeTarget = 0;
             waitForConnection = false;
