@@ -1,6 +1,6 @@
 /files
-/cacert-cassiopeia
-/cacert-cassiopeia-doc
-/cacert-cassiopeia-signer
+/wpia-cassiopeia
+/wpia-cassiopeia-doc
+/wpia-cassiopeia-signer
 /*.substvars
 /*.debhelper
