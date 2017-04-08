@@ -44,6 +44,8 @@ Record Types/Commands
   Sets the desired starting date.
 (0x13) wishTo
   Sets the desired ending date (or validity-period).
+(0x14) ocspTargetCA
+  Used instead of (0x11) when signing OCSP certs. The payload is an exact time-CA name (e.g. orga_2017_1).
 (0x18) addSAN
   Adds a given SAN (Subject alternative name) to the certificate.
   (DNS,<dnsname> or email,<email address>)

@@ -38,6 +38,8 @@ struct TBSCertificate {
 
     std::string wishFrom;
     std::string wishTo;
+
+    std::string ocspCA;
 };
 
 struct SignedCertificate {

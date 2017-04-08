@@ -17,6 +17,8 @@
 #include "io/slipBio.h"
 #include "config.h"
 #include <internal/bio.h>
+#include <dirent.h>
+#include <crypto/X509.h>
 
 #ifdef NO_DAEMON
 #define DAEMON false
@@ -51,6 +53,88 @@ void checkCRLs( std::shared_ptr<Signer> sign ) {
         }
     }
 }
+
+bool pathExists( const std::string& name ) {
+    struct stat buffer;
+    return stat( name.c_str(), &buffer ) == 0;
+}
+
+void checkOCSP( std::shared_ptr<Signer> sign ) {
+    std::unique_ptr<DIR, std::function<void( DIR * )>> dp( opendir( "ca" ), []( DIR * d ) {
+        closedir( d );
+    } );
+
+    // When opendir fails and returns 0 the unique_ptr will be considered unintialized and will not call closedir.
+    // Even if closedir would be called, according to POSIX it MAY handle nullptr properly (for glibc it does).
+    if( !dp ) {
+        logger::error( "CA directory not found" );
+        return;
+    }
+
+    struct dirent *ep;
+
+    while( ( ep = readdir( dp.get() ) ) ) {
+        if( ep->d_name[0] == '.' ) {
+            continue;
+        }
+
+        std::string profileName( ep->d_name );
+        std::string csr = "ca/" + profileName + "/ocsp.csr";
+
+        if( ! pathExists( csr ) ) {
+            continue;
+        }
+
+        std::string crtName = "ca/" + profileName + "/ocsp.crt";
+
+        if( pathExists( crtName ) ) {
+            continue;
+        }
+
+        logger::notef( "Discovered OCSP CSR that needs action: %s", csr );
+        std::string req = readFile( csr );
+        std::shared_ptr<X509Req> parsed = X509Req::parseCSR( req );
+
+        if( parsed->verify() <= 0 ) {
+            logger::errorf( "Invalid CSR for %s", profileName );
+            continue;
+        }
+
+        auto cert = std::make_shared<TBSCertificate>();
+        cert->ocspCA = profileName;
+        cert->wishFrom = "now";
+        cert->wishTo = "1y";
+        cert->md = "sha512";
+
+        logger::note( "INFO: Message Digest: ", cert->md );
+
+        for( auto& SAN : cert->SANs ) {
+            logger::notef( "INFO: SAN %s: %s", SAN->type, SAN->content );
+        }
+
+        for( auto& AVA : cert->AVAs ) {
+            logger::notef( "INFO: AVA %s: %s", AVA->name, AVA->value );
+        }
+
+        cert->csr_content = req;
+        cert->csr_type = "CSR";
+        auto nAVA = std::make_shared<AVA>();
+        nAVA->name = "CN";
+        nAVA->value = "OCSP Responder";
+        cert->AVAs.push_back( nAVA );
+
+        std::shared_ptr<SignedCertificate> res = sign->sign( cert );
+
+        if( !res ) {
+            logger::error( "OCSP Cert signing failed." );
+            continue;
+        }
+
+        writeFile( crtName, res->certificate );
+        logger::notef( "Cert log: %s", res->log );
+    }
+}
+
 
 int main( int argc, const char *argv[] ) {
     bool once = false;
@@ -113,6 +197,8 @@ int main( int argc, const char *argv[] ) {
                 checkCRLs( sign );
                 lastCRLCheck = current;
             }
+
+            checkOCSP( sign );
 
             std::shared_ptr<Job> job;
 

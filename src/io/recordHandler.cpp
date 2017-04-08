@@ -112,6 +112,10 @@ public:
             tbs->wishTo = data;
             break;
 
+        case RecordHeader::SignerCommand::SET_OCSP_TARGET_CA:
+            tbs->ocspCA = data;
+            break;
+
         case RecordHeader::SignerCommand::ADD_SAN: {
             size_t pos = data.find( "," );
 

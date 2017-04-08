@@ -93,16 +93,20 @@ int parseProfiles() {
         prof.ku = map->at( "ku" );
         prof.maxValidity = std::stoi( map->at( "days" ) ) * /* DAYS */24 * 60 * 60;
 
-        std::string cas = map->at( "ca" );
 
         DIR *dir;
         struct dirent *ent;
 
-        if( ( dir = opendir( "ca" ) ) != NULL ) {
+        if( profileName == "0100-ocsp" ) {
+            //This profile does not have a specific CA. The concrete CA has to be set in each request.
+        } else if( ( dir = opendir( "ca" ) ) != NULL ) {
+            std::string cas = map->at( "ca" );
+            std::string toFind = cas + "_";
+
             while( ( ent = readdir( dir ) ) != NULL ) {
                 std::string caName = std::string( ent->d_name );
 
-                if( caName.find( cas ) != 0 ) {
+                if( caName.find( toFind ) != 0 ) {
                     continue;
                 }
 

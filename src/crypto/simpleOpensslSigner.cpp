@@ -18,6 +18,7 @@
 #include "sslUtil.h"
 
 extern std::unordered_map<std::string, Profile> profiles;
+extern std::unordered_map<std::string, std::shared_ptr<CAConfig>> CAs;
 
 std::shared_ptr<int> SimpleOpensslSigner::lib_ref = ssl_lib_ref;
 
@@ -74,12 +75,28 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     std::stringstream signlog;
     logger::logger_set log_set_sign( {logger::log_target( signlog, logger::level::debug )}, logger::auto_register::on );
 
-    logger::note( "FINE: Profile name is: ", cert->profile );
+    std::shared_ptr<CAConfig> ca;
+    Profile *prof;
 
-    Profile& prof = profiles.at( cert->profile );
-    logger::note( "FINE: Profile ID is: ", prof.id );
+    if( cert->ocspCA != "" ) {
+        auto caIterator = CAs.find( cert->ocspCA );
 
-    std::shared_ptr<CAConfig> ca = prof.getCA();
+        if( caIterator == CAs.end() ) {
+            logger::error( "ERROR: Signing CA specified in request for an OCSP cert could not be loaded." );
+            throw std::runtime_error( "CA-key for OCSP cert not found" );
+        }
+
+        ca = caIterator->second;
+        logger::note( "Trying to fetch OCSP-profile" );
+        prof = &profiles.at( "0100-ocsp" );
+        logger::note( "Done with it" );
+    } else {
+        logger::note( "FINE: Profile name is: ", cert->profile );
+
+        prof = &profiles.at( cert->profile );
+        logger::note( "FINE: Profile ID is: ", prof->id );
+        ca = prof->getCA();
+    }
 
     if( !ca ) {
         logger::error( "ERROR: Signing CA specified in profile could not be loaded." );
@@ -92,8 +109,8 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
 
     logger::note( "FINE: Key for Signing CA is correctly loaded." );
 
-    logger::note( "INFO: Baseline Key Usage is: ", prof.ku );
-    logger::note( "INFO: Extended Key Usage is: ", prof.eku );
+    logger::note( "INFO: Baseline Key Usage is: ", prof->ku );
+    logger::note( "INFO: Extended Key Usage is: ", prof->eku );
 
     logger::note( "FINE: Signing is wanted by: ", cert->wishFrom );
     logger::note( "FINE: Signing is wanted for: ", cert->wishTo );
@@ -207,7 +224,7 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
             to = from + /*2 Years */ 2 * 365 * 24 * 60 * 60;
         }
 
-        time_t limit = prof.maxValidity;
+        time_t limit = prof->maxValidity;
 
         if( ( to - from > limit ) || ( to - from < 0 ) ) {
             to = from + limit;
@@ -232,13 +249,13 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
     }
 
     logger::note( "INFO: Setting extensions:" );
-    c.setExtensions( ca->ca, cert->SANs, prof, ca->crlURL, ca->crtURL );
+    c.setExtensions( ca->ca, cert->SANs, *prof, ca->crlURL, ca->crtURL );
     logger::note( "FINE: Setting extensions successful." );
 
     logger::note( "INFO: Generating next Serial Number ..." );
     std::shared_ptr<BIGNUM> ser;
     std::string num;
-    std::tie( ser, num ) = nextSerial( prof, ca );
+    std::tie( ser, num ) = nextSerial( *prof, ca );
     c.setSerialNumber( ser.get() );
     logger::note( "FINE: Certificate Serial Number set to: ", num );
 
