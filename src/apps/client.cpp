@@ -140,6 +140,12 @@ int main( int argc, const char* argv[] ) {
             if( job->task == "sign" ) {
                 try {
                     std::shared_ptr<TBSCertificate> cert = jp->fetchTBSCert( job );
+                    if( !cert ) {
+                        logger::error( "Unable to load CSR" );
+                        jp->failJob( job );
+                        continue;
+                    }
+
                     cert->wishFrom = job->from;
                     cert->wishTo = job->to;
                     logger::note( "INFO: Message Digest: ", cert->md );
@@ -151,12 +157,6 @@ int main( int argc, const char* argv[] ) {
 
                     for( auto& AVA : cert->AVAs ) {
                         logger::notef( "INFO: AVA %s: %s", AVA->name, AVA->value );
-                    }
-
-                    if( !cert ) {
-                        logger::error( "Unable to load CSR" );
-                        jp->failJob( job );
-                        continue;
                     }
 
                     logger::notef( "FINE: Found the CSR at '%s'", cert->csr );
