@@ -29,7 +29,7 @@ std::string writeBackFile( const std::string& serial, const std::string& cert, c
 
     if( 0 != mkdir( filename.c_str(), 0755 ) ) {
         if( EEXIST != errno ) {
-            throw std::runtime_error("Storage location could not be determined");
+            throw std::runtime_error( "Storage location could not be determined" );
         }
 
         //! \FIXME: Check this is a directory
@@ -144,7 +144,7 @@ std::pair<bool, time_t> parseMonthInterval( std::time_t t, const std::string& da
 
     try {
         size_t end = 0;
-        int num = std::stoi( date.substr( 0, date.size() - 1 ) , &end );
+        int num = std::stoi( date.substr( 0, date.size() - 1 ), &end );
 
         if( end != date.size() - 1 ) {
             return  std::pair<bool, time_t>( false, 0 );
@@ -191,16 +191,18 @@ std::unique_ptr<std::ofstream> openLogfile( const std::string &name ) {
     auto res = std::make_unique<std::ofstream>( tname );
 
     if( ! res->good() ) {
-        throw std::runtime_error( std::string("Failed to open file for logging: " ) + name );
+        throw std::runtime_error( std::string( "Failed to open file for logging: " ) + name );
     }
 
     return res;
 }
 
-std::string timestamp(){
+std::string timestamp() {
     time_t c_time;
+
     if( time( &c_time ) == -1 ) {
         throw std::runtime_error( "Error while fetching time?" );
     }
+
     return std::to_string( c_time );
 }

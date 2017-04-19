@@ -68,14 +68,14 @@ BIO_METHOD* toBio() {
 
 template <typename T>
 BIO_METHOD* toBio( int ( *newfunc )( BIO* ) ) {
-    BIO_METHOD *meth = BIO_meth_new(T::typeID, T::getName());
-    BIO_meth_set_write(meth, BIOWrapper::write);
-    BIO_meth_set_read(meth, BIOWrapper::read);
-    BIO_meth_set_puts(meth, BIOWrapper::puts);
-    BIO_meth_set_gets(meth, BIOWrapper::gets);
-    BIO_meth_set_ctrl(meth, BIOWrapper::ctrl);
-    BIO_meth_set_destroy(meth, BIOWrapper::free);
-    BIO_meth_set_create(meth, newfunc);
+    BIO_METHOD *meth = BIO_meth_new( T::typeID, T::getName() );
+    BIO_meth_set_write( meth, BIOWrapper::write );
+    BIO_meth_set_read( meth, BIOWrapper::read );
+    BIO_meth_set_puts( meth, BIOWrapper::puts );
+    BIO_meth_set_gets( meth, BIOWrapper::gets );
+    BIO_meth_set_ctrl( meth, BIOWrapper::ctrl );
+    BIO_meth_set_destroy( meth, BIOWrapper::free );
+    BIO_meth_set_create( meth, newfunc );
 
     return meth;
 }

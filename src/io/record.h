@@ -90,7 +90,7 @@ public:
 
     void unpackFromString( const std::string& str ) {
         if( str.size() != RECORD_HEADER_SIZE ) {
-            throw std::runtime_error("Invalid string length");
+            throw std::runtime_error( "Invalid string length" );
         }
 
         auto it =  str.cbegin();
@@ -108,6 +108,6 @@ public:
 };
 
 std::string parseCommand( RecordHeader& head, const std::string& input );
-std::string parseCommandChunked( RecordHeader& head, std::shared_ptr<OpensslBIOWrapper> conn);
+std::string parseCommandChunked( RecordHeader& head, std::shared_ptr<OpensslBIOWrapper> conn );
 
 void sendCommand( RecordHeader& head, const std::string& data, std::shared_ptr<OpensslBIO> bio );

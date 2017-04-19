@@ -45,7 +45,7 @@ public:
 
     RecordHandlerSession( DefaultRecordHandler* parent, std::shared_ptr<Signer> signer, std::shared_ptr<SSL_CTX> ctx, std::shared_ptr<BIO> output ) :
         tbs( std::make_shared<TBSCertificate>() ),
-        logFile(openLogfile( "logs/log_" + timestamp() ) ),
+        logFile( openLogfile( "logs/log_" + timestamp() ) ),
         logger{ std::cout, *logFile } {
         this->parent = parent;
         this->signer = signer;
@@ -160,9 +160,11 @@ public:
             }
 
             logger::note( "Shutting down SSL" );
+
             if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
                 logger::warn( "ERROR: SSL shutdown failed." );
             }
+
             io->ctrl( BIO_CTRL_FLUSH, 0, NULL );
             logger::note( "Shutted down SSL" );
 
@@ -207,7 +209,7 @@ public:
             break;
 
         default:
-            throw std::runtime_error("Unimplemented");
+            throw std::runtime_error( "Unimplemented" );
         }
     }
 };
@@ -222,13 +224,14 @@ void DefaultRecordHandler::reset() {
 
 void DefaultRecordHandler::handle() {
     if( !currentSession ) {
-        (void) BIO_reset( bio.get() );
+        ( void ) BIO_reset( bio.get() );
         logger::note( "New session allocated." );
         currentSession = std::make_shared<RecordHandlerSession>( this, signer, ctx, bio );
     }
+
     try {
         currentSession->work();
-    } catch( eof_exception e ){
+    } catch( eof_exception e ) {
         reset();
     }
 }

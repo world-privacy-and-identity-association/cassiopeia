@@ -75,7 +75,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
             RecordHeader head;
             std::string payload = parseCommandChunked( head, conn );
 
-            switch( static_cast<RecordHeader::SignerResult>( head.command )) {
+            switch( static_cast<RecordHeader::SignerResult>( head.command ) ) {
             case RecordHeader::SignerResult::CERTIFICATE:
                 result->certificate = payload;
                 break;
@@ -107,7 +107,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
             int dlen = BIO_write( bios.get(), buf, len );
 
             if( dlen <= 0 ) {
-                throw std::runtime_error("Memory error.");
+                throw std::runtime_error( "Memory error." );
             }
 
             len -= dlen;
@@ -117,10 +117,10 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
         std::shared_ptr<X509> pem( PEM_read_bio_X509( bios.get(), NULL, 0, NULL ), X509_free );
 
         if( !pem ) {
-            throw std::runtime_error("Pem was not readable");
+            throw std::runtime_error( "Pem was not readable" );
         }
 
-        std::shared_ptr<BIGNUM> ser( ASN1_INTEGER_to_BN( X509_get_serialNumber(pem.get()), NULL), BN_free );
+        std::shared_ptr<BIGNUM> ser( ASN1_INTEGER_to_BN( X509_get_serialNumber( pem.get() ), NULL ), BN_free );
         std::shared_ptr<char> serStr(
             BN_bn2hex( ser.get() ),
             []( char* p ) {
@@ -133,9 +133,11 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     }
 
     logger::note( "Closing SSL connection" );
+
     if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) { // need to close the connection twice
         logger::warn( "SSL shutdown failed" );
     }
+
     logger::note( "SSL connection closed" );
 
     return result;
@@ -169,7 +171,7 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
     std::string date;
 
     if( static_cast<RecordHeader::SignerResult>( head.command ) != RecordHeader::SignerResult::REVOKED ) {
-        throw std::runtime_error("Protocol violation");
+        throw std::runtime_error( "Protocol violation" );
     }
 
     const unsigned char* buffer2 = reinterpret_cast<const unsigned char*>( payload.data() );
@@ -196,7 +198,7 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
         payload = parseCommandChunked( head, conn );
 
         if( static_cast<RecordHeader::SignerResult>( head.command ) != RecordHeader::SignerResult::FULL_CRL ) {
-            throw std::runtime_error("Protocol violation");
+            throw std::runtime_error( "Protocol violation" );
         }
 
         std::string name_bak = ca->path + std::string( "/ca.crl.bak" );
@@ -204,9 +206,10 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
         crl = std::make_shared<CRL>( name_bak );
 
         if( crl->verify( ca ) ) {
-            if( rename( name_bak.c_str(), tgtName.c_str() ) != 0 ){
+            if( rename( name_bak.c_str(), tgtName.c_str() ) != 0 ) {
                 logger::warn( "Moving new CRL over old CRL failed" );
             }
+
             logger::note( "CRL is now valid again" );
         } else {
             logger::warn( "CRL is still broken... Please, help me" );
@@ -214,9 +217,11 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
     }
 
     logger::note( "Closing SSL connection" );
+
     if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) { // need to close the connection twice
         logger::warn( "SSL shutdown failed" );
     }
+
     logger::note( "SSL connection closed" );
 
     return { crl, date };

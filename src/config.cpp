@@ -23,7 +23,7 @@ std::shared_ptr<std::unordered_map<std::string, std::string>> parseConf( std::st
 
     if( !config.is_open() ) {
         logger::notef( "Where is \"%s\"?", path );
-        throw std::runtime_error("Config missing");
+        throw std::runtime_error( "Config missing" );
     }
 
     std::string line1;
@@ -117,7 +117,7 @@ int parseProfiles() {
 
             closedir( dir );
         } else {
-            throw std::runtime_error("Directory with CAConfigs not found");
+            throw std::runtime_error( "Directory with CAConfigs not found" );
         }
 
         profiles.emplace( profileName, prof );

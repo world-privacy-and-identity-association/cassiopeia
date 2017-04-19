@@ -16,34 +16,36 @@ CRL::CRL( std::string path ) {
 std::string CRL::revoke( std::string serial, std::string time ) {
     BIGNUM* serBN = 0;
 
-    logger::note("parsing serial");
+    logger::note( "parsing serial" );
+
     if( ! BN_hex2bn( &serBN, serial.c_str() ) ) {
-        throw std::runtime_error("hex2bn malloc fail");
+        throw std::runtime_error( "hex2bn malloc fail" );
     }
 
     std::shared_ptr<BIGNUM> serBNP( serBN, BN_free );
     std::shared_ptr<ASN1_INTEGER> ser( BN_to_ASN1_INTEGER( serBN, NULL ), ASN1_INTEGER_free );
 
     if( !ser ) {
-        throw std::runtime_error("BN Malloc fail");
+        throw std::runtime_error( "BN Malloc fail" );
     }
 
-    logger::note("building current time");
+    logger::note( "building current time" );
     std::shared_ptr<ASN1_TIME> tmptm( ASN1_TIME_new(), ASN1_TIME_free );
 
     if( !tmptm ) {
-        throw std::runtime_error("ASN1-Time Malloc fail");
+        throw std::runtime_error( "ASN1-Time Malloc fail" );
     }
 
     X509_gmtime_adj( tmptm.get(), 0 );
 
-    logger::note("creating entry");
+    logger::note( "creating entry" );
     X509_REVOKED* rev = X509_REVOKED_new();
     X509_REVOKED_set_serialNumber( rev, ser.get() );
 
     if( time != "" ) {
-      ASN1_TIME_set_string( tmptm.get(), time.data() );
+        ASN1_TIME_set_string( tmptm.get(), time.data() );
     }
+
     X509_REVOKED_set_revocationDate( rev, tmptm.get() );
 
     X509_CRL_add0_revoked( crl.get(), rev );
@@ -58,38 +60,39 @@ std::string CRL::revoke( std::string serial, std::string time ) {
 }
 
 void CRL::sign( std::shared_ptr<CAConfig> ca ) {
-    if(!ca->caKey){
-        throw new std::invalid_argument("Cannot sign CRL with CA " + ca->name + " because it has no private key.");
+    if( !ca->caKey ) {
+        throw new std::invalid_argument( "Cannot sign CRL with CA " + ca->name + " because it has no private key." );
     }
 
     // Updating necessary CRL props
     std::shared_ptr<ASN1_TIME> tmptm( ASN1_TIME_new(), ASN1_TIME_free );
 
     if( !tmptm ) {
-        throw std::runtime_error("ASN1-Time Malloc fail");
+        throw std::runtime_error( "ASN1-Time Malloc fail" );
     }
 
     X509_gmtime_adj( tmptm.get(), 0 );
 
-    logger::note("setting issuer");
+    logger::note( "setting issuer" );
+
     if( !X509_CRL_set_issuer_name( crl.get(), X509_get_subject_name( ca->ca.get() ) ) ) {
-        throw std::runtime_error("Setting issuer failed");
+        throw std::runtime_error( "Setting issuer failed" );
     }
 
-    logger::note("setting update");
+    logger::note( "setting update" );
     X509_CRL_set_lastUpdate( crl.get(), tmptm.get() );
 
     if( !X509_time_adj_ex( tmptm.get(), 1, 10, NULL ) ) {
-        throw std::runtime_error("Updating time failed");
+        throw std::runtime_error( "Updating time failed" );
     }
 
-    logger::note("setting next update");
+    logger::note( "setting next update" );
     X509_CRL_set_nextUpdate( crl.get(), tmptm.get() );
 
-    logger::note("sorting");
+    logger::note( "sorting" );
     // Sorting and signing
     X509_CRL_sort( crl.get() );
-    logger::note("signing");
+    logger::note( "signing" );
     X509_CRL_sign( crl.get(), ca->caKey.get(), EVP_sha256() );
 }
 
@@ -112,18 +115,18 @@ std::string CRL::getSignature() {
     const X509_ALGOR *palg;
     const ASN1_BIT_STRING *psig;
 
-    X509_CRL_get0_signature(crl.get(), &psig, &palg);
-    int len = i2d_X509_ALGOR( const_cast<X509_ALGOR*>(palg), NULL );
-    len += i2d_ASN1_BIT_STRING( const_cast<ASN1_BIT_STRING*>(psig), NULL );
-    len += i2d_ASN1_TIME( const_cast<ASN1_TIME*>(X509_CRL_get0_lastUpdate(crl.get())), NULL );
-    len += i2d_ASN1_TIME( const_cast<ASN1_TIME*>(X509_CRL_get0_nextUpdate(crl.get())), NULL );
+    X509_CRL_get0_signature( crl.get(), &psig, &palg );
+    int len = i2d_X509_ALGOR( const_cast<X509_ALGOR*>( palg ), NULL );
+    len += i2d_ASN1_BIT_STRING( const_cast<ASN1_BIT_STRING*>( psig ), NULL );
+    len += i2d_ASN1_TIME( const_cast<ASN1_TIME*>( X509_CRL_get0_lastUpdate( crl.get() ) ), NULL );
+    len += i2d_ASN1_TIME( const_cast<ASN1_TIME*>( X509_CRL_get0_nextUpdate( crl.get() ) ), NULL );
 
     unsigned char* buffer = ( unsigned char* ) OPENSSL_malloc( len );
     unsigned char* pos = buffer;
-    i2d_X509_ALGOR( const_cast<X509_ALGOR*>(palg), &pos );
-    i2d_ASN1_BIT_STRING( const_cast<ASN1_BIT_STRING*>(psig), &pos );
-    i2d_ASN1_TIME( const_cast<ASN1_TIME*>(X509_CRL_get0_lastUpdate(crl.get())), &pos );
-    i2d_ASN1_TIME( const_cast<ASN1_TIME*>(X509_CRL_get0_nextUpdate(crl.get())), &pos );
+    i2d_X509_ALGOR( const_cast<X509_ALGOR*>( palg ), &pos );
+    i2d_ASN1_BIT_STRING( const_cast<ASN1_BIT_STRING*>( psig ), &pos );
+    i2d_ASN1_TIME( const_cast<ASN1_TIME*>( X509_CRL_get0_lastUpdate( crl.get() ) ), &pos );
+    i2d_ASN1_TIME( const_cast<ASN1_TIME*>( X509_CRL_get0_nextUpdate( crl.get() ) ), &pos );
     std::string res = std::string( ( char* ) buffer, len );
     OPENSSL_free( buffer );
 

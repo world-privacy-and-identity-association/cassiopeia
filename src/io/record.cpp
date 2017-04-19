@@ -27,17 +27,18 @@ std::string toHexAndChecksum( const std::string& src ) {
 void sendCommand( RecordHeader& head, const std::string& data, std::shared_ptr<OpensslBIO> bio ) {
     std::stringstream ss;
     ss << data.size();
-    logger::debugf( "Record payload length: %s", ss.str() ); 
+    logger::debugf( "Record payload length: %s", ss.str() );
     size_t pos = 0;
     head.offset = 0;
     head.totalLength = data.size();
+
     do {
-        size_t toTransfer = std::min(static_cast<size_t>(0xF000), data.size() - pos);
+        size_t toTransfer = std::min( static_cast<size_t>( 0xF000 ), data.size() - pos );
         head.payloadLength = toTransfer;
 
         std::string s;
         s += head.packToString();
-        s += data.substr(pos, toTransfer);
+        s += data.substr( pos, toTransfer );
 
         std::string res = toHexAndChecksum( s );
 
@@ -47,7 +48,7 @@ void sendCommand( RecordHeader& head, const std::string& data, std::shared_ptr<O
 
         pos += toTransfer;
         head.offset += 1;
-    } while(pos < data.size());
+    } while( pos < data.size() );
 }
 
 int32_t fromHexDigit( char c ) {
@@ -64,7 +65,7 @@ int32_t fromHexDigit( char c ) {
     return res;
 }
 
-std::string parseCommand( RecordHeader& head, const std::string& input) {
+std::string parseCommand( RecordHeader& head, const std::string& input ) {
     logger::debug( "FINE: RECORD input: ", input );
 
     int32_t dlen = ( input.size() - 2 ) / 2;
@@ -96,35 +97,43 @@ std::string parseCommand( RecordHeader& head, const std::string& input) {
         std::stringstream ss;
         ss << "Expected: " << expectedTotalLength << ", Got: " << input.size();
         logger::error( ss.str() );
-        throw std::length_error("Error, invalid length");
+        throw std::length_error( "Error, invalid length" );
     }
+
     if( checksum != -1 || error || dlen < RECORD_HEADER_SIZE ) {
-        throw std::runtime_error("Error, invalid checksum");
+        throw std::runtime_error( "Error, invalid checksum" );
     }
 
     data.pop_back();
 
     return data;
 }
-std::string parseCommandChunked( RecordHeader& head, std::shared_ptr<OpensslBIOWrapper> io){
-    logger::note("reading");
+std::string parseCommandChunked( RecordHeader& head, std::shared_ptr<OpensslBIOWrapper> io ) {
+    logger::note( "reading" );
     std::string payload = parseCommand( head, io->readLine() );
-    std::string all(head.totalLength, ' ');
+    std::string all( head.totalLength, ' ' );
     auto target = all.begin();
     size_t pos = 0;
     RecordHeader head2;
-    while(true) {
+
+    while( true ) {
         pos += head.payloadLength;
-        target = std::copy ( payload.begin(), payload.end(), target);
-        if(pos >= head.totalLength) {
+        target = std::copy( payload.begin(), payload.end(), target );
+
+        if( pos >= head.totalLength ) {
             break;
         }
-        logger::note("chunk digested, reading next one");
+
+        logger::note( "chunk digested, reading next one" );
+
         payload = parseCommand( head2, io->readLine() );
-        if(!head2.isFollowupOf(head)){
-            throw std::runtime_error("Error, header of follow up chunk was malformed");
+
+        if( !head2.isFollowupOf( head ) ) {
+            throw std::runtime_error( "Error, header of follow up chunk was malformed" );
         }
+
         head = head2;
     }
+
     return all;
 }
