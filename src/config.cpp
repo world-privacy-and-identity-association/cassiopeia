@@ -15,6 +15,7 @@ std::string sqlHost, sqlUser, sqlPass, sqlDB;
 std::string serialPath;
 std::string crlPrefix;
 std::string crtPrefix;
+std::string ocspPath;
 
 std::shared_ptr<std::unordered_map<std::string, std::string>> parseConf( std::string path ) {
     auto map = std::make_shared<std::unordered_map<std::string, std::string>>();
@@ -146,6 +147,14 @@ int parseConfig( std::string path ) {
     serialPath = masterConf->at( "serialPath" );
     crlPrefix = masterConf->at( "crlPrefix" );
     crtPrefix = masterConf->at( "crtPrefix" );
+
+    auto ocspPathEntry = masterConf->find( "ocsp.path" );
+
+    if( ocspPathEntry == masterConf->end() ) {
+        ocspPath = "";
+    } else {
+        ocspPath = ocspPathEntry->second;
+    }
 
     if( keyDir == "" ) {
         logger::error( "Missing config property key.directory" );

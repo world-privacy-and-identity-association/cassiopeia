@@ -176,6 +176,8 @@ merr:
     throw std::runtime_error( "memerr" );
 }
 
+extern std::string ocspPath;
+
 void X509Cert::setExtensions( std::shared_ptr<X509> caCert, std::vector<std::shared_ptr<SAN>>& sans, Profile& prof, std::string crlURL, std::string crtURL ) {
     add_ext( caCert, target, NID_basic_constraints, "critical,CA:FALSE" );
     add_ext( caCert, target, NID_subject_key_identifier, "hash" );
@@ -183,7 +185,7 @@ void X509Cert::setExtensions( std::shared_ptr<X509> caCert, std::vector<std::sha
     std::string ku = std::string( "critical," ) + prof.ku;
     add_ext( caCert, target, NID_key_usage, ku.c_str() );
     add_ext( caCert, target, NID_ext_key_usage, prof.eku.c_str() );
-    add_ext( caCert, target, NID_info_access, ( "OCSP;URI:http://ocsp.cacert.org,caIssuers;URI:" + crtURL ).c_str() );
+    add_ext( caCert, target, NID_info_access, ( ( ocspPath.empty() ? "" : "OCSP;URI:" + ocspPath + "," ) + "caIssuers;URI:" + crtURL ).c_str() );
     add_ext( caCert, target, NID_crl_distribution_points, ( "URI:" + crlURL ).c_str() );
 
     if( sans.empty() ) {
