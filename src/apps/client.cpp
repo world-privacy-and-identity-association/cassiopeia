@@ -59,6 +59,33 @@ bool pathExists( const std::string& name ) {
     return stat( name.c_str(), &buffer ) == 0;
 }
 
+void signOCSP( std::shared_ptr<Signer> sign, std::string profileName, std::string req, std::string crtName ) {
+    auto cert = std::make_shared<TBSCertificate>();
+    cert->ocspCA = profileName;
+    cert->wishFrom = "now";
+    cert->wishTo = "1y";
+    cert->md = "sha512";
+
+    logger::note( "INFO: Message Digest: ", cert->md );
+
+    cert->csr_content = req;
+    cert->csr_type = "CSR";
+    auto nAVA = std::make_shared<AVA>();
+    nAVA->name = "CN";
+    nAVA->value = "OCSP Responder";
+    cert->AVAs.push_back( nAVA );
+
+    std::shared_ptr<SignedCertificate> res = sign->sign( cert );
+
+    if( !res ) {
+        logger::error( "OCSP Cert signing failed." );
+        return;
+    }
+
+    writeFile( crtName, res->certificate );
+    logger::notef( "Cert log: %s", res->log );
+}
+
 void checkOCSP( std::shared_ptr<Signer> sign ) {
     std::unique_ptr<DIR, std::function<void( DIR * )>> dp( opendir( "ca" ), []( DIR * d ) {
         closedir( d );
@@ -100,38 +127,7 @@ void checkOCSP( std::shared_ptr<Signer> sign ) {
             continue;
         }
 
-        auto cert = std::make_shared<TBSCertificate>();
-        cert->ocspCA = profileName;
-        cert->wishFrom = "now";
-        cert->wishTo = "1y";
-        cert->md = "sha512";
-
-        logger::note( "INFO: Message Digest: ", cert->md );
-
-        for( auto& SAN : cert->SANs ) {
-            logger::notef( "INFO: SAN %s: %s", SAN->type, SAN->content );
-        }
-
-        for( auto& AVA : cert->AVAs ) {
-            logger::notef( "INFO: AVA %s: %s", AVA->name, AVA->value );
-        }
-
-        cert->csr_content = req;
-        cert->csr_type = "CSR";
-        auto nAVA = std::make_shared<AVA>();
-        nAVA->name = "CN";
-        nAVA->value = "OCSP Responder";
-        cert->AVAs.push_back( nAVA );
-
-        std::shared_ptr<SignedCertificate> res = sign->sign( cert );
-
-        if( !res ) {
-            logger::error( "OCSP Cert signing failed." );
-            continue;
-        }
-
-        writeFile( crtName, res->certificate );
-        logger::notef( "Cert log: %s", res->log );
+        signOCSP( sign, profileName, req, crtName );
     }
 }
 
