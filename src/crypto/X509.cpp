@@ -197,7 +197,7 @@ void X509Cert::setExtensions( std::shared_ptr<X509> caCert, std::vector<std::sha
             sk_GENERAL_NAME_pop_free( ref, GENERAL_NAME_free );
         }
     };
-    std::shared_ptr<GENERAL_NAMES> gens = std::shared_ptr<GENERAL_NAMES>( sk_GENERAL_NAME_new_null(), freeGeneralNames );
+    std::shared_ptr<GENERAL_NAMES> gens( sk_GENERAL_NAME_new_null(), freeGeneralNames );
 
     for( auto& name : sans ) {
         GENERAL_NAME *gen = GENERAL_NAME_new();
