@@ -11,9 +11,9 @@ BOOST_AUTO_TEST_SUITE( TestLogger )
 
 static inline bool head_and_tail_equal( const std::string& str, const std::string& head, const std::string& tail ) {
     return str.size() >= head.size() + tail.size()
-            and std::equal( head.begin(), head.end(), str.begin() )
-            and std::equal( tail.rbegin(), tail.rend(), str.rbegin() )
-            ;
+           and std::equal( head.begin(), head.end(), str.begin() )
+           and std::equal( tail.rbegin(), tail.rend(), str.rbegin() )
+           ;
 }
 
 BOOST_AUTO_TEST_CASE( basic_log ) {

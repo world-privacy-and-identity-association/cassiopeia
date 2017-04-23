@@ -7,8 +7,8 @@
 #include <openssl/bio.h>
 #include <openssl/x509v3.h>
 
-X509Req::X509Req( X509_REQ* csr ) : req( csr, X509_REQ_free ) {
-    EVP_PKEY* pkt = X509_REQ_get_pubkey( req.get() );
+X509Req::X509Req( X509_REQ *csr ) : req( csr, X509_REQ_free ) {
+    EVP_PKEY *pkt = X509_REQ_get_pubkey( req.get() );
 
     if( !pkt ) {
         throw std::runtime_error( "Error extracting public key" );
@@ -23,14 +23,14 @@ X509Req::X509Req( std::string spkac ) {
     }
 
     spkac = spkac.substr( 6 );
-    NETSCAPE_SPKI* spki_p = NETSCAPE_SPKI_b64_decode( spkac.c_str(), spkac.size() );
+    NETSCAPE_SPKI *spki_p = NETSCAPE_SPKI_b64_decode( spkac.c_str(), spkac.size() );
 
     if( !spki_p ) {
         throw std::runtime_error( "Error: decode failed" );
     }
 
     spki = std::shared_ptr<NETSCAPE_SPKI>( spki_p, NETSCAPE_SPKI_free );
-    EVP_PKEY* pkt_p = NETSCAPE_SPKI_get_pubkey( spki.get() );
+    EVP_PKEY *pkt_p = NETSCAPE_SPKI_get_pubkey( spki.get() );
 
     if( !pkt_p ) {
         throw std::runtime_error( "Error: reading SPKAC Pubkey failed" );
@@ -52,8 +52,8 @@ std::shared_ptr<EVP_PKEY> X509Req::getPkey() const {
 }
 
 std::shared_ptr<X509Req> X509Req::parseCSR( std::string content ) {
-    std::shared_ptr<BIO> in = std::shared_ptr<BIO>( BIO_new_mem_buf( const_cast<char*>( content.c_str() ), -1 ), BIO_free );
-    X509_REQ* req = PEM_read_bio_X509_REQ( in.get(), NULL, NULL, NULL );
+    std::shared_ptr<BIO> in = std::shared_ptr<BIO>( BIO_new_mem_buf( const_cast<char *>( content.c_str() ), -1 ), BIO_free );
+    X509_REQ *req = PEM_read_bio_X509_REQ( in.get(), NULL, NULL, NULL );
 
     if( !req ) {
         throw std::runtime_error( "Error parsing CSR" );
@@ -66,8 +66,8 @@ std::shared_ptr<X509Req> X509Req::parseSPKAC( std::string content ) {
     return std::shared_ptr<X509Req>( new X509Req( content ) );
 }
 
-int add_ext( std::shared_ptr<X509> issuer, std::shared_ptr<X509> subj, int nid, const char* value ) {
-    X509_EXTENSION* ex;
+int add_ext( std::shared_ptr<X509> issuer, std::shared_ptr<X509> subj, int nid, const char *value ) {
+    X509_EXTENSION *ex;
     X509V3_CTX ctx;
 
     /* This sets the 'context' of the extensions. */
@@ -78,7 +78,7 @@ int add_ext( std::shared_ptr<X509> issuer, std::shared_ptr<X509> subj, int nid, 
      * no request and no CRL
      */
     X509V3_set_ctx( &ctx, issuer.get(), subj.get(), NULL, NULL, 0 );
-    ex = X509V3_EXT_conf_nid( NULL, &ctx, nid, const_cast<char*>( value ) );
+    ex = X509V3_EXT_conf_nid( NULL, &ctx, nid, const_cast<char *>( value ) );
 
     if( !ex ) {
         return 0;
@@ -91,7 +91,7 @@ int add_ext( std::shared_ptr<X509> issuer, std::shared_ptr<X509> subj, int nid, 
 }
 
 X509Cert::X509Cert() {
-    X509* c = X509_new();
+    X509 *c = X509_new();
 
     if( !c ) {
         throw std::runtime_error( "malloc failed" );
@@ -103,7 +103,7 @@ X509Cert::X509Cert() {
         throw std::runtime_error( "Setting X509-version to 3 failed" );
     }
 
-    X509_NAME* subjectP = X509_NAME_new();
+    X509_NAME *subjectP = X509_NAME_new();
 
     if( !subjectP ) {
         throw std::runtime_error( "malloc failure in construct." );
@@ -113,7 +113,7 @@ X509Cert::X509Cert() {
 }
 
 void X509Cert::addRDN( int nid, std::string data ) {
-    if( ! X509_NAME_add_entry_by_NID( subject.get(), nid, MBSTRING_UTF8, ( unsigned char* )const_cast<char*>( data.data() ), data.size(), -1, 0 ) ) {
+    if( ! X509_NAME_add_entry_by_NID( subject.get(), nid, MBSTRING_UTF8, ( unsigned char * )const_cast<char *>( data.data() ), data.size(), -1, 0 ) ) {
         throw std::runtime_error( "malloc failure in RDN" );
     }
 }
@@ -132,8 +132,8 @@ void X509Cert::setPubkeyFrom( std::shared_ptr<X509Req> req ) {
     }
 }
 
-void X509Cert::setSerialNumber( BIGNUM* num ) {
-    ASN1_INTEGER *i = BN_to_ASN1_INTEGER( num, NULL);
+void X509Cert::setSerialNumber( BIGNUM *num ) {
+    ASN1_INTEGER *i = BN_to_ASN1_INTEGER( num, NULL );
     X509_set_serialNumber( target.get(), i );
     ASN1_INTEGER_free( i );
 }
@@ -143,11 +143,11 @@ void X509Cert::setTimes( uint32_t before, uint32_t after ) {
     ASN1_TIME_set( X509_get_notAfter( target.get() ), after );
 }
 
-static X509_EXTENSION* do_ext_i2d( int ext_nid, int crit, ASN1_VALUE* ext_struc ) {
-    unsigned char* ext_der;
+static X509_EXTENSION *do_ext_i2d( int ext_nid, int crit, ASN1_VALUE *ext_struc ) {
+    unsigned char *ext_der;
     int ext_len;
-    ASN1_OCTET_STRING* ext_oct;
-    X509_EXTENSION* ext;
+    ASN1_OCTET_STRING *ext_oct;
+    X509_EXTENSION *ext;
     /* Convert internal representation to DER */
     ext_der = NULL;
     ext_len = ASN1_item_i2d( ext_struc, &ext_der, ASN1_ITEM_ptr( ASN1_ITEM_ref( GENERAL_NAMES ) ) );
@@ -199,7 +199,7 @@ void X509Cert::setExtensions( std::shared_ptr<X509> caCert, std::vector<std::sha
         } );
 
     for( auto& name : sans ) {
-        GENERAL_NAME* gen = GENERAL_NAME_new();
+        GENERAL_NAME *gen = GENERAL_NAME_new();
 
         if( !gen ) {
             throw std::runtime_error( "Malloc failure." );
@@ -217,7 +217,7 @@ void X509Cert::setExtensions( std::shared_ptr<X509> caCert, std::vector<std::sha
         sk_GENERAL_NAME_push( gens.get(), gen );
     }
 
-    X509_EXTENSION* ext = do_ext_i2d( NID_subject_alt_name, 0/*critical*/, ( ASN1_VALUE* )gens.get() );
+    X509_EXTENSION *ext = do_ext_i2d( NID_subject_alt_name, 0/*critical*/, ( ASN1_VALUE * )gens.get() );
 
     X509_add_ext( target.get(), ext, -1 );
     X509_EXTENSION_free( ext );
@@ -228,7 +228,7 @@ std::shared_ptr<SignedCertificate> X509Cert::sign( std::shared_ptr<EVP_PKEY> caK
         throw std::runtime_error( "error setting subject" );
     }
 
-    const EVP_MD* md;
+    const EVP_MD *md;
 
     if( signAlg == "sha512" ) {
         md = EVP_sha512();
@@ -258,7 +258,7 @@ std::shared_ptr<SignedCertificate> X509Cert::sign( std::shared_ptr<EVP_PKEY> caK
 
     PEM_write_bio_X509( mem.get(), target.get() );
 
-    BUF_MEM* buf = NULL;
+    BUF_MEM *buf = NULL;
     BIO_get_mem_ptr( mem.get(), &buf );
 
     auto res = std::make_shared<SignedCertificate>();

@@ -14,7 +14,7 @@ CRL::CRL( std::string path ) {
 }
 
 std::string CRL::revoke( std::string serial, std::string time ) {
-    BIGNUM* serBN = 0;
+    BIGNUM *serBN = 0;
 
     logger::note( "parsing serial" );
 
@@ -39,7 +39,7 @@ std::string CRL::revoke( std::string serial, std::string time ) {
     X509_gmtime_adj( tmptm.get(), 0 );
 
     logger::note( "creating entry" );
-    X509_REVOKED* rev = X509_REVOKED_new();
+    X509_REVOKED *rev = X509_REVOKED_new();
     X509_REVOKED_set_serialNumber( rev, ser.get() );
 
     if( time != "" ) {
@@ -51,10 +51,10 @@ std::string CRL::revoke( std::string serial, std::string time ) {
     X509_CRL_add0_revoked( crl.get(), rev );
 
     int len = i2d_ASN1_TIME( tmptm.get(), NULL );
-    unsigned char* buffer = ( unsigned char* ) OPENSSL_malloc( len );
-    unsigned char* pos = buffer;
+    unsigned char *buffer = ( unsigned char * ) OPENSSL_malloc( len );
+    unsigned char *pos = buffer;
     i2d_ASN1_TIME( tmptm.get(), &pos );
-    std::string rettime = std::string( ( char* ) buffer, len );
+    std::string rettime = std::string( ( char * ) buffer, len );
     OPENSSL_free( buffer );
     return rettime;
 }
@@ -105,7 +105,7 @@ std::string CRL::toString() {
     // Write out the new CRL
     std::shared_ptr<BIO> mem( BIO_new( BIO_s_mem() ), BIO_free );
     PEM_write_bio_X509_CRL( mem.get(), crl.get() );
-    BUF_MEM* bptr;
+    BUF_MEM *bptr;
     BIO_get_mem_ptr( mem.get(), &bptr );
     std::string newCRL( bptr->data, bptr->length );
     return newCRL;
@@ -116,18 +116,18 @@ std::string CRL::getSignature() {
     const ASN1_BIT_STRING *psig;
 
     X509_CRL_get0_signature( crl.get(), &psig, &palg );
-    int len = i2d_X509_ALGOR( const_cast<X509_ALGOR*>( palg ), NULL );
-    len += i2d_ASN1_BIT_STRING( const_cast<ASN1_BIT_STRING*>( psig ), NULL );
-    len += i2d_ASN1_TIME( const_cast<ASN1_TIME*>( X509_CRL_get0_lastUpdate( crl.get() ) ), NULL );
-    len += i2d_ASN1_TIME( const_cast<ASN1_TIME*>( X509_CRL_get0_nextUpdate( crl.get() ) ), NULL );
+    int len = i2d_X509_ALGOR( const_cast<X509_ALGOR *>( palg ), NULL );
+    len += i2d_ASN1_BIT_STRING( const_cast<ASN1_BIT_STRING *>( psig ), NULL );
+    len += i2d_ASN1_TIME( const_cast<ASN1_TIME *>( X509_CRL_get0_lastUpdate( crl.get() ) ), NULL );
+    len += i2d_ASN1_TIME( const_cast<ASN1_TIME *>( X509_CRL_get0_nextUpdate( crl.get() ) ), NULL );
 
-    unsigned char* buffer = ( unsigned char* ) OPENSSL_malloc( len );
-    unsigned char* pos = buffer;
-    i2d_X509_ALGOR( const_cast<X509_ALGOR*>( palg ), &pos );
-    i2d_ASN1_BIT_STRING( const_cast<ASN1_BIT_STRING*>( psig ), &pos );
-    i2d_ASN1_TIME( const_cast<ASN1_TIME*>( X509_CRL_get0_lastUpdate( crl.get() ) ), &pos );
-    i2d_ASN1_TIME( const_cast<ASN1_TIME*>( X509_CRL_get0_nextUpdate( crl.get() ) ), &pos );
-    std::string res = std::string( ( char* ) buffer, len );
+    unsigned char *buffer = ( unsigned char * ) OPENSSL_malloc( len );
+    unsigned char *pos = buffer;
+    i2d_X509_ALGOR( const_cast<X509_ALGOR *>( palg ), &pos );
+    i2d_ASN1_BIT_STRING( const_cast<ASN1_BIT_STRING *>( psig ), &pos );
+    i2d_ASN1_TIME( const_cast<ASN1_TIME *>( X509_CRL_get0_lastUpdate( crl.get() ) ), &pos );
+    i2d_ASN1_TIME( const_cast<ASN1_TIME *>( X509_CRL_get0_nextUpdate( crl.get() ) ), &pos );
+    std::string res = std::string( ( char * ) buffer, len );
     OPENSSL_free( buffer );
 
     return res;
@@ -138,23 +138,23 @@ void CRL::setSignature( std::string signature ) {
     X509_ALGOR *palg;
     ASN1_BIT_STRING *psig;
     // this is not intended use of the OPENSSL-API but API-limitations leave us with no other options.
-    X509_CRL_get0_signature(crl.get(), const_cast<const ASN1_BIT_STRING **>(&psig), const_cast<const X509_ALGOR**>(&palg));
+    X509_CRL_get0_signature( crl.get(), const_cast<const ASN1_BIT_STRING **>( &psig ), const_cast<const X509_ALGOR **>( &palg ) );
 
-    const unsigned char* data = ( unsigned char* )( signature.data() );
-    const unsigned char* buffer = data;
+    const unsigned char *data = ( unsigned char * )( signature.data() );
+    const unsigned char *buffer = data;
     X509_ALGOR *alg = d2i_X509_ALGOR( NULL, &buffer, signature.size() );
     ASN1_BIT_STRING *sig = d2i_ASN1_BIT_STRING( NULL, &buffer, signature.size() + data - buffer );
     ASN1_TIME *a1 = d2i_ASN1_TIME( NULL, &buffer, signature.size() + data - buffer );
     ASN1_TIME *a2 = d2i_ASN1_TIME( NULL, &buffer, signature.size() + data - buffer );
-    std::swap(*palg, *alg);
-    std::swap(*psig, *sig);
-    X509_CRL_set1_lastUpdate( crl.get(), a1);
-    X509_CRL_set1_nextUpdate( crl.get(), a2);
+    std::swap( *palg, *alg );
+    std::swap( *psig, *sig );
+    X509_CRL_set1_lastUpdate( crl.get(), a1 );
+    X509_CRL_set1_nextUpdate( crl.get(), a2 );
 
-    X509_ALGOR_free(alg);
-    ASN1_BIT_STRING_free(sig);
-    ASN1_TIME_free(a1);
-    ASN1_TIME_free(a2);
+    X509_ALGOR_free( alg );
+    ASN1_BIT_STRING_free( sig );
+    ASN1_TIME_free( a1 );
+    ASN1_TIME_free( a2 );
 }
 
 bool CRL::needsResign() {

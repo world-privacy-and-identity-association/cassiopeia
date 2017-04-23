@@ -25,7 +25,7 @@ std::shared_ptr<X509> loadX509FromFile( const std::string& filename ) {
         return std::shared_ptr<X509>();
     }
 
-    X509* key = PEM_read_X509( f.get(), NULL, NULL, 0 );
+    X509 *key = PEM_read_X509( f.get(), NULL, NULL, 0 );
 
     if( !key ) {
         return std::shared_ptr<X509>();
@@ -51,7 +51,7 @@ std::shared_ptr<EVP_PKEY> loadPkeyFromFile( const std::string& filename ) {
         return std::shared_ptr<EVP_PKEY>();
     }
 
-    EVP_PKEY* key = PEM_read_PrivateKey( f.get(), NULL, NULL, 0 );
+    EVP_PKEY *key = PEM_read_PrivateKey( f.get(), NULL, NULL, 0 );
 
     if( !key ) {
         return std::shared_ptr<EVP_PKEY>();
@@ -64,7 +64,7 @@ std::shared_ptr<EVP_PKEY> loadPkeyFromFile( const std::string& filename ) {
         } );
 }
 
-int gencb( int a, int b, BN_GENCB* g ) {
+int gencb( int a, int b, BN_GENCB *g ) {
     ( void ) a;
     ( void ) b;
     ( void ) g;
@@ -74,7 +74,7 @@ int gencb( int a, int b, BN_GENCB* g ) {
     return 1;
 }
 
-static int verify_callback( int preverify_ok, X509_STORE_CTX* ctx ) {
+static int verify_callback( int preverify_ok, X509_STORE_CTX *ctx ) {
     if( !preverify_ok ) {
         //auto cert = X509_STORE_CTX_get_current_cert(ctx);
         //BIO *o = BIO_new_fp(stdout,BIO_NOCLOSE);
@@ -200,7 +200,7 @@ CAConfig::CAConfig( const std::string& name ) : path( "ca/" + name ), name( name
 
     caKey = loadPkeyFromFile( path + "/ca.key" );
 
-    ASN1_TIME* tm = X509_get_notBefore( ca.get() ); // tm MUST NOT be free'd; duplicate for owning copy.
+    ASN1_TIME *tm = X509_get_notBefore( ca.get() ); // tm MUST NOT be free'd; duplicate for owning copy.
     notBefore = std::shared_ptr<ASN1_TIME>( ASN1_STRING_dup( tm ), ASN1_TIME_free );
 
     std::size_t pos = name.find( "_" );
@@ -221,7 +221,7 @@ CAConfig::CAConfig( const std::string& name ) : path( "ca/" + name ), name( name
 
 std::string timeToString( std::shared_ptr<ASN1_TIME> time ) {
     std::shared_ptr<ASN1_GENERALIZEDTIME> gtime( ASN1_TIME_to_generalizedtime( time.get(), 0 ), ASN1_GENERALIZEDTIME_free );
-    std::string strdate( ( char* ) ASN1_STRING_get0_data( gtime.get() ), ASN1_STRING_length( gtime.get() ) );
+    std::string strdate( ( char * ) ASN1_STRING_get0_data( gtime.get() ), ASN1_STRING_length( gtime.get() ) );
 
     logger::notef( "openssl formatted me a date: %s", strdate );
 
@@ -233,8 +233,12 @@ std::string timeToString( std::shared_ptr<ASN1_TIME> time ) {
 }
 
 void extractTimes( std::shared_ptr<X509> target,  std::shared_ptr<SignedCertificate> cert ) {
-    cert->before = timeToString( std::shared_ptr<ASN1_TIME>( X509_get_notBefore( target.get() ), [target](auto p){(void)p;} ) );
-    cert->after = timeToString( std::shared_ptr<ASN1_TIME>( X509_get_notAfter( target.get() ), [target](auto p){(void)p;} ) );
+    cert->before = timeToString( std::shared_ptr<ASN1_TIME>( X509_get_notBefore( target.get() ), [target]( auto p ) {
+        ( void )p;
+    } ) );
+    cert->after = timeToString( std::shared_ptr<ASN1_TIME>( X509_get_notAfter( target.get() ), [target]( auto p ) {
+        ( void )p;
+    } ) );
 }
 
 bool CAConfig::crlNeedsResign() {

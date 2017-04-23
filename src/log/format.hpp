@@ -93,19 +93,19 @@ namespace logger {
         template <typename... Args>
         formated_string fmt( const std::string& str, const Args& ... args ) {
             auto format = format_data{};
-            std::ignore = std::initializer_list<int>{( format.set( args ), 0 )...};
+            std::ignore = std::initializer_list<int> {( format.set( args ), 0 )...};
             return format( str );
         }
 
         template <typename Integer, typename... Args>
         formated_integer<Integer> fmt( const Integer i, const Args& ... args ) {
             auto format = format_data{};
-            std::ignore = std::initializer_list<int>{( format.set( args ), 0 )...};
+            std::ignore = std::initializer_list<int> {( format.set( args ), 0 )...};
             return format( i );
         }
 
         inline namespace literals {
-            format_data operator"" _fmt( const char*, std::size_t );
+            format_data operator"" _fmt( const char *, std::size_t );
         }
 
     } // namespace format
@@ -116,10 +116,10 @@ namespace logger {
         inline std::string to_string( const format::formated_integer<Integer>& arg ) {
             std::ostringstream stream;
             stream <<
-                std::setbase( arg.base ) <<
-                std::setw( arg.width ) <<
-                std::setfill( arg.fill ) <<
-                arg.value;
+                   std::setbase( arg.base ) <<
+                   std::setw( arg.width ) <<
+                   std::setfill( arg.fill ) <<
+                   arg.value;
             return stream.str();
         }
 

@@ -32,7 +32,7 @@ char hexDigit( char c ) {
     return 'x';
 }
 
-std::string toHex( const char* buf, int len ) {
+std::string toHex( const char *buf, int len ) {
     std::string data = "000000";
 
     for( int i = 0; i < len; i++ ) {
@@ -57,7 +57,7 @@ SlipBIO::SlipBIO( std::shared_ptr<OpensslBIO> target ) : target( target ), buffe
 
 SlipBIO::~SlipBIO() {}
 
-int SlipBIO::write( const char* buf, int num ) {
+int SlipBIO::write( const char *buf, int num ) {
 #ifdef SLIP_IO_DEBUG
     logger::notef( "slip-out: %s", toHex( buf, num ) );
 #endif
@@ -77,7 +77,7 @@ int SlipBIO::write( const char* buf, int num ) {
     }
 
     int totalLen = num + badOnes; // 2
-    char* targetPtr = ( char* ) malloc( totalLen );
+    char *targetPtr = ( char * ) malloc( totalLen );
 
     if( !targetPtr ) {
         return -1;
@@ -129,7 +129,7 @@ int SlipBIO::write( const char* buf, int num ) {
     return num;
 }
 
-int SlipBIO::read( char* buf, int size ) {
+int SlipBIO::read( char *buf, int size ) {
 #ifdef UNMASK_DEBUG
     logger::note( "starting read" );
 #endif
@@ -222,7 +222,7 @@ int SlipBIO::read( char* buf, int size ) {
     return len;
 }
 
-long SlipBIO::ctrl( int cmod, long arg1, void* arg2 ) {
+long SlipBIO::ctrl( int cmod, long arg1, void *arg2 ) {
     ( void ) cmod;
     ( void ) arg1;
     ( void ) arg2;
@@ -254,7 +254,7 @@ long SlipBIO::ctrl( int cmod, long arg1, void* arg2 ) {
     return target->ctrl( cmod, arg1, arg2 );
 }
 
-const char* SlipBIO::getName() {
+const char *SlipBIO::getName() {
     return "SlipBIO";
 }
 

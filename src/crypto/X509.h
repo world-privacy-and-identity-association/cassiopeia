@@ -13,7 +13,7 @@ private:
     std::shared_ptr<EVP_PKEY> pk;
     std::shared_ptr<X509_REQ> req;
     std::shared_ptr<NETSCAPE_SPKI> spki;
-    X509Req( X509_REQ* csr );
+    X509Req( X509_REQ *csr );
     X509Req( std::string spkac );
 public:
     static std::shared_ptr<X509Req> parseCSR( std::string content );
@@ -31,7 +31,7 @@ public:
     void addRDN( int nid, std::string data );
     void setIssuerNameFrom( std::shared_ptr<X509> ca );
     void setPubkeyFrom( std::shared_ptr<X509Req> r );
-    void setSerialNumber( BIGNUM* num );
+    void setSerialNumber( BIGNUM *num );
     void setExtensions( std::shared_ptr<X509> caCert, std::vector<std::shared_ptr<SAN>>& sans, Profile& prof, std::string crlURL, std::string crtURL );
     void setTimes( uint32_t before, uint32_t after );
     std::shared_ptr<SignedCertificate> sign( std::shared_ptr<EVP_PKEY> caKey, std::string signAlg );

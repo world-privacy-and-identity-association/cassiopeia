@@ -54,7 +54,7 @@ public:
 
     template <class T>
     static void append( std::string& str, T val ) {
-        str.append( ( char* ) &val, sizeof( T ) );
+        str.append( ( char * ) &val, sizeof( T ) );
     }
 
     template <class T>

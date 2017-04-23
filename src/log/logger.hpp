@@ -30,7 +30,7 @@ namespace logger {
         inline std::string to_string( const std::string& arg ) {
             return arg;
         }
-        inline std::string to_string( const char* arg ) {
+        inline std::string to_string( const char *arg ) {
             return arg;
         }
 
@@ -51,13 +51,13 @@ namespace logger {
                 throw std::runtime_error {"logfile not open"};
             }
         }
-        std::ostream* stream;
+        std::ostream *stream;
         level min_level;
     };
 
     class logger_set;
     namespace impl {
-        void reassign_stack_pointer( logger_set*& ptr );
+        void reassign_stack_pointer( logger_set *&ptr );
     }
 
     /**
@@ -72,7 +72,7 @@ namespace logger {
         logger_set( std::initializer_list<log_target> lst, auto_register = auto_register::on );
 
         logger_set( logger_set&& ) noexcept;
-        logger_set& operator=( logger_set && ) noexcept;
+        logger_set& operator=( logger_set&& ) noexcept;
         ~logger_set();
 
         template<typename... Args>
@@ -105,13 +105,13 @@ namespace logger {
         template<typename... Args>
         void fatalf( const std::string& format, Args&& ... args );
 
-        friend void impl::reassign_stack_pointer( logger_set*& ptr );
+        friend void impl::reassign_stack_pointer( logger_set *&ptr );
         friend logger_set current_logger_extended( std::initializer_list<log_target> further_targets );
     private:
         void log_impl( level l, const std::string& msg );
 
         std::vector<log_target> m_loggers;
-        logger_set** m_stackpointer = nullptr;
+        logger_set **m_stackpointer = nullptr;
         level m_min_level;
     };
 

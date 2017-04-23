@@ -46,13 +46,13 @@ void checkCRLs( std::shared_ptr<Signer> sign ) {
         try {
             std::vector<std::string> serials;
             std::pair<std::shared_ptr<CRL>, std::string> rev = sign->revoke( x.second, serials );
-        } catch( const std::exception &e ) {
+        } catch( const std::exception& e ) {
             logger::error( "Exception: ", e.what() );
         }
     }
 }
 
-int main( int argc, const char* argv[] ) {
+int main( int argc, const char *argv[] ) {
     bool once = false;
     bool resetOnly = false;
 
@@ -86,7 +86,7 @@ int main( int argc, const char* argv[] ) {
     std::shared_ptr<BIO> b = openSerial( serialPath );
     std::shared_ptr<BIO_METHOD> m( toBio<SlipBIO>(), BIO_meth_free );
     std::shared_ptr<BIO> slip1( BIO_new( m.get() ), BIO_free );
-    static_cast<SlipBIO*>( slip1->ptr )->setTarget( std::make_shared<OpensslBIOWrapper>( b ), false );
+    static_cast<SlipBIO *>( slip1->ptr )->setTarget( std::make_shared<OpensslBIOWrapper>( b ), false );
     auto sign = std::make_shared<RemoteSigner>( slip1, generateSSLContext( false ) );
     // std::shared_ptr<Signer> sign( new SimpleOpensslSigner() );
 
@@ -119,7 +119,7 @@ int main( int argc, const char* argv[] ) {
 
             try {
                 job = jp->fetchJob();
-            } catch ( std::exception &e ){
+            } catch( std::exception& e ) {
                 logger::errorf( "Exception while fetchJob: %s", e.what() );
             }
 
@@ -140,6 +140,7 @@ int main( int argc, const char* argv[] ) {
             if( job->task == "sign" ) {
                 try {
                     std::shared_ptr<TBSCertificate> cert = jp->fetchTBSCert( job );
+
                     if( !cert ) {
                         logger::error( "Unable to load CSR" );
                         jp->failJob( job );
@@ -209,7 +210,7 @@ int main( int argc, const char* argv[] ) {
                     logger::note( "revoking" );
                     std::pair<std::shared_ptr<CRL>, std::string> rev = sign->revoke( CAs.at( data.second ), serials );
                     std::string date = rev.second;
-                    const unsigned char* pos = ( const unsigned char* ) date.data();
+                    const unsigned char *pos = ( const unsigned char * ) date.data();
                     std::shared_ptr<ASN1_TIME> time( d2i_ASN1_TIME( NULL, &pos, date.size() ), ASN1_TIME_free );
 
                     jp->writeBackRevocation( job, timeToString( time ) );
@@ -225,7 +226,7 @@ int main( int argc, const char* argv[] ) {
             if( !DAEMON || once ) {
                 return 0;
             }
-        } catch ( std::exception &e ){
+        } catch( std::exception& e ) {
             logger::errorf( "std::exception in mainloop: %s", e.what() );
         }
 

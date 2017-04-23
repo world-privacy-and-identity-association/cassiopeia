@@ -20,19 +20,19 @@ public:
     OpensslBIOVector( std::vector<std::vector<char>> data ) : input( data ), it( input.begin() ), end( input.end() ) {
     }
 
-    int write( const char* buf, int num );
-    int read( char* buf, int size );
-    long ctrl( int cmod, long arg1, void* arg2 );
+    int write( const char *buf, int num );
+    int read( char *buf, int size );
+    long ctrl( int cmod, long arg1, void *arg2 );
 
-    static const char* getName();
+    static const char *getName();
 };
 
-int OpensslBIOVector::write( const char* buf, int num ) {
+int OpensslBIOVector::write( const char *buf, int num ) {
     result.push_back( std::vector<char>( buf, buf + num ) );
     return num;
 }
 
-int OpensslBIOVector::read( char* buf, int size ) {
+int OpensslBIOVector::read( char *buf, int size ) {
     if( it == end ) {
         return -1;
     }
@@ -47,14 +47,14 @@ int OpensslBIOVector::read( char* buf, int size ) {
     return result;
 }
 
-long OpensslBIOVector::ctrl( int cmod, long arg1, void* arg2 ) {
+long OpensslBIOVector::ctrl( int cmod, long arg1, void *arg2 ) {
     ( void ) cmod;
     ( void ) arg1;
     ( void ) arg2;
     return 0;
 }
 
-const char* OpensslBIOVector::getName() {
+const char *OpensslBIOVector::getName() {
     return "dummyBIO";
 }
 
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_SUITE( TestSLIPBioWrapper )
 BOOST_AUTO_TEST_CASE( TestMockup ) {
     std::vector<std::vector<char>> source = {{1, 2}, {1, 2, 3}, {1, 2, 3, 4}, {1, 2, 3, 4, 5}};
 
-    OpensslBIOVector* data = new OpensslBIOVector( source );
+    OpensslBIOVector *data = new OpensslBIOVector( source );
 
     char buf[4096];
 

@@ -117,7 +117,7 @@ std::pair<bool, time_t> parseDate( const std::string& date ) {
 }
 
 std::pair<bool, time_t> addMonths( std::time_t t, int32_t count ) {
-    std::tm* parsed = gmtime( &t );
+    std::tm *parsed = gmtime( &t );
 
     if( !parsed || count <= 0 || count > 24 ) { // FIXED MAX-Validity-Length
         return std::pair<bool, time_t>( false, 0 );
@@ -179,7 +179,7 @@ std::pair<bool, time_t> parseYearInterval( std::time_t t, const std::string& dat
     }
 }
 
-std::unique_ptr<std::ofstream> openLogfile( const std::string &name ) {
+std::unique_ptr<std::ofstream> openLogfile( const std::string& name ) {
     struct stat buffer;
     std::string tname = name;
     int ctr = 2;

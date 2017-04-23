@@ -31,7 +31,7 @@ std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial(
     uint16_t profile = prof.id;
     std::string res = readFile( ca->path + "/serial" );
 
-    BIGNUM* bn = 0;
+    BIGNUM *bn = 0;
 
     if( res == "" ) {
         bn = BN_new();
@@ -47,7 +47,7 @@ std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial(
 
     std::shared_ptr<BIGNUM> serial = std::shared_ptr<BIGNUM>( bn, BN_free );
 
-    std::shared_ptr<unsigned char> data = std::shared_ptr<unsigned char>( ( unsigned char* ) malloc( BN_num_bytes( serial.get() ) + 20 ), free );
+    std::shared_ptr<unsigned char> data = std::shared_ptr<unsigned char>( ( unsigned char * ) malloc( BN_num_bytes( serial.get() ) + 20 ), free );
     int len = BN_bn2bin( serial.get(), data.get() );
 
     data.get()[len] = 0x0;
@@ -217,17 +217,17 @@ std::shared_ptr<SignedCertificate> SimpleOpensslSigner::sign( std::shared_ptr<TB
         c.setTimes( from, to );
         logger::note( "FINE: Setting validity period successful:" );
         {
-            struct tm* timeobj;
+            struct tm *timeobj;
             std::vector<char> timebuf;
 
             timeobj = gmtime( &from );
             timebuf.resize( 128 );
-            timebuf.resize( std::strftime( const_cast<char*>( timebuf.data() ), timebuf.size(), "%F %T %Z", timeobj ) );
+            timebuf.resize( std::strftime( const_cast<char *>( timebuf.data() ), timebuf.size(), "%F %T %Z", timeobj ) );
             logger::note( "FINE: - Valid not before: ", std::string( timebuf.cbegin(), timebuf.cend() ) );
 
             timeobj = gmtime( &to );
             timebuf.resize( 128 );
-            timebuf.resize( std::strftime( const_cast<char*>( timebuf.data() ), timebuf.size(), "%F %T %Z", timeobj ) );
+            timebuf.resize( std::strftime( const_cast<char *>( timebuf.data() ), timebuf.size(), "%F %T %Z", timeobj ) );
             logger::note( "FINE: - Valid not after:  ", std::string( timebuf.cbegin(), timebuf.cend() ) );
         }
     }

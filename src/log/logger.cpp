@@ -17,8 +17,8 @@ namespace logger {
          *
          * CAREFULL: THIS FUNCTION CONTAINS GLOBAL STATE!
          */
-        std::vector<logger_set*>& logger_stack() {
-            static auto stack = std::vector<logger_set*> {};
+        std::vector<logger_set *>& logger_stack() {
+            static auto stack = std::vector<logger_set *> {};
             // To avoid infinite recursion, the base-logger must
             // not auto-register but be added manually
             static auto std_logger = logger_set {{std::cout}, auto_register::off};
@@ -35,7 +35,7 @@ namespace logger {
             return stack;
         }
 
-        void reassign_stack_pointer( logger_set*& ptr ) {
+        void reassign_stack_pointer( logger_set *&ptr ) {
             const auto old_ptr = ptr;
 
             if( ptr ) {
@@ -113,7 +113,7 @@ namespace logger {
         }
     }
 
-    logger_set& logger_set::operator=( logger_set && other ) noexcept {
+    logger_set& logger_set::operator=( logger_set&& other ) noexcept {
         if( m_stackpointer ) {
             *m_stackpointer = nullptr;
             impl::pop_loggers();

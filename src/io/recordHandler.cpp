@@ -34,7 +34,7 @@ public:
     std::shared_ptr<SSL> ssl;
 
     std::shared_ptr<OpensslBIOWrapper> io;
-    DefaultRecordHandler* parent;
+    DefaultRecordHandler *parent;
     std::shared_ptr<Signer> signer;
 
     std::unique_ptr<std::ofstream> logFile;
@@ -43,7 +43,7 @@ public:
     logger::logger_set logger;
 
 
-    RecordHandlerSession( DefaultRecordHandler* parent, std::shared_ptr<Signer> signer, std::shared_ptr<SSL_CTX> ctx, std::shared_ptr<BIO> output ) :
+    RecordHandlerSession( DefaultRecordHandler *parent, std::shared_ptr<Signer> signer, std::shared_ptr<SSL_CTX> ctx, std::shared_ptr<BIO> output ) :
         tbs( std::make_shared<TBSCertificate>() ),
         logFile( openLogfile( "logs/log_" + timestamp() ) ),
         logger{ std::cout, *logFile } {
@@ -113,35 +113,33 @@ public:
             tbs->wishTo = data;
             break;
 
-        case RecordHeader::SignerCommand::ADD_SAN:
-            {
-                size_t pos = data.find( "," );
+        case RecordHeader::SignerCommand::ADD_SAN: {
+            size_t pos = data.find( "," );
 
-                if( pos == std::string::npos ) {
-                    // error
-                } else {
-                    auto san = std::make_shared<SAN>();
-                    san->type = data.substr( 0, pos );
-                    san->content = data.substr( pos + 1 );
-                    tbs->SANs.push_back( san );
-                }
+            if( pos == std::string::npos ) {
+                // error
+            } else {
+                auto san = std::make_shared<SAN>();
+                san->type = data.substr( 0, pos );
+                san->content = data.substr( pos + 1 );
+                tbs->SANs.push_back( san );
             }
-            break;
+        }
+        break;
 
-        case RecordHeader::SignerCommand::ADD_AVA:
-            {
-                size_t pos = data.find( "," );
+        case RecordHeader::SignerCommand::ADD_AVA: {
+            size_t pos = data.find( "," );
 
-                if( pos == std::string::npos ) {
-                    // error
-                } else {
-                    auto ava = std::make_shared<AVA>();
-                    ava->name = data.substr( 0, pos );
-                    ava->value = data.substr( pos + 1 );
-                    tbs->AVAs.push_back( ava );
-                }
+            if( pos == std::string::npos ) {
+                // error
+            } else {
+                auto ava = std::make_shared<AVA>();
+                ava->name = data.substr( 0, pos );
+                ava->value = data.substr( pos + 1 );
+                tbs->AVAs.push_back( ava );
             }
-            break;
+        }
+        break;
 
         case RecordHeader::SignerCommand::ADD_PROOF_LINE:
             break;
@@ -176,37 +174,37 @@ public:
             serials.push_back( data );
             break;
 
-        case RecordHeader::SignerCommand::REVOKE:
-            {
-                logger::note("Revoking: ", data);
-                std::string ca = data;
-                auto reqCA = CAs.at( ca );
-                logger::note( "CA found in recordHandler" );
-                std::shared_ptr<CRL> crl;
-                std::string date;
-                std::tie( crl, date ) = signer->revoke( reqCA, serials );
+        case RecordHeader::SignerCommand::REVOKE: {
+            logger::note( "Revoking: ", data );
+            std::string ca = data;
+            auto reqCA = CAs.at( ca );
+            logger::note( "CA found in recordHandler" );
+            std::shared_ptr<CRL> crl;
+            std::string date;
+            std::tie( crl, date ) = signer->revoke( reqCA, serials );
 
-                respondCommand( RecordHeader::SignerResult::REVOKED, date + crl->getSignature() );
+            respondCommand( RecordHeader::SignerResult::REVOKED, date + crl->getSignature() );
+        }
+        break;
+
+        case RecordHeader::SignerCommand::GET_FULL_CRL: {
+            logger::note( "Requesting full CRL: ", data );
+            auto ca = CAs.at( data );
+            CRL c( ca->path + "/ca.crl" );
+            respondCommand( RecordHeader::SignerResult::FULL_CRL, c.toString() );
+
+            logger::note( "Shutting down SSL" );
+
+            if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
+                logger::error( "ERROR: SSL shutdown failed." );
             }
-            break;
 
-        case RecordHeader::SignerCommand::GET_FULL_CRL:
-            {
-                logger::note("Requesting full CRL: ", data);
-                auto ca = CAs.at( data );
-                CRL c( ca->path + "/ca.crl" );
-                respondCommand( RecordHeader::SignerResult::FULL_CRL, c.toString() );
-                
-                logger::note( "Shutting down SSL" );
-                if( !SSL_shutdown( ssl.get() ) && !SSL_shutdown( ssl.get() ) ) {
-                    logger::error( "ERROR: SSL shutdown failed." );
-                }
-                io->ctrl( BIO_CTRL_FLUSH, 0, NULL );
-                logger::note( "Shutted down SSL" );
+            io->ctrl( BIO_CTRL_FLUSH, 0, NULL );
+            logger::note( "Shutted down SSL" );
 
-                parent->reset(); // Connection ended
-            }
-            break;
+            parent->reset(); // Connection ended
+        }
+        break;
 
         default:
             throw std::runtime_error( "Unimplemented" );

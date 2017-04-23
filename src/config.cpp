@@ -53,8 +53,8 @@ std::shared_ptr<std::unordered_map<std::string, std::string>> parseConf( std::st
 int parseProfiles() {
     CAs = std::unordered_map<std::string, std::shared_ptr<CAConfig>>();
 
-    DIR* dp;
-    struct dirent* ep;
+    DIR *dp;
+    struct dirent *ep;
     dp = opendir( "profiles" );
 
     if( dp == NULL ) {
@@ -95,8 +95,8 @@ int parseProfiles() {
 
         std::string cas = map->at( "ca" );
 
-        DIR* dir;
-        struct dirent* ent;
+        DIR *dir;
+        struct dirent *ent;
 
         if( ( dir = opendir( "ca" ) ) != NULL ) {
             while( ( ent = readdir( dir ) ) != NULL ) {

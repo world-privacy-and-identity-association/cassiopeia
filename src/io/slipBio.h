@@ -34,9 +34,9 @@ public:
 
     void setTarget( std::shared_ptr<OpensslBIO> target, bool server );
 
-    virtual int write( const char* buf, int num );
-    virtual int read( char* buf, int size );
-    virtual long ctrl( int cmod, long arg1, void* arg2 );
+    virtual int write( const char *buf, int num );
+    virtual int read( char *buf, int size );
+    virtual long ctrl( int cmod, long arg1, void *arg2 );
 
-    static const char* getName();
+    static const char *getName();
 };

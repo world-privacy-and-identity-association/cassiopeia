@@ -48,7 +48,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
     send( conn, head, RecordHeader::SignerCommand::SET_WISH_FROM, cert->wishFrom );
     send( conn, head, RecordHeader::SignerCommand::SET_WISH_TO, cert->wishTo );
 
-    for( auto &ava : cert->AVAs ) {
+    for( auto& ava : cert->AVAs ) {
         if( ava->name.find( "," ) != std::string::npos ) {
             // invalid ava
             return nullptr;
@@ -57,7 +57,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
         send( conn, head, RecordHeader::SignerCommand::ADD_AVA, ava->name + "," + ava->value );
     }
 
-    for( auto &san : cert->SANs ) {
+    for( auto& san : cert->SANs ) {
         if( san->type.find( "," ) != std::string::npos ) {
             // invalid ava
             return nullptr;
@@ -100,7 +100,7 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
 
     if( result ) {
         std::shared_ptr<BIO> bios( BIO_new( BIO_s_mem() ), BIO_free );
-        const char* buf = result->certificate.data();
+        const char *buf = result->certificate.data();
         unsigned int len = result->certificate.size();
 
         while( len > 0 ) {
@@ -157,7 +157,7 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
     head.flags = 0;
     head.sessid = 13;
 
-    for( auto &serial : serials ) {
+    for( auto& serial : serials ) {
         send( conn, head, RecordHeader::SignerCommand::ADD_SERIAL, serial );
     }
 
@@ -174,14 +174,14 @@ std::pair<std::shared_ptr<CRL>, std::string> RemoteSigner::revoke( std::shared_p
         throw std::runtime_error( "Protocol violation" );
     }
 
-    const unsigned char* buffer2 = reinterpret_cast<const unsigned char*>( payload.data() );
-    const unsigned char* pos = buffer2;
-    ASN1_TIME* time = d2i_ASN1_TIME( NULL, &pos, payload.size() );
+    const unsigned char *buffer2 = reinterpret_cast<const unsigned char *>( payload.data() );
+    const unsigned char *pos = buffer2;
+    ASN1_TIME *time = d2i_ASN1_TIME( NULL, &pos, payload.size() );
     ASN1_TIME_free( time );
     date = payload.substr( 0, pos - buffer2 );
     std::string rest = payload.substr( pos - buffer2 );
 
-    for( std::string &serial : serials ) {
+    for( std::string& serial : serials ) {
         crl->revoke( serial, date );
     }
 

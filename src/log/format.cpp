@@ -10,7 +10,7 @@ namespace logger {
 
         inline namespace literals {
 
-            format_data operator"" _fmt( const char* it, std::size_t len ) {
+            format_data operator"" _fmt( const char *it, std::size_t len ) {
                 const auto end = it + len;
                 auto retval = format_data {};
 
