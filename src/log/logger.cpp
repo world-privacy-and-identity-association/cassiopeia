@@ -87,9 +87,9 @@ namespace logger {
         m_loggers{lst}, m_min_level{default_level} {
         if( lst.size() > 0 ) {
             m_min_level = std::min_element( lst.begin(), lst.end(),
-                []( const log_target& l, const log_target& r ) {
-                    return l.min_level < r.min_level;
-                } )->min_level;
+            []( const log_target & l, const log_target & r ) {
+                return l.min_level < r.min_level;
+            } )->min_level;
         }
 
         if( r == auto_register::on ) {
@@ -222,9 +222,9 @@ namespace logger {
             const auto length = prefix.length();
             const auto fmt = replace_newlines( format, length );
             std::transform( args.begin(), args.end(), args.begin(),
-                [length]( const std::string & str ) {
-                    return replace_newlines( str, length );
-                } );
+            [length]( const std::string & str ) {
+                return replace_newlines( str, length );
+            } );
 
             auto msg = prefix;
             auto arg_index = std::size_t {0};

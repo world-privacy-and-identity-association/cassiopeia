@@ -9,6 +9,7 @@
 #include "crypto/CRL.h"
 #include "log/logger.hpp"
 
+// *INDENT-OFF*
 std::shared_ptr<int> ssl_lib_ref(
     new int( SSL_library_init() ),
     []( int* ref ) {
@@ -17,6 +18,7 @@ std::shared_ptr<int> ssl_lib_ref(
         EVP_cleanup();
         CRYPTO_cleanup_all_ex_data();
     } );
+// *INDENT-ON*
 
 std::shared_ptr<X509> loadX509FromFile( const std::string& filename ) {
     std::shared_ptr<FILE> f( fopen( filename.c_str(), "r" ), fclose );
@@ -31,21 +33,19 @@ std::shared_ptr<X509> loadX509FromFile( const std::string& filename ) {
         return std::shared_ptr<X509>();
     }
 
-    return std::shared_ptr<X509>(
-        key,
-        []( X509* ref ) {
-            X509_free( ref );
-        } );
+    auto freeX509 = []( X509 * ref ) {
+        X509_free( ref );
+    };
+    return std::shared_ptr<X509>( key, freeX509 );
 }
 
 std::shared_ptr<EVP_PKEY> loadPkeyFromFile( const std::string& filename ) {
-    std::shared_ptr<FILE> f(
-        fopen( filename.c_str(), "r" ),
-        []( FILE* ptr ) {
-            if( ptr ) {
-                fclose( ptr );
-            }
-        } );
+    auto freeFile =  []( FILE * ptr ) {
+        if( ptr ) {
+            fclose( ptr );
+        }
+    };
+    std::shared_ptr<FILE> f( fopen( filename.c_str(), "r" ), freeFile );
 
     if( !f ) {
         return std::shared_ptr<EVP_PKEY>();
@@ -57,11 +57,10 @@ std::shared_ptr<EVP_PKEY> loadPkeyFromFile( const std::string& filename ) {
         return std::shared_ptr<EVP_PKEY>();
     }
 
-    return std::shared_ptr<EVP_PKEY>(
-        key,
-        []( EVP_PKEY* ref ) {
-            EVP_PKEY_free( ref );
-        } );
+    auto freeKey = []( EVP_PKEY * ref ) {
+        EVP_PKEY_free( ref );
+    };
+    return std::shared_ptr<EVP_PKEY>( key, freeKey );
 }
 
 int gencb( int a, int b, BN_GENCB *g ) {
@@ -90,11 +89,10 @@ static int verify_callback( int preverify_ok, X509_STORE_CTX *ctx ) {
 static std::shared_ptr<DH> dh_param;
 
 std::shared_ptr<SSL_CTX> generateSSLContext( bool server ) {
-    std::shared_ptr<SSL_CTX> ctx = std::shared_ptr<SSL_CTX>(
-        SSL_CTX_new( TLS_method() ),
-        []( SSL_CTX* p ) {
-            SSL_CTX_free( p );
-        } );
+    auto freeSSL = []( SSL_CTX * p ) {
+        SSL_CTX_free( p );
+    };
+    std::shared_ptr<SSL_CTX> ctx = std::shared_ptr<SSL_CTX>( SSL_CTX_new( TLS_method() ), freeSSL );
 
     if( !SSL_CTX_set_cipher_list( ctx.get(), "HIGH:+CAMELLIA256:!eNull:!aNULL:!ADH:!MD5:-RSA+AES+SHA1:!RC4:!DES:!3DES:!SEED:!EXP:!AES128:!CAMELLIA128" ) ) {
         throw std::runtime_error( "Cannot set cipher list. Your source is broken." );
@@ -181,11 +179,10 @@ std::shared_ptr<BIO> openSerial( const std::string& name ) {
     }
 
     setupSerial( f );
-    return std::shared_ptr<BIO>(
-        BIO_new_fd( fileno( f.get() ), 0 ),
-        [f]( BIO* b ) {
-            BIO_free( b );
-        } );
+    auto freeBIO = [f]( BIO * b ) {
+        BIO_free( b );
+    };
+    return std::shared_ptr<BIO>( BIO_new_fd( fileno( f.get() ), 0 ), freeBIO );
 }
 
 extern std::string crlPrefix;

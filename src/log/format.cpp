@@ -29,9 +29,9 @@ namespace logger {
 
                 if( std::isdigit( *it ) ) {
                     const auto w_end = std::find_if_not( it, end,
-                        []( char c ) {
-                            return std::isdigit( c );
-                        } );
+                    []( char c ) {
+                        return std::isdigit( c );
+                    } );
                     retval.width = std::stoul( std::string{it, w_end} );
                     it = w_end;
                 }

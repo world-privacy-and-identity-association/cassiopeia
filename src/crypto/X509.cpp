@@ -190,13 +190,12 @@ void X509Cert::setExtensions( std::shared_ptr<X509> caCert, std::vector<std::sha
         return;
     }
 
-    std::shared_ptr<GENERAL_NAMES> gens = std::shared_ptr<GENERAL_NAMES>(
-        sk_GENERAL_NAME_new_null(),
-        []( GENERAL_NAMES * ref ) {
-            if( ref ) {
-                sk_GENERAL_NAME_pop_free( ref, GENERAL_NAME_free );
-            }
-        } );
+    auto freeGeneralNames = []( GENERAL_NAMES * ref ) {
+        if( ref ) {
+            sk_GENERAL_NAME_pop_free( ref, GENERAL_NAME_free );
+        }
+    };
+    std::shared_ptr<GENERAL_NAMES> gens = std::shared_ptr<GENERAL_NAMES>( sk_GENERAL_NAME_new_null(), freeGeneralNames );
 
     for( auto& name : sans ) {
         GENERAL_NAME *gen = GENERAL_NAME_new();
@@ -270,11 +269,10 @@ std::shared_ptr<SignedCertificate> X509Cert::sign( std::shared_ptr<EVP_PKEY> caK
         throw std::runtime_error( "Failed to retrieve certificate serial of signed certificate." );
     }
 
-    std::shared_ptr<char> serStr(
-        BN_bn2hex( ser.get() ),
-        []( char* p ) {
-            OPENSSL_free( p );
-        } ); // OPENSSL_free is a macro...
+    auto freeMem = []( char *p ) {
+        OPENSSL_free( p );
+    };// OPENSSL_free is a macro...
+    std::shared_ptr<char> serStr( BN_bn2hex( ser.get() ), freeMem );
     res->serial = serStr ? std::string( serStr.get() ) : "";
 
     return res;

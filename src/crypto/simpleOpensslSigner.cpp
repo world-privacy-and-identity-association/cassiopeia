@@ -60,11 +60,10 @@ std::pair<std::shared_ptr<BIGNUM>, std::string> SimpleOpensslSigner::nextSerial(
         throw std::runtime_error( "Big number math failed while fetching random data for serial number." );
     }
 
-    std::shared_ptr<char> serStr = std::shared_ptr<char>(
-        BN_bn2hex( serial.get() ),
-        []( char* ref ) {
-            OPENSSL_free( ref );
-        } );
+    auto freeMem = []( char *ref ) {
+        OPENSSL_free( ref );
+    };
+    std::shared_ptr<char> serStr = std::shared_ptr<char>( BN_bn2hex( serial.get() ), freeMem );
 
     writeFile( ca->path + "/serial", serStr.get() );
 

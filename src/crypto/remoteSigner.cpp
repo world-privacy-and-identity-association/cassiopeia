@@ -121,11 +121,10 @@ std::shared_ptr<SignedCertificate> RemoteSigner::sign( std::shared_ptr<TBSCertif
         }
 
         std::shared_ptr<BIGNUM> ser( ASN1_INTEGER_to_BN( X509_get_serialNumber( pem.get() ), NULL ), BN_free );
-        std::shared_ptr<char> serStr(
-            BN_bn2hex( ser.get() ),
-            []( char* p ) {
-                OPENSSL_free( p );
-            } ); // OPENSSL_free is a macro...
+        auto freeMem = []( char *p ) {
+            OPENSSL_free( p );
+        }; // OPENSSL_free is a macro...
+        std::shared_ptr<char> serStr( BN_bn2hex( ser.get() ), freeMem );
 
         extractTimes( pem, result );
 

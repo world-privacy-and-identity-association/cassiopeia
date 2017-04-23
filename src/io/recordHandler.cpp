@@ -51,11 +51,10 @@ public:
         this->signer = signer;
 
         ssl = std::shared_ptr<SSL>( SSL_new( ctx.get() ), SSL_free );
-        std::shared_ptr<BIO> bio(
-            BIO_new( BIO_f_ssl() ),
-            [output]( BIO * p ) {
-                BIO_free( p );
-            } );
+        auto freeBIO = [output]( BIO * p ) {
+            BIO_free( p );
+        };
+        std::shared_ptr<BIO> bio( BIO_new( BIO_f_ssl() ), freeBIO );
         SSL_set_accept_state( ssl.get() );
         SSL_set_bio( ssl.get(), output.get(), output.get() );
         BIO_set_ssl( bio.get(), ssl.get(), BIO_NOCLOSE );

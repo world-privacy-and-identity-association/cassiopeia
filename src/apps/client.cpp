@@ -106,11 +106,10 @@ int main( int argc, const char *argv[] ) {
 
             if( lastCRLCheck + 30 * 60 < current ) {
                 // todo set good log TODO FIXME
-                sign->setLog( std::shared_ptr<std::ostream>(
-                    &std::cout,
-                    []( std::ostream* o ) {
-                        ( void ) o;
-                    } ) );
+                auto ostreamFree = []( std::ostream * o ) {
+                    ( void ) o;
+                };
+                sign->setLog( std::shared_ptr<std::ostream>( &std::cout, ostreamFree ) );
                 checkCRLs( sign );
                 lastCRLCheck = current;
             }
