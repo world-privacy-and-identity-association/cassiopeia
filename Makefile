@@ -116,6 +116,10 @@ coverage:
 	lcov -r coverage.info "/usr/**" -o coverage_stripped.info &&\
 	genhtml -p $(shell pwd) coverage_stripped.info --output-directory coverage
 
+.PHONY: checkformat
+checkformat:
+	(! LC_ALL=C scripts/format.sh | grep -q "^Formatted  ")
+
 # --------
 
 cassiopeia: bin/cassiopeia bin/cassiopeia-signer
