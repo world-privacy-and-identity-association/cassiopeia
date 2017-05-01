@@ -1,11 +1,5 @@
 MKDIR = mkdir -p
 
-ifneq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
-    CFLAGS += -O0
-else
-    CFLAGS += -O2
-endif
-
 BIN="bin/cassiopeia-test"
 LIBS=openssl collisiondetect
 
@@ -15,13 +9,21 @@ CXX=libtool --mode=compile g++
 CXX_DEP=g++
 LD=libtool --mode=link g++
 
+# Debhelper messes with environment variables which leads to wrong environment variable injection
+# into CFLAGS. Therefore we do not append but override.
+CFLAGS=${ADDFLAGS} -Wall -Werror -Wextra -pedantic -std=c++11 -I../src -I../lib/openssl/include
+CXXFLAGS=$(CFLAGS)
+LDFLAGS=${ADDFLAGS} -lssl -lcrypto -ldl -lboost_unit_test_framework -L../lib/openssl -L/usr/lib/i386-linux-gnu -lpqxx -lpq
+
+ifneq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
+    CFLAGS += -O0
+else
+    CFLAGS += -O2
+endif
+
 ifneq (,$(filter debug,$(DEB_BUILD_OPTIONS)))
 CFLAGS+=-DNO_DAEMON -g -Og
 endif
-
-CFLAGS+=${ADDFLAGS} -Wall -Werror -Wextra -pedantic -std=c++11 -I../src -I../lib/openssl/include
-CXXFLAGS=$(CFLAGS)
-LDFLAGS+=${ADDFLAGS} -lssl -lcrypto -ldl -lboost_unit_test_framework -L../lib/openssl -L/usr/lib/i386-linux-gnu -lpqxx -lpq
 
 ifneq (,$(filter coverage,$(DEB_BUILD_OPTIONS)))
     LDFLAGS += -lgcov
