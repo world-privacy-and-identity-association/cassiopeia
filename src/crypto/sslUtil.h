@@ -6,6 +6,7 @@
 #include <vector>
 #include <cinttypes>
 #include <ctime>
+#include <unordered_set>
 
 #include <openssl/ssl.h>
 
@@ -34,6 +35,7 @@ struct Profile {
 
     std::vector<std::shared_ptr<CAConfig>> ca;
     std::time_t maxValidity;
+    std::unordered_set<std::string> include;
     std::shared_ptr<CAConfig> getCA() {
         std::shared_ptr<CAConfig> min = nullptr;
 

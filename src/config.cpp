@@ -92,6 +92,20 @@ int parseProfiles() {
         prof.id = std::stoi( id );
         prof.eku = map->at( "eku" );
         prof.ku = map->at( "ku" );
+        {
+            std::string include = map->at( "include" );
+            size_t pos = 0;
+            size_t end = 0;
+            std::unordered_set<std::string> include_set;
+
+            while( ( end = include.find( ",", pos ) ) != std::string::npos ) {
+                include_set.emplace( include.substr( pos, end - pos ) );
+                pos = end + 1;
+            }
+
+            include_set.emplace( include.substr( pos ) );
+            prof.include = include_set;
+        }
         prof.maxValidity = std::stoi( map->at( "days" ) ) * /* DAYS */24 * 60 * 60;
 
 
