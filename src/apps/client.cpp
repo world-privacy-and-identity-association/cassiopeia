@@ -59,7 +59,7 @@ bool pathExists( const std::string& name ) {
     return stat( name.c_str(), &buffer ) == 0;
 }
 
-void signOCSP( std::shared_ptr<Signer> sign, std::string profileName, std::string req, std::string crtName ) {
+void signOCSP( std::shared_ptr<Signer> sign, std::string profileName, std::string req, std::string crtName, std::string failName ) {
     auto cert = std::make_shared<TBSCertificate>();
     cert->ocspCA = profileName;
     cert->wishFrom = "now";
@@ -78,6 +78,7 @@ void signOCSP( std::shared_ptr<Signer> sign, std::string profileName, std::strin
     std::shared_ptr<SignedCertificate> res = sign->sign( cert );
 
     if( !res ) {
+        writeFile( failName, "failed" );
         logger::error( "OCSP Cert signing failed." );
         return;
     }
@@ -118,6 +119,12 @@ void checkOCSP( std::shared_ptr<Signer> sign ) {
             continue;
         }
 
+        std::string failName = "ca/" + profileName + "/ocsp.fail";
+
+        if( pathExists( failName ) ) {
+            continue;
+        }
+
         logger::notef( "Discovered OCSP CSR that needs action: %s", csr );
         std::string req = readFile( csr );
         std::shared_ptr<X509Req> parsed = X509Req::parseCSR( req );
@@ -127,7 +134,7 @@ void checkOCSP( std::shared_ptr<Signer> sign ) {
             continue;
         }
 
-        signOCSP( sign, profileName, req, crtName );
+        signOCSP( sign, profileName, req, crtName, failName );
     }
 }
 
