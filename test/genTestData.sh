@@ -26,6 +26,7 @@ ca=unassured
 eku=
 ku=
 days=10
+include=
 EOF
 
 mkdir -p ca/unassured_2015_2

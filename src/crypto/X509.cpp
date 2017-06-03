@@ -185,7 +185,7 @@ void X509Cert::setExtensions( std::shared_ptr<X509> caCert, std::vector<std::sha
     std::string ku = std::string( "critical," ) + prof.ku;
     add_ext( caCert, target, NID_key_usage, ku.c_str() );
     add_ext( caCert, target, NID_ext_key_usage, prof.eku.c_str() );
-    add_ext( caCert, target, NID_info_access, ( ( ocspPath.empty() ? "" : "OCSP;URI:" + ocspPath + "," ) + "caIssuers;URI:" + crtURL ).c_str() );
+    add_ext( caCert, target, NID_info_access, ( ( ocspPath.empty() || prof.include.find( "noOCSP" ) != prof.include.end() ? "" : "OCSP;URI:" + ocspPath + "," ) + "caIssuers;URI:" + crtURL ).c_str() );
     add_ext( caCert, target, NID_crl_distribution_points, ( "URI:" + crlURL ).c_str() );
 
     if( sans.empty() ) {
