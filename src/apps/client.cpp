@@ -36,10 +36,7 @@ void checkCRLs( std::shared_ptr<Signer> sign ) {
     logger::note( "Signing CRLs" );
 
     for( auto& x : CAs ) {
-        logger::notef( "Checking: %s ...", x.first );
-
         if( !x.second->crlNeedsResign() ) {
-            logger::warnf( "Skipping Resigning CRL: %s ...", x.second->name );
             continue;
         }
 
