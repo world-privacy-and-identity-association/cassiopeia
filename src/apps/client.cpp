@@ -245,8 +245,6 @@ int main( int argc, const char *argv[] ) {
                         logger::notef( "INFO: AVA %s: %s", AVA->name, AVA->value );
                     }
 
-                    logger::notef( "FINE: Found the CSR at '%s'", cert->csr );
-                    cert->csr_content = readFile( keyDir + "/../" + cert->csr );
                     logger::note( "FINE: CSR content:\n", cert->csr_content );
 
                     std::shared_ptr<SignedCertificate> res = sign->sign( cert );
@@ -260,15 +258,6 @@ int main( int argc, const char *argv[] ) {
                     logger::note( "FINE: CERTIFICATE LOG:\n", res->log,
                                   "FINE: CERTIFICATE:\n", res->certificate );
 
-                    std::string fn = writeBackFile( job->target.c_str(), res->certificate, keyDir );
-
-                    if( fn.empty() ) {
-                        logger::error( "ERROR: Writeback of the certificate failed." );
-                        jp->failJob( job );
-                        continue;
-                    }
-
-                    res->crt_name = fn;
                     jp->writeBack( job, res ); //! \FIXME: Check return value
                     logger::note( "FINE: signing done." );
 

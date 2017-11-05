@@ -10,6 +10,16 @@
 PostgresJobProvider::PostgresJobProvider( const std::string& server, const std::string& user, const std::string& password, const std::string& database ):
     c( "dbname=" + database + " host=" + server + " user=" + user + " password=" + password + " client_encoding=UTF-8 application_name=cassiopeia-client" ) {
     // TODO better connection string generation??
+    pqxx::work txn( c );
+    pqxx::result version = txn.exec( "SELECT \"version\" FROM \"schemeVersion\"" );
+
+    if( version.size() != 1 ) {
+        throw std::runtime_error( "Only one version row expected but multiple found." );
+    }
+
+    if( version[0][0].as<int>() < 33 ) {
+        throw std::runtime_error( "Requires at least database schema version 33. Please update gigi before restarting cassiopeia." );
+    }
 }
 
 
@@ -66,7 +76,7 @@ void PostgresJobProvider::failJob( std::shared_ptr<Job> job ) {
 std::shared_ptr<TBSCertificate> PostgresJobProvider::fetchTBSCert( std::shared_ptr<Job> job ) {
     pqxx::work txn( c );
     auto cert = std::make_shared<TBSCertificate>();
-    std::string q = "SELECT md, profile, csr_name, csr_type, keyname FROM certs INNER JOIN profiles ON profiles.id = certs.profile WHERE certs.id=" + txn.quote( job->target );
+    std::string q = "SELECT md, profile, csr_type, keyname, att.content AS csr FROM certs INNER JOIN profiles ON profiles.id = certs.profile INNER JOIN \"certificateAttachment\" att ON att.certid=certs.id AND att.type='CSR' WHERE certs.id=" + txn.quote( job->target );
     pqxx::result r = txn.exec( q );
 
     if( r.size() != 1 ) {
@@ -86,7 +96,7 @@ std::shared_ptr<TBSCertificate> PostgresJobProvider::fetchTBSCert( std::shared_p
 
     cert->profile = profileId + "-" + profileName;
 
-    cert->csr = ro["csr_name"].as<std::string>();
+    cert->csr_content = ro["csr"].as<std::string>();
     cert->csr_type = ro["csr_type"].as<std::string>();
 
     cert->SANs = std::vector<std::shared_ptr<SAN>>();
@@ -140,7 +150,7 @@ void PostgresJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<S
         serial = serial.substr( 1 );
     }
 
-    std::string q = "UPDATE certs SET crt_name=" + txn.quote( res->crt_name ) + ", serial=" + txn.quote( serial ) + ", \"caid\" = " + txn.quote( read_id ) + ", created=" + txn.quote( pgTime( res->before ) ) + ", expire=" + txn.quote( pgTime( res->after ) ) + "  WHERE id=" + txn.quote( job->target );
+    std::string q = "UPDATE certs SET serial=" + txn.quote( serial ) + ", \"caid\" = " + txn.quote( read_id ) + ", created=" + txn.quote( pgTime( res->before ) ) + ", expire=" + txn.quote( pgTime( res->after ) ) + "  WHERE id=" + txn.quote( job->target );
     // TODO write more thingies back
 
     r = txn.exec( q );
@@ -148,6 +158,9 @@ void PostgresJobProvider::writeBack( std::shared_ptr<Job> job, std::shared_ptr<S
     if( r.affected_rows() != 1 ) {
         throw std::runtime_error( "Only one row should be updated." );
     }
+
+    c.prepare( "insertCrt", "INSERT INTO \"certificateAttachment\"(\"certid\", \"type\", \"content\") VALUES($1,'CRT',$2)" );
+    txn.prepared( "insertCrt" )( job->target )( res->certificate ).exec();
 
     txn.commit();
 }
