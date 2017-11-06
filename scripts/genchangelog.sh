@@ -1,6 +1,6 @@
 cd "$(dirname $0)"
 cat > ../debian/changelog <<EOF
-wpia-cassiopeia (0.1.b${BUILD_NUMBER}-$(git rev-parse HEAD)) unstable; urgency=low
+wpia-cassiopeia ($(git describe HEAD --tags --match "v*" | sed "s/^v//")) unstable; urgency=low
 
   * Initial Release.
 
