@@ -3,14 +3,16 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <sstream>
 
 struct Job {
     std::string id;
-    std::string warning;
+    std::string attempt;
     std::string target;
     std::string task;
     std::string from;
     std::string to;
+    std::stringstream log;
 };
 
 struct SAN {

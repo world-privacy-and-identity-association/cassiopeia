@@ -213,12 +213,10 @@ int main( int argc, const char *argv[] ) {
                 continue;
             }
 
-            std::shared_ptr<std::ofstream> logPtr = openLogfile( std::string( "logs/" ) + job->id + std::string( "_" ) + job->warning + std::string( ".log" ) );
-
-            logger::logger_set log_set( {logger::log_target( *logPtr, logger::level::debug )}, logger::auto_register::on );
+            logger::logger_set log_set( {logger::log_target( job->log, logger::level::debug )}, logger::auto_register::on );
 
             logger::note( "TASK ID: ", job->id );
-            logger::note( "TRY:     ", job->warning );
+            logger::note( "TRY:     ", job->attempt );
             logger::note( "TARGET:  ", job->target );
             logger::note( "TASK:    ", job->task );
 
@@ -264,15 +262,8 @@ int main( int argc, const char *argv[] ) {
                     if( DAEMON ) {
                         jp->finishJob( job );
                     }
-
-                    continue;
                 } catch( std::exception& c ) {
-                    logger::error( "ERROR: ", c.what() );
-                }
-
-                try {
                     jp->failJob( job );
-                } catch( std::exception& c ) {
                     logger::error( "ERROR: ", c.what() );
                 }
             } else if( job->task == "revoke" ) {
@@ -289,7 +280,9 @@ int main( int argc, const char *argv[] ) {
 
                     jp->writeBackRevocation( job, timeToString( time ) );
                     jp->finishJob( job );
+                    continue;
                 } catch( const std::exception& c ) {
+                    jp->failJob( job );
                     logger::error( "Exception: ", c.what() );
                 }
             } else {

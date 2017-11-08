@@ -24,7 +24,7 @@ PostgresJobProvider::PostgresJobProvider( const std::string& server, const std::
 
 
 std::shared_ptr<Job> PostgresJobProvider::fetchJob() {
-    std::string q = "SELECT id, \"targetId\", task, \"executeFrom\", \"executeTo\", warning FROM jobs WHERE state='open' AND warning < 3";
+    std::string q = "SELECT id, \"targetId\", task, \"executeFrom\", \"executeTo\", attempt FROM jobs WHERE state='open' AND attempt < 3";
     pqxx::work txn( c );
     pqxx::result result = txn.exec( q );
 
@@ -40,10 +40,9 @@ std::shared_ptr<Job> PostgresJobProvider::fetchJob() {
     job->task = result[0]["task"].as<std::string>();
     job->from = result[0]["\"executeFrom\""].as<std::string>( "" );
     job->to = result[0]["\"executeTo\""].as<std::string>( "" );
-    job->warning = result[0]["warning"].as<std::string>();
+    job->attempt = result[0]["attempt"].as<std::string>();
 
-    logger::notef( "Got a job: (id=%s, target=%s, task=%s, from=%s, to=%s, warnings=%s)", job->id, job->target, job->task, job->from, job->to, job->warning );
-
+    logger::notef( "Got a job: (id=%s, target=%s, task=%s, from=%s, to=%s, attempts=%s)", job->id, job->target, job->task, job->from, job->to, job->attempt );
     return job;
 }
 
@@ -57,18 +56,24 @@ void PostgresJobProvider::finishJob( std::shared_ptr<Job> job ) {
         throw std::runtime_error( "No database entry found." );
     }
 
+    c.prepare( "insertLog", "INSERT INTO \"jobLog\"(\"jobid\", \"attempt\", \"content\") VALUES($1,$2,$3)" );
+    txn.prepared( "insertCrt" )( job->id )( job->attempt )( job->log.str() ).exec();
+
     txn.commit();
 }
 
 void PostgresJobProvider::failJob( std::shared_ptr<Job> job ) {
     pqxx::work txn( c );
 
-    std::string q = "UPDATE jobs SET warning = warning + 1 WHERE id=" + txn.quote( job->id );
+    std::string q = "UPDATE jobs SET attempt = attempt + 1 WHERE id=" + txn.quote( job->id );
     pqxx::result r = txn.exec( q );
 
     if( r.affected_rows() != 1 ) {
         throw std::runtime_error( "No database entry found." );
     }
+
+    c.prepare( "insertLog", "INSERT INTO \"jobLog\"(\"jobid\", \"attempt\", \"content\") VALUES($1,$2,$3)" );
+    txn.prepared( "insertCrt" )( job->id )( job->attempt )( job->log.str() ).exec();
 
     txn.commit();
 }
