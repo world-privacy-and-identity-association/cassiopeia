@@ -57,7 +57,7 @@ void PostgresJobProvider::finishJob( std::shared_ptr<Job> job ) {
     }
 
     c.prepare( "insertLog", "INSERT INTO \"jobLog\"(\"jobid\", \"attempt\", \"content\") VALUES($1,$2,$3)" );
-    txn.prepared( "insertCrt" )( job->id )( job->attempt )( job->log.str() ).exec();
+    txn.prepared( "insertLog" )( job->id )( job->attempt )( job->log.str() ).exec();
 
     txn.commit();
 }
@@ -73,7 +73,7 @@ void PostgresJobProvider::failJob( std::shared_ptr<Job> job ) {
     }
 
     c.prepare( "insertLog", "INSERT INTO \"jobLog\"(\"jobid\", \"attempt\", \"content\") VALUES($1,$2,$3)" );
-    txn.prepared( "insertCrt" )( job->id )( job->attempt )( job->log.str() ).exec();
+    txn.prepared( "insertLog" )( job->id )( job->attempt )( job->log.str() ).exec();
 
     txn.commit();
 }
